@@ -1,10 +1,10 @@
-@ECHO OFF
+@ECHO ON
 
 SETLOCAL 
 SET PATH=%PATH%;..\..\tools\bin
 
 ECHO Clean Previous Documentation...
-del /Q documentation\*.*
+DEL /Q documentation\*.*
 
 ECHO Generate Documentation for SQL Server General....
 robodoc ^
@@ -17,11 +17,11 @@ robodoc ^
      --toc ^
      --sections ^
      --nogeneratedwith ^
-     --documenttitle "SPDBA General Function Documentation" 
+     --documenttitle "SPDBA General TSQL Function Documentation" 
 
 ECHO Generate Documentation for SQL Server LRS....
 robodoc ^
-     --src src\LRS     ^
+     --src src\LRS ^
      --doc documentation\c_SQLServerLrs ^
      --singledoc ^
      --index ^

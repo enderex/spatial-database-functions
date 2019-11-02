@@ -1,4 +1,4 @@
-USE [DEVDB]
+USE $(usedbname)
 GO
 
 IF EXISTS (
@@ -23,11 +23,11 @@ CREATE FUNCTION [$(owner)].[STBoundingDiagonal]
 )
 Returns geometry 
 AS
-/****m* GEOPROCESSING/STBoundingDiagonal (2008)
+/****f* MBR/STBoundingDiagonal (2008)
  *  NAME
  *    STBoundingDiagonal -- Returns the diagonal of the supplied geometry's bounding box as a linestring.
  *  SYNOPSIS
- *    Function [dbp].[STBoundingDiagonal] (
+ *    Function [dbo].[STBoundingDiagonal] (
  *                @p_geom     geometry,
  *                @p_round_xy int = 3,
  *                @p_round_zm int = 2
@@ -68,7 +68,7 @@ BEGIN
     @v_dimensions    varchar(4),
     @v_round_xy      int,
     @v_round_zm      int,
-	@v_bounding_line geometry,
+    @v_bounding_line geometry,
     @v_mbr           geometry;
   Begin
     If ( @p_geom is null )
@@ -86,17 +86,17 @@ BEGIN
     SET @v_dimensions = 'XY' 
                        + case when @p_geom.HasZ=1 then 'Z' else '' end 
                        + case when @p_geom.HasM=1 then 'M' else '' end;
-		   
+           
     SET @v_mbr = @p_geom.STEnvelope();
 
-	SET @v_bounding_line = [dbo].[STMakeLine](
+    SET @v_bounding_line = [$(owner)].[STMakeLine](
                               @v_mbr.STPointN(1),
                               @v_mbr.STPointN(3),
                               @v_round_xy,
                               @v_round_zm
                            );
 
-	Return @v_bounding_line;
+    Return @v_bounding_line;
   End;
 End;
 GO
@@ -109,3 +109,4 @@ select [$(owner)].[STBoundingDiagonal] (b.geom,3,2).STAsText() as bLine
 GO
 
 QUIT;
+GO

@@ -319,7 +319,7 @@ CREATE FUNCTION [$(cogoowner)].[DD2DMS]
 )
 Returns nvarchar(50)
 AS
-/****m* COGO/DD2DMS (2008)
+/****f* COGO/DD2DMS (2008)
  *  NAME
  *    DD2DMS -- Function converts a decimal degree floating point number to its string equivalent.
  *  SYNOPSIS

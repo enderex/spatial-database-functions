@@ -48,6 +48,36 @@ AS
         r[int]r - rounds number outside of the decimal context
         z[int]z - zero fills to [int] width
 **/
+/****f* TOOLS/STFormatNumber (2008)
+ *  NAME
+ *    STFormatNumber -- Formats a number into a string.
+ *  SYNOPSIS 
+ *    FUNCTION [$(owner)].[STFORMATNUMBER] 
+ *    (
+ *      @number        decimal(38,15), 
+ *      @decimalplaces int=0, 
+ *      @format        varchar(115) = '',
+ *      @ifzero        varchar(115) = '0',
+ *      @ifNull        varchar(115) ='NULL'
+ *    ) 
+ *    Returns varchar(256)
+ *  DESCRIPTION
+ *    Creates a formatted string for the supplied number using supplied parameters.
+ *  ARGUMENTS
+ *    @number        (decimal 38 15)  -- number to format
+ *    @decimalplaces (int)            -- Number decimal places
+ *    @format        (varchar 115)    -- Format string.
+ *    @ifzero        (varchar 115)    -- String for zeros eg '0'
+ *    @ifNull        (varchar 115)    -- String for null values eg 'NULL'
+ *  RESULT
+ *    formatted number (varchar 256)  -- Formatted number
+ *  AUTHOR
+ *    Simon Greener
+ *  HISTORY
+ *    Simon Greener - January 2018 - Original Coding.
+ *  COPYRIGHT
+ *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
+******/
 BEGIN 
   DECLARE @fmtxt varchar(25), @parsetxt varchar(50)
        , @parsetxtdec varchar(50)

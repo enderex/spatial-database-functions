@@ -1,5 +1,5 @@
-use spatialdb
-go
+USE $(usedbname)
+GO
 
 SET ANSI_NULLS ON
 SET ARITHABORT ON 
@@ -31,11 +31,11 @@ Create Function [$(owner)].[STMakeEnvelopeFromText] (
 )
 Returns geometry 
 As
-/****f* CREATE/STMakeEnvelopeFromText (2008)
+/****f* MBR/STMakeEnvelopeFromText (2008)
  *  NAME
  *    STMakeEnvelopeFromText -- Function that constructs a 5 point polygon from supplied string.
  *  SYNOPSIS
- *    Function [dbo].[STMakeEnvelopeFromText] (
+ *    Function [$(owner)].[STMakeEnvelopeFromText] (
  *               @p_mbr_coords varchar,
  *               @p_delim      varchar(1) = ' ',
  *               @p_srid       integer    = 0
@@ -51,9 +51,10 @@ As
  *  RESULT
  *    geometry     (geometry) - Input coordinates converted to 5 point polygon.
  *  EXAMPLE
- *    USE GISDB
+ *    SELECT [dbo].[STMakeEnvelopeFromText]('0,0,1,1',',',0).STAsText() as mbr;
  *    GO
- *    SELECT [dbo].[STMakeEnvelopeFromText](0,0,1,1,null) as mbr;
+ *    mbr
+ *    POLYGON ((0 0, 1 0, 1 1, 0 1, 0 0))
  *  AUTHOR
  *    Simon Greener
  *  HISTORY
@@ -101,14 +102,24 @@ Begin
                          @v_ur_x + ' ' + @v_ll_y + ',' +
                          @v_ur_x + ' ' + @v_ur_y + ',' +
                          @v_ll_x + ' ' + @v_ur_y + ',' +
-                         @v_ll_x + ' ' + @v_ll_y
-			+ '))';
+                         @v_ll_x + ' ' + @v_ll_y +
+               '))';
   RETURN geometry::STGeomFromText(@v_wkt,ISNULL(@p_srid,0));
  End;
 End
 GO
 
-SELECT [$(owner)].[STMakeEnvelopeFromText]('0 0,1 1',null) as mbr;
+PRINT 'Testing [$(owner)].[STMakeEnvelopeFromText] ...';
+GO
+
+SELECT [$(owner)].[STMakeEnvelopeFromText]('0 0 1 1',DEFAULT,0) as mbr;
+GO
+
+SELECT [$(owner)].[STMakeEnvelopeFromText]('0,0,1,1',',',0).STAsText() as mbr;
+GO
+
+SELECT [$(owner)].[STMakeEnvelopeFromText]('0@0@1@1','@',0) as mbr;
+GO
 
 QUIT
 GO

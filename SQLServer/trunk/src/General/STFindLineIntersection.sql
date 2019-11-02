@@ -383,7 +383,7 @@ CREATE FUNCTION [$(cogoowner)].[STFindLineIntersectionDetails]
   @p_line_segment_2 geometry
 )
 Returns varchar(max)
-/****m* COGO/STFindLineIntersectionDetails (2008)
+/****f* COGO/STFindLineIntersectionDetails (2008)
  *  NAME
  *    STFindLineIntersectionDetails -- Interprets intersection that results from a call to STFindLineIntersectionBySegment with same parameter values.
  *  SYNOPSIS

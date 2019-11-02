@@ -35,13 +35,37 @@ create function [$(cogoowner)].[STResection] (
 )
 Returns geometry
 As
-/****f* COGO/STResection - Computes resection point using Tienstra's Method from supplied parameters.
- * NOTE
- *   All three angles must add up to 360.0
- *   Points must be supplied in clockwise order.
- * TODO
- *   Still under development.
- ******/
+/****f* COGO/STResection 
+ *  NAME
+ *    ST_Resection -- Creates a square buffer to left or right of a linestring.
+ *  SYNOPSIS
+ *    Function [$(cogoowner)].[STResection] (
+ *       @p_point1     geometry,
+ *       @p_angle1     float,
+ *       @p_point2     geometry,
+ *       @p_angle2     float,
+ *       @p_point3     geometry,
+ *       @p_angle3     float,
+ *       @p_angle_type varchar(1) = 'I'
+ *      )
+ *    Returns geometry
+ *  NOTES
+ *    All three angles must add up to 360.0
+ *    Points must be supplied in clockwise order.
+ *  TODO
+ *    Still under development.
+ *  RESULT
+ *    point (geometry) - Result of resection
+ *  AUTHOR
+ *    Simon Greener
+ *  HISTORY
+ *    Simon Greener - February 2019 - Original TSQL coding
+ *  COPYRIGHT
+ *    (c) 2012-2019 by TheSpatialDBAdvisor/Simon Greener
+ *  LICENSE
+ *    Creative Commons Attribution-Share Alike 2.5 Australia License.
+ *    http://creativecommons.org/licenses/by-sa/2.5/au/
+******/
 Begin
   Declare
     @v_angle_type   varchar(1),

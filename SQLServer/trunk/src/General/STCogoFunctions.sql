@@ -1265,7 +1265,7 @@ AS
  *    Function STFindAngleBetween
  *               @p_line      geometry 
  *               @p_next_line geometry,
- *               @p_side      int = -1 /* Left -1; Right +1 */
+ *               @p_side      int = -1 -- Left -1; Right +1 
  *             )
  *      Return Float
  *  DESCRIPTION

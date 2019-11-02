@@ -26,11 +26,11 @@ GO
 
 CREATE FUNCTION [$(lrsowner)].[STFindSegmentByZRange]
 (
-  @p_linestring    geometry,
-  @p_start_Z Float,
-  @p_end_Z   Float = null,
-  @p_round_xy      int   = 3,
-  @p_round_zm      int   = 2
+  @p_linestring geometry,
+  @p_start_Z    Float,
+  @p_end_Z      Float = null,
+  @p_round_xy   int   = 3,
+  @p_round_zm   int   = 2
 )
 returns geometry 
 as
@@ -107,7 +107,7 @@ begin
 
     SET @v_round_xy = ISNULL(@p_round_xy,3);
     SET @v_round_zm = ISNULL(@p_round_zm,2);
-    SET @v_offset   = 0.0; -- Offset done by STLineOffset at end of function if @p_offset <> 0.0
+    SET @v_offset   = 0.0; -- Offset done by STOffsetLine at end of function if @p_offset <> 0.0
     SET @v_start_Z  = case when @p_start_Z is null then @p_linestring.STStartPoint().Z else @p_start_Z end;
     SET @v_end_Z    = case when @p_end_Z   is null then @p_linestring.STEndPoint().Z   else @p_end_Z   end;
 
@@ -315,7 +315,7 @@ begin
                                 /* @p_round_xy   */ @v_round_xy,
                                 /* @p_round_zm   */ @v_round_zm
                               )
-                         else [$(owner)].[STLineOffset] (
+                         else [$(owner)].[STOffsetLine] (
                                 /* @p_linestring */ @v_return_geom,
                                 /* @p_offset     */ @v_offset,
                                 /* @p_round_xy   */ @v_round_xy,

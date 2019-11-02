@@ -1,4 +1,4 @@
-USE [$(usedbname)]
+USE $(usedbname)
 GO
 
 SET ANSI_NULLS ON
@@ -30,7 +30,7 @@ CREATE FUNCTION [$(owner)].[STOneSidedBuffer]
   @p_buffer_distance Float,   /* -ve is left and +ve is right */
   @p_square          int = 1, /* 1 means square ends, 0 means round ends */
   @p_round_xy        int = 3,
-  @p_round_zm        int  = 2
+  @p_round_zm        int = 2
 )
 Returns geometry 
 AS
@@ -48,7 +48,7 @@ AS
  *     Returns geometry
  *  DESCRIPTION
  *    This function creates a square buffer to left or right of a linestring.
- *    To create a buffer to the LEFT of the linestring (direction start to end) supply a negative @p_buffer_distance; 
+ *    To create a buffer to the LEFT of the linestring (direction start to end) supply a negative p_buffer_distance; 
  *    a +ve value will create a buffer on the right side of the linestring.
  *    Square ends can be created by supplying a positive value to @p_square parameter. 
  *    A value of 0 will create a rounded end at the start or end point.
@@ -70,31 +70,43 @@ AS
  *  HISTORY
  *    Simon Greener - Jan 2013 - Original coding (Oracle).
  *    Simon Greener - Nov 2017 - Original coding for SQL Server.
+ *    Simon Greener - Oct 2019 - Improvements to handle disppearing segments.
  *  COPYRIGHT
- *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
+ *    (c) 2012-2019 by TheSpatialDBAdvisor/Simon Greener
+ *  LICENSE
+ *      Creative Commons Attribution-Share Alike 2.5 Australia License.
+ *      http://creativecommons.org/licenses/by-sa/2.5/au/
 ******/
 BEGIN
   DECLARE
-    @v_wkt               varchar(max),
-    @v_GeometryType      varchar(100),
-    @v_dimensions        varchar(4),
-    @v_square            int = case when ISNULL(@p_square,1) >= 1 then 1 else 0 end,
-    @v_round_xy          int,
-    @v_round_zm           int,
-    @v_buffer_distance   float = ABS(@p_buffer_distance),
-    @v_buffer_increment  float,
-    @v_sign              int, /* -1 left/+1 right */
-    @v_GeomN             int,
-    @v_bearing           float,
-    @v_linestring        geometry,
-    @v_start_linestring  geometry,
-    @v_end_linestring    geometry,
-    @v_circular_string   geometry,
-    @v_point             geometry,
-    @v_circle            geometry,
-    @v_split_geom        geometry,
-    @v_side_geom         geometry,
-    @v_buffer            geometry;
+    @v_wkt              varchar(max),
+    @v_GeometryType     varchar(100),
+    @v_dimensions       varchar(4),
+    @v_square           int = case when ISNULL(@p_square,1) >= 1 then 1 else 0 end,
+    @v_round_xy         int,
+    @v_round_zm         int,
+    @v_buffer_distance  float = ABS(@p_buffer_distance),
+    @v_buffer_increment float,
+    @v_radius           float,
+    @v_sign             int, /* -1 left/+1 right */
+    @v_GeomN            int,
+    @v_NumPoints        int,
+    @v_minId            int,
+    @v_maxId            int,
+    @v_bearing          float,
+    @v_distance         float,
+    @v_linestring       geometry,
+    @v_start_linestring geometry,
+    @v_end_linestring   geometry,
+    @v_circular_string  geometry,
+    @v_point            geometry,
+    @v_circle           geometry,
+    @v_split_geom       geometry,
+    @v_side_geom        geometry,
+    @v_buffer_ring      geometry,
+    @v_shortest_line_to geometry,
+    @v_extension_line   geometry,
+    @v_buffer           geometry;
   Begin
     If ( @p_linestring is null )
       Return @p_linestring;
@@ -117,6 +129,7 @@ BEGIN
 
     -- Create buffer around linestring.
     SET @v_sign             = SIGN(@p_buffer_distance);
+    -- SET @v_buffer_distance  = ROUND(ABS(@p_buffer_distance) * 1.1,@v_round_xy+1);
     SET @v_buffer_distance  = ROUND(ABS(@p_buffer_distance),@v_round_xy+1);
     SET @v_buffer_increment = ROUND(1.0/POWER(10,@v_round_xy+1)*5.0,@v_round_xy+1);
 
@@ -132,56 +145,119 @@ BEGIN
              @v_round_zm ) = 1 )
     BEGIN
       -- Try and convert to polygon with single outer ring
-      IF      @v_GeometryType = 'LineString' 
+      IF ( @v_GeometryType = 'LineString' )
         SET @v_wkt    = REPLACE(@p_linestring.AsTextZM(),'LINESTRING (','POLYGON ((') + ')'
       ELSE IF @v_geometryType = 'CompoundCurve'
-        SET @v_wkt    = REPLACE(@p_linestring.AsTextZM(),'COMPOUNDCURVE (','CURVEPOLYGON ((') + ')'
+        SET @v_wkt    = 'CURVEPOLYGON (' + @p_linestring.AsTextZM() + ')'
       ELSE IF @v_geometryType = 'CircularString' 
-        SET @v_wkt    = REPLACE(@p_linestring.AsTextZM(),'CIRCULARSTRING (','CURVEPOLYGON ((') + ')';
+        SET @v_wkt    = 'CURVEPOLYGON (' + @p_linestring.AsTextZM() + ')';
+      -- Ring rotation should be considered
       -- +ve Buffer outside, -ve buffer inside, so reverse
       SET @v_split_geom = geometry::STGeomFromText(@v_wkt,@p_linestring.STSrid).MakeValid();
       SET @v_buffer = @v_split_geom.STBuffer(-1.0 * @p_buffer_distance).STSymDifference(@v_split_geom);
       Return @v_buffer;
     END;
 
-    SET @v_linestring       = @p_linestring;
+    -- **********************************************************************************
+    -- Get start and end segments that don't disappear.
+    SET @v_buffer      = @p_linestring.STBuffer(ABS(@p_buffer_distance));
+    SET @v_buffer_ring = @v_buffer.STExteriorRing();
+    SET @v_linestring  = [$(owner)].[STRemoveOffsetSegments] (
+                           @p_linestring,
+                           @p_buffer_distance,
+                           @v_round_xy, 
+                           @v_round_zm 
+                         );
+    IF ( @v_linestring is null )
+       return @p_linestring;
+
+    SET @v_GeometryType = @v_linestring.STGeometryType();
+
+    -- **********************************************************************************
+
+    -- Rebuffer those that don't disappear
+    SET @v_buffer      = @p_linestring.STBuffer(ABS(@p_buffer_distance));
+    SET @v_buffer_ring = @v_buffer.STExteriorRing();
+
     IF ( @v_GeometryType    = 'CompoundCurve' )
     BEGIN
-      SET @v_start_linestring = @p_linestring.STCurveN(1);
-      SET @v_end_linestring   = @p_linestring.STCurveN(@p_linestring.STNumCurves());
+      SET @v_start_linestring = @v_linestring.STCurveN(1);
+      SET @v_end_linestring   = @v_linestring.STCurveN(@v_linestring.STNumCurves());
     END
     ELSE
     BEGIN
-      SET @v_start_linestring = @p_linestring;
-      SET @v_end_linestring   = @p_linestring;
+      SET @v_start_linestring = @v_linestring;
+      SET @v_end_linestring   = @v_linestring;
     END;
 
-    -- Create splitting lines at either end at 90 degrees to line direction if square else straght extension..
+    -- Create splitting lines at either end at 90 degrees to line direction if square else straight extension.
     -- 
 
     -- ******************** START OF LINE PROCESSING *************************
 
+    -- Create one sided with round fillet first
+    -- Leave Square till later.
+    --
     IF ( @v_start_linestring.STGeometryType() = 'LineString' ) 
     BEGIN
       -- Extend original line at start on right or left side of line segment 
       -- depending on sign of offset at 90 degrees to direction of segment
       -- 
-      SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
-                         [$(cogoowner)].[STBearingBetweenPoints] (
-                            @v_start_linestring.STStartPoint(),
+      SET @v_bearing = [$(cogoowner)].[STBearingBetweenPoints] (
+                            @v_start_linestring.STPointN(1),
                             @v_start_linestring.STPointN(2)
-                         )
-                         + 
-                         case when @v_square = 1 then (@v_sign * 90.0) else 180.0 end
+                         );
+      SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
+                         @v_bearing + case when @v_square = 1 then (@v_sign * 90.0) else 180.0 end
                        );
-      SET @v_linestring = [$(cogoowner)].[STAddSegmentByCOGO] (
-                             @v_linestring,
-                             @v_bearing,
-                             @v_buffer_distance + @v_buffer_increment,
-                             'START', /* POINT */
-                             /* @p_round    */ @v_round_xy+1,
-                             /* @p_round_zm */ @v_round_zm 
-                           );
+      -- create initial new extension line using buffer distance + increment
+      SET @v_extension_line = [$(owner)].[STMakeLine] (
+                                 @v_start_linestring.STPointN(1),
+                                 [$(cogoowner)].[STPointFromCOGO] ( 
+                                    @v_start_linestring.STPointN(1),
+                                    @v_bearing,
+                                    @v_buffer_distance + @v_buffer_increment,
+                                    @v_round_xy+1
+                                 ),
+                                 @p_round_xy,
+                                 @p_round_zm
+                              );
+      IF ( @v_extension_line is null ) 
+      BEGIN
+        SET @v_linestring = [$(cogoowner)].[STAddSegmentByCOGO] (
+                              @v_linestring,
+                              @v_bearing,
+                              @v_buffer_distance + @v_buffer_increment,
+                              'START', /* POINT */
+                              /* @p_round    */ @v_round_xy+1,
+                              /* @p_round_zm */ @v_round_zm 
+                            );
+      END
+      ELSE
+      BEGIN
+        -- Create extended linestring...
+        -- Test if end point is on/near buffer line (on will return single - intersection - point)
+        SET @v_shortest_line_to = @v_extension_line.STEndPoint().ShortestLineTo(@v_buffer_ring);
+        IF ( @v_shortest_line_to.STGeometryType() <> 'Point')
+        BEGIN
+          -- Modify extended line
+          --   Replace end of @v_extension_line with end point of @v_shortest_line_to
+          --   NOTE: Direction may still not be correct but it should be close
+          SET @v_extension_line = [$(owner)].[STMakeLine] (
+                                    @v_extension_line.STPointN(1),
+                                    @v_shortest_line_to.STEndPoint(),
+                                    @p_round_xy,
+                                    @p_round_zm
+                                 );
+        END;
+        -- Create extended linestring by appending extension line to @v_linestring
+        SET @v_linestring = [$(owner)].[STAppend] (
+                              @v_extension_line,
+                              @v_linestring,
+                              @p_round_xy,
+                              @p_round_zm
+                            );
+      END;
     END;
 
     IF ( @v_start_linestring.STGeometryType() = 'CircularString') 
@@ -191,50 +267,98 @@ BEGIN
       -- Is collinear?
       IF ( @v_circle.STStartPoint().STX = -1 and @v_circle.STStartPoint().STY = -1 and @v_circle.STStartPoint().Z = -1 )
         RETURN @v_buffer;
+      SET @v_radius = @v_circle.STStartPoint().Z;
+      -- Make circle a 2D point (throw away radius)
+      SET @v_circle = geometry::Point(
+                        @v_circle.STStartPoint().STX,
+                        @v_circle.STStartPoint().STY,
+                        @p_linestring.STSrid
+                       );
       -- Line from centre to v_start_point is at a tangent (90 degrees) to arc "direction" 
       -- Compute bearing
       -- 
-      SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
-                         [$(cogoowner)].[STBearingBetweenPoints] (
+      SET @v_bearing = [$(cogoowner)].[STBearingBetweenPoints] (
                             @v_circular_string.STStartPoint(),
                             @v_circle
-                         )
-                         +
-                         case when @v_square = 1 then 0.0 else (@v_sign * 90.0) end
+                         );
+      SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
+                         @v_bearing + case when @v_square = 1 then 0.0 else (@v_sign * 90.0) end
                        );
-      -- Create and Add new segment to existing linestring...
+      -- Add new segment to existing linestring...
       SET @v_linestring = [$(cogoowner)].[STAddSegmentByCOGO] ( 
                              @v_linestring,
                              @v_bearing,
-                             (@v_circle.Z /*Radius*/ + @p_buffer_distance + (@v_sign * @v_buffer_increment)),
+                             (@v_radius + @p_buffer_distance + (@v_sign * @v_buffer_increment)),
                              'START', 
                              @v_round_xy+1,
                              @v_round_zm
                           );
     END;
 
-    -- ******************** END OF LINE PROCESSING *************************
+    -- ******************** END OF START LINE PROCESSING *************************
 
+    -- Now compute for END LINE
+    --
     IF ( @v_end_linestring.STGeometryType() = 'LineString')  
     BEGIN
       -- Now Extend at end
       -- 
+      SET @v_NumPoints = @v_end_linestring.STNumPoints();
+      SET @v_bearing   = [$(cogoowner)].[STBearingBetweenPoints] (
+                            @v_end_linestring.STPointN(@v_numPoints-1),
+                            @v_end_linestring.STPointN(@v_NumPoints)
+                         );
       SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
-                         [$(cogoowner)].[STBearingBetweenPoints] (
-                            @v_end_linestring.STPointN(@p_linestring.STNumPoints()-1),
-                            @v_end_linestring.STEndPoint()
-                         )
-                         + 
-                         case when @v_square = 1 then (@v_sign * 90.0) else 0.0 end
+                         @v_bearing + case when @v_square = 1 then (@v_sign * 90.0) else 0.0 end
                        );
-      SET @v_linestring = [$(cogoowner)].[STAddSegmentByCOGO] (
-                             @v_linestring,
-                             @v_bearing,
-                             @v_buffer_distance + @v_buffer_increment,
-                             'END',  /* POINT */
-                             @v_round_xy+1,
-                             @v_round_zm
-                           );
+      -- create initial new extension line using buffer distance + increment
+      SET @v_extension_line = [$(owner)].[STMakeLine] (
+                                 @v_end_linestring.STEndPoint(),
+                                 [$(cogoowner)].[STPointFromCOGO] ( 
+                                    @v_end_linestring.STEndPoint(),
+                                    @v_bearing,
+                                    @v_buffer_distance + @v_buffer_increment,
+                                    @v_round_xy+1
+                                 ),
+                                 @p_round_xy,
+                                 @p_round_zm
+                              );
+      IF ( @v_extension_line is null ) 
+      BEGIN
+        SET @v_linestring = [$(cogoowner)].[STAddSegmentByCOGO] (
+                              @v_linestring,
+                              @v_bearing,
+                              @v_buffer_distance + @v_buffer_increment,
+                              'START', /* POINT */
+                              /* @p_round    */ @v_round_xy+1,
+                              /* @p_round_zm */ @v_round_zm 
+                            );
+      END
+      ELSE
+      BEGIN
+        -- Create extended linestring...
+        -- Test if end point is on/near buffer line (on will return single - intersection - point)
+        SET @v_shortest_line_to = @v_extension_line.STEndPoint().ShortestLineTo(@v_buffer_ring);
+        IF ( @v_shortest_line_to.STGeometryType() <> 'Point')
+        BEGIN
+          -- Modify extended line
+          --   Replace end of @v_extension_line with end point of @v_shortest_line_to
+          --   NOTE: Direction may still not be correct but it should be close
+          SET @v_extension_line = [$(owner)].[STMakeLine] (
+                                    @v_extension_line.STPointN(1),
+                                    @v_shortest_line_to.STEndPoint(),
+                                    @p_round_xy,
+                                    @p_round_zm
+                                 );
+        END;
+        -- Create extended linestring by appending extension line to @v_linestring
+        SET @v_linestring = [$(owner)].[STAppend] (
+                              @v_extension_line,
+                              @v_linestring,
+                              @p_round_xy,
+                              @p_round_zm
+                            );
+      END;
     END;
 
     IF ( @v_end_linestring.STGeometryType() = 'CircularString' ) 
@@ -244,22 +368,28 @@ BEGIN
       -- Is collinear?
       IF ( @v_circle.STStartPoint().STX = -1 and @v_circle.STStartPoint().STY = -1 and @v_circle.STStartPoint().Z = -1 )
         RETURN @v_buffer;
+      SET @v_radius = @v_circle.STStartPoint().Z;
+      -- Make circle a 2D point (throw away radius)
+      SET @v_circle = geometry::Point(
+                        @v_circle.STStartPoint().STX,
+                        @v_circle.STStartPoint().STY,
+                        @p_linestring.STSrid
+                       );
       -- Line from centre to v_start_point is at a tangent (90 degrees) to arc "direction" 
       -- Compute bearing
       -- 
-      SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
-                         [$(cogoowner)].[STBearingBetweenPoints] (
-                            @v_circular_string.STStartPoint(),
+      SET @v_bearing = [$(cogoowner)].[STBearingBetweenPoints] (
+                            @v_circular_string.STPointN(1),
                             @v_circle
-                         )
-                         +
-                         case when @v_square = 1 then 0.0 else (@v_sign * 90.0) end
+                         );
+      SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
+                         @v_bearing + case when @v_square = 1 then 0.0 else (@v_sign * 90.0) end
                        );
       -- Create and Add new segment to existing linestring...
       SET @v_linestring = [$(cogoowner)].[STAddSegmentByCOGO] ( 
-                             @p_linestring,
+                             @v_linestring,
                              @v_bearing,
-                             (@v_circle.Z /*Radius*/ + @p_buffer_distance + (@v_sign * @v_buffer_increment)),
+                             (@v_radius + @p_buffer_distance + (@v_sign * @v_buffer_increment)),
                              'END', 
                              @v_round_xy+1,
                              @v_round_zm
@@ -267,29 +397,32 @@ BEGIN
     END;
 
     -- #########################################################################################
+    -- #########################################################################################
     -- Now, split buffer with modified linestring (using buffer trick) to generate two polygons
     --
 
-    SET @v_buffer     = @p_linestring.STBuffer(@v_buffer_distance);
-    SET @v_split_geom = @v_buffer.STDifference(@v_linestring.STBuffer(@v_buffer_increment/10.0));
+    SET @v_split_geom = @v_buffer.STDifference(@v_linestring.STBuffer(@v_buffer_increment));  -- /10.0));
 
-    -- Find out which polygon is the one we want.
+    -- Find out which of the split left/right polygons is the one we want.
+    --
     SET @v_GeomN = 1;
     WHILE ( @v_GeomN <= @v_split_geom.STNumGeometries() )
     BEGIN
       -- Create point on correct side of line at 1/2 buffer distance.
+      SET @v_bearing = [$(cogoowner)].[STBearingBetweenPoints] (
+                            @v_linestring.STPointN(1),
+                            @v_linestring.STPointN(2)
+                         );
       SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
-                         [$(cogoowner)].[STBearingBetweenPoints] (
-                            @p_linestring.STStartPoint(),
-                            @p_linestring.STPointN(2)
-                         ) 
-                         + 
-                         (@v_sign * 45.0)
+                         @v_bearing + (@v_sign * 45.0)
                        );
       SET @v_point   = [$(cogoowner)].[STPointFromCOGO] ( 
-                          @p_linestring.STStartPoint(),
+                          @v_linestring.STPointN(1),
                           @v_bearing,
-                          @v_buffer_distance / 2.0,
+                          case when @p_linestring.STLength() < @v_buffer_distance 
+                               then @p_linestring.STLength()
+                               else @v_buffer_distance
+                           end / 2.0,
                           @v_round_xy
                        );
       IF ( @v_split_geom.STGeometryN(@v_GeomN).STContains(@v_point) = 1 )
@@ -299,6 +432,7 @@ BEGIN
       END;
       SET @v_GeomN = @v_GeomN + 1;
     END;
+
     -- #########################################################################################
     -- STRound removes 0.00001 sliver trick that would otherwise be left behind in the data.
     SET @v_side_geom = [$(owner)].[STRound] ( 
@@ -311,7 +445,7 @@ BEGIN
                 else @v_side_geom 
             end;
   End;
-End
+End;
 GO
 
 Print '****************************';
@@ -332,9 +466,17 @@ GO
 
 select geometry::STGeomFromText('LINESTRING(0 0, 10 0, 10 10, 0 10,0 0)',0) as geom
 union all
-select [$(owner)].[STOneSidedBuffer](geometry::STGeomFromText('LINESTRING (0 0, 10 0, 10 10, 0 10,0 0)',0),-1.0,3,2)
+select [$(owner)].[STOneSidedBuffer](geometry::STGeomFromText('LINESTRING (0 0, 10 0, 10 10, 0 10,0 0)',0),-1.0,1,3,2)
 union all
-select [$(owner)].[STOneSidedBuffer](geometry::STGeomFromText('LINESTRING (0 0, 10 0, 10 10, 0 10,0 0)',0),1.0,3,2);
+select [$(owner)].[STOneSidedBuffer](geometry::STGeomFromText('LINESTRING (0 0, 10 0, 10 10, 0 10,0 0)',0),1.0,0,3,2);
+GO
+
+-- Nearly closed
+select geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5)',0).STBuffer(0.01) as rGeom
+union all
+select [$(owner)].[STOneSidedBuffer] (geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5)',0),-0.5,1,3,1)
+.STAsText() as pGeom;
+GO
 
 QUIT
 GO

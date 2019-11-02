@@ -45,14 +45,6 @@ As
  *               @p_round_zm int 
  *             )
  *     Returns geometry 
- *  USAGE
- *    SELECT STInsertN(
- *             STGeomFromText ('LINESTRING(0 0,2 2)',0),
- *             STPointFromText('POINT(1 1)',0),
- *             2,
- *             1,1 ).AsTextZM() as newGeom;
- *    # updatedGeom
- *    'LINESTRING(0 0,1 1,2 2)'
  *  DESCRIPTION
  *    Function that inserts the coordinate @p_point into position @p_position in the supplied geometry.
  *    @p_position Values:
@@ -70,6 +62,14 @@ As
  *    @p_round_zm (int)      - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
  *    geometry -- Input geometry with coordinate inserted.
+ *  EXAMPLE
+ *    SELECT STInsertN(
+ *             STGeomFromText ('LINESTRING(0 0,2 2)',0),
+ *             STPointFromText('POINT(1 1)',0),
+ *             2,
+ *             1,1 ).AsTextZM() as newGeom;
+ *    # updatedGeom
+ *    'LINESTRING(0 0,1 1,2 2)'
  *  AUTHOR
  *    Simon Greener
  *  HISTORY
@@ -153,7 +153,7 @@ Begin
     -- Short circuit for two points.
     IF ( @p_geometry.STGeometryType() = 'Point' ) 
     BEGIN
-      Set @v_token = [dbo].[STPointAsText] (
+      Set @v_token = [$(owner)].[STPointAsText] (
                           /* @p_dimensions */ @v_dimensions,
                           /* @p_X          */ @p_geometry.STX,
                           /* @p_Y          */ @p_geometry.STY,
@@ -343,11 +343,11 @@ GO
 -- Add XYZM point to an XYZ point
 select 10 as testid, 
        t.intValue as Position,
-       [dbo].[STInsertN](geometry::STGeomFromText('POINT(0 0 0)',  0),
+       [$(owner)].[STInsertN](geometry::STGeomFromText('POINT(0 0 0)',  0),
                          geometry::STGeomFromText('POINT(3 3 2 2)',0),
                          t.IntValue,
                          1,2).AsTextZM() as geom
-  from dbo.Generate_Series(-1,1,1) as t
+  from $(owner).Generate_Series(-1,1,1) as t
  where t.IntValue <> 0
 GO
 

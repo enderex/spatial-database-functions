@@ -1,4 +1,4 @@
-USE [$(usedbname)]
+USE $(usedbname)
 GO
 
 SET ANSI_NULLS ON
@@ -218,7 +218,7 @@ AS
  *             )
  *     Returns geometry 
  *  USAGE
- *    SELECT [$(owner)].STMakeLine(geometry::Point(0,0,0),geometry::Point(10,10,28355)) as line;
+ *    SELECT [$(owner)].[STMakeLine](geometry::Point(0,0,0),geometry::Point(10,10,28355)) as line;
  *    LINE
  *    45
  *  DESCRIPTION
@@ -362,7 +362,7 @@ CREATE FUNCTION [$(owner)].[STMakeLineFromGeometryCollection]
 )
 Returns geometry
 AS
-/****m* EDITOR/STMakeLineFromGeometryCollection (2008)
+/****f* EDITOR/STMakeLineFromGeometryCollection (2008)
  *  NAME
  *    STMakeLineFromGeometryCollection -- Creates a linestring from supplied GeometryCollection geometry.
  *  SYNOPSIS
@@ -774,21 +774,21 @@ GO
 
 SELECT [$(owner)].[STMakeLineXY](null,null,null,null,null,null);
 GO
-SELECT [$(owner)].STMakeLineXY(0,0,10,10,0,3).STAsText();
+SELECT [$(owner)].[STMakeLineXY](0,0,10,10,0,3).STAsText();
 GO
 
 Print 'Testing STMakeLine...';
 GO
 
-SELECT [$(owner)].STMakeLine(null,null,null,null);
+SELECT [$(owner)].[STMakeLine](null,null,null,null);
 GO
-SELECT [$(owner)].STMakeLine(geometry::Point(0,0,0),null,null,null);
+SELECT [$(owner)].[STMakeLine](geometry::Point(0,0,0),null,null,null);
 GO
-SELECT [$(owner)].STMakeLine(null,geometry::Point(10,10,0),null,null);
+SELECT [$(owner)].[STMakeLine](null,geometry::Point(10,10,0),null,null);
 GO
-SELECT [$(owner)].STMakeLine(geometry::Point(0,0,0),geometry::Point(10,10,28355),3,2);
+SELECT [$(owner)].[STMakeLine](geometry::Point(0,0,0),geometry::Point(10,10,28355),3,2);
 GO
-SELECT [$(owner)].STMakeLine(geometry::Point(0,0,0),geometry::Point(10,10,0),3,2).STAsText();
+SELECT [$(owner)].[STMakeLine](geometry::Point(0,0,0),geometry::Point(10,10,0),3,2).STAsText();
 GO
 
 Print 'Testing STMakeLineFromMultiPoint ...';
@@ -800,17 +800,13 @@ GO
 Print 'Testing STMakeLineFromGeometryCollection ...';
 GO
 
-select [$(owner)].[STMakeLineFromGeometryCollection](geometry::STGeomFromText('GEOMETRYCOLLECTION (POINT (148.13461 -35.29305), POINT (148.13443 -35.29315))',4283),3,2).AsTextZM() as linestring
+select [$(owner)].[STMakeLineFromGeometryCollection](geometry::STGeomFromText('GEOMETRYCOLLECTION (POINT (148.13461 -35.29305), POINT (148.13443 -35.29315))',4283),3,2).AsTextZM() as linestring;
 GO
 
-SELECT [dbo].STMakeLineFromGeometryCollection(geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(0,0),POINT(10,10))',28355) as line
+SELECT [$(owner)].[STMakeLineFromGeometryCollection](geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(0,0),POINT(10,10))',28355) as line;
 GO
 
-SELECT [dbo].[STMakeLineFromGeometryCollection] (
-                geometry::STGeomFromText('GEOMETRYCOLLECTION(LINESTRING(1 1, 3 5),LINESTRING(3 10,6 -5))',0),
-                3,
-                2
-       ).STAsText() as line;
+SELECT [$(owner)].[STMakeLineFromGeometryCollection](geometry::STGeomFromText('GEOMETRYCOLLECTION(LINESTRING(1 1, 3 5),LINESTRING(3 10,6 -5))',0),3,2).STAsText() as line;
 GO
 
 Print 'Testing STMakeCircularLine...';

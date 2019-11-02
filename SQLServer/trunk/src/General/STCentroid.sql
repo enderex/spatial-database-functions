@@ -184,7 +184,7 @@ CREATE FUNCTION [$(owner)].[STCentroid_L]
   @p_round_zm            int   = 2
 )
 returns geometry 
-as
+AS
 /****f* GEOPROCESSING/STCentroid_L (2008)
  *  NAME
  *    STCentroid_L - Generates centroid for a Linestring or multiLinestring geometry object.
@@ -224,6 +224,7 @@ as
  *  COPYRIGHT
  *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 ******/
+
 begin
   DECLARE
     @v_gtype               varchar(100),

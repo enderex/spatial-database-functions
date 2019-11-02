@@ -710,7 +710,7 @@ select cogoLine, cogoLine.AsTextZM() as cogoLineWKT
 GO
 
 SELECT [$(cogoowner)].[STCogo2Line] ( f.cogoXML, 3,2) as linestring
-  FROM (SELECT [cogo].[STLine2Cogo] (
+  FROM (SELECT [$(cogoowner)].[STLine2Cogo] (
                  geometry::STGeomFromText('MULTILINESTRING((0 0,1 1,2 2),(100 100,110 110,130 130))',0),
                  CHAR(176),
                  CHAR(39),

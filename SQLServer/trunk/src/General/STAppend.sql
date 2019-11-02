@@ -1,5 +1,5 @@
-use [$(usedbname)]
-go
+USE $(usedbname)
+GO
 
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
@@ -22,18 +22,6 @@ END;
 GO
 
 Print 'Creating [$(owner)].[STAppend] ...';
-GO
-
-CREATE FUNCTION [$(owner)].[STAppend]
-USE [TESTDB]
-GO
-/****** Object:  UserDefinedFunction [$(owner)].[STAppend]    Script Date: 17-Oct-19 10:11:16 AM ******/
-SET ANSI_NULLS ON
-GO
-SET QUOTED_IDENTIFIER ON
-GO
-
-DROP FUNCTION [$(owner)].[STAppend]
 GO
 
 CREATE FUNCTION [$(owner)].[STAppend]

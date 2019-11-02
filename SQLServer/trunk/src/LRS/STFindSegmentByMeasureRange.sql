@@ -112,7 +112,7 @@ begin
 
     SET @v_round_xy      = ISNULL(@p_round_xy,3);
     SET @v_round_zm      = ISNULL(@p_round_zm,2);
-    SET @v_offset        = 0.0; -- Offset done by STLineOffset at end of function if @p_offset <> 0.0
+    SET @v_offset        = 0.0; -- Offset done by STOffsetLine at end of function if @p_offset <> 0.0
     SET @v_start_measure = case when @p_start_measure is null then @p_linestring.STStartPoint().M else @p_start_measure end;
     SET @v_end_measure   = case when @p_end_measure   is null then @p_linestring.STEndPoint().M   else @p_end_measure   end;
 
@@ -326,7 +326,7 @@ begin
                                 /* @p_round_xy   */ @v_round_xy,
                                 /* @p_round_zm   */ @v_round_zm
                               )
-                         else [$(owner)].[STLineOffset] (
+                         else [$(owner)].[STOffsetLine] (
                                 /* @p_linestring */ @v_return_geom,
                                 /* @p_offset     */ @v_offset,
                                 /* @p_round_xy   */ @v_round_xy,

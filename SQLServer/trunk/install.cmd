@@ -17,15 +17,15 @@ SET server_instance=localhost\SQLEXPRESS
 SET /P Express=Are we connecting to an Express database? (%server_instance%: Default is N):
 IF %Express%_ EQU Y_ GOTO IDBNAME
 
-SET server_instance=%ComputerName%\{EnterSQLServiceName}
+SET server_instance=%ComputerName%\EnterSQLInstanceName
 :SINSTANCE
-SET /P server_instance=Enter server/instance (%server_instance%):
+SET /P server_instance=Enter server\instance (%server_instance%):
 IF %server_instance%_ NEQ _ GOTO IDBNAME
 ECHO Server Instance must be entered.
 GOTO SINSTANCE
 
 :IDBNAME
-SET dbname=GISDB
+SET dbname=TESTDB
 SET /P dbname=Enter install DB name (%dbname%):
 IF %dbname%_ NEQ _ GOTO IOWNER
 ECHO Installation database name must be entered.
@@ -117,8 +117,8 @@ find /I src/general/STMBR.sql "CREATE FUNCTION" | find /I "CREATE"
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% owner=%owner% -m-1 -E -i src/general/STMBR.sql                               -o log/STMBR.log
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% owner=%owner% -m-1 -E -i src/general/STMakeEnvelope.sql                      -o log/STMakeEnvelope.log
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% owner=%owner% -m-1 -E -i src/general/STMakeEnvelopeFromText.sql              -o log/STMakeEnvelopeFromText.log
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% owner=%owner% -m-1 -E -i src/general/STBoundingDiagonal.sql                  -o log/STBoundingDiagonal.sql
-
+ECHO ...... STBoundingDiagonal Function
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STBoundingDiagonal.sql -o log/STBoundingDiagonal.log
 
 ECHO ... STMorton function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% owner=%owner% -m-1 -E -i src/general/STMorton.sql                            -o log/STMorton.log 
@@ -148,6 +148,8 @@ ECHO ...... STEndPoint function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STEndPoint.sql    -o log/STEndPoint.log 
 ECHO ...... STIsPseudoMultiCurve function 
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STIsPseudoMultiCurve.sql -o log/STIsPseudoMultiCurve.log 
+ECHO ...... STIsCCW function 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STIsCCW.sql -o log/STIsCCW.log 
 
 ECHO ... STPointAsText and STPointGeomAsText Functions ...
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% owner=%owner% -m-1 -E -i src/general/STPointAsText.sql                       -o log/STPointAsText.log
@@ -167,6 +169,16 @@ find /I src/general/STGeographic.sql "CREATE FUNCTION" | find /I "CREATE"
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STGeographic.sql    -o log/COGO_STGeographic.log
 find /I src/general/STCogoFunctions.sql "CREATE FUNCTION" | find /I "CREATE"
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STCOGOFunctions.sql -o log/COGO_STCOGOFunctions.log
+ECHO ...... STIsCollinear 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STIsCollinear .sql -o log/COGO_STIsCollinear .log
+ECHO ...... STGeographicDistance
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STGeographicDistance.sql -o log/COGO_STGeographicDistance.log
+ECHO ...... STEllipsoidParameters
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STEllipsoidParameters.sql -o log/COGO_STEllipsoidParameters.log
+ECHO ...... STDirectVincenty
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STDirectVincenty.sql -o log/COGO_STDirectVincenty.log
+ECHO ...... STInverseVincenty
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STInverseVincenty.sql -o log/COGO_STInverseVincenty.log
 
 ECHO ... MAKE Functions ...
 ECHO ... STMakeLine* Functions (depends on COGO) ...
@@ -178,6 +190,8 @@ ECHO ...... STExtract (for DB Version %dbversion%) function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STExtract%dbversion%.sql -o log/STExtract.log 
 ECHO ...... STExtractPolygon  function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STExtractPolygon.sql     -o log/STExtractPolygon.log 
+ECHO ...... STForceCollection Function (Before STExplode)
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STForceCollection.sql    -o log/STForceCollection.log 
 ECHO ...... STExplode Function 
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STExplode.sql            -o log/STExplode.log 
 ECHO ...... STSegmentLine function
@@ -194,7 +208,9 @@ sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogo
 
 ECHO ... COGO Functions Dependent on STSegmentize ...
 find /I src/general/STLine2Cogo.sql "CREATE FUNCTION" | find /I "CREATE"
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STLine2Cogo.sql   -o log/COGO_STLine2Cogo.log
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STLine2Cogo.sql      -o log/COGO_STLine2Cogo.log
+ECHO ...... STAverageBearing Function
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STAverageBearing.sql -o log/STAverageBearing.log 
 
 ECHO ... EDIT Functions
 ECHO ...... STAddZ function ...
@@ -214,13 +230,15 @@ sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogo
 ECHO ...... STExtend and STReduce (depends on STInsert and STUpdate) functions
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STExtend.sql      -o log/STExtend.log 
 ECHO ...... STAddSegmentByCOGO (uses STExtract) Function ...
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STAddSegmentByCOGO.sql -o log/COGO_STAddSegmentByCOGO.log
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STAddSegmentByCOGO.sql -o log/STAddSegmentByCOGO.log
 ECHO ...... STDensify Function ...
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STDensify.sql          -o log/COGO_STDensify.log
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STDensify.sql          -o log/STDensify.log
+ECHO ...... STConvertToLineString Function ...
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STConvertToLineString.sql -o log/STConvertToLineString.log
 
 ECHO ... Data Quality Functions ...
 ECHO ......  STRemoveSpikes Functions
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STRemoveSpikes.sql     -o log/STRemoveSpikes.log 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STRemoveSpikes.sql          -o log/STRemoveSpikes.log 
 ECHO ......  STRemoveCollinearPoints Function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STRemoveCollinearPoints.sql -o log/STRemoveCollinearPoints.log 
 ECHO ......  STRemoveDuplicatePoints Function
@@ -228,15 +246,17 @@ sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogo
 
 ECHO ... GEOPROCESSING
 ECHO ...... STFlipVectors Function
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STFlipVectors.sql     -o log/STFlipVectors.log 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STFlipVectors.sql          -o log/STFlipVectors.log 
+ECHO ...... STRemoveOffsetSegments Function (Before STOneSidedBuffer and STLineOffset)
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STRemoveOffsetSegments.sql -o log/STRemoveOffsetSegments.log 
 ECHO ...... STOneSidedBuffer Function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STOneSidedBuffer.sql  -o log/STOneSidedBuffer.log 
-ECHO ...... STParallel Function
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STParallel.sql        -o log/STParallel.log 
+ECHO ...... STOffsetLine Function
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STOffsetLine.sql        -o log/STOffsetLine.log 
 ECHO ...... STSwapOrdinates Function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STSwapOrdinates.sql   -o log/STSwapOrdinates.log
-ECHO ...... STParallelSegment Function (depends on COGO)
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STParallelSegment.sql -o log/STParallelSegment.log 
+ECHO ...... STOffsetSegment Function (depends on COGO)
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STOffsetSegment.sql -o log/STOffsetSegment.log 
 ECHO ...... STReverse Function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STReverse.sql         -o log/STReverse.log 
 ECHO ...... STAppend Function
@@ -246,24 +266,33 @@ find /I src/general/STCentroid.sql "CREATE FUNCTION" | find /I "CREATE"
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STCentroid.sql        -o log/STCentroid.log 
 ECHO ...... STSquareBuffer Function
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STSquareBuffer.sql    -o log/STSquareBuffer.log 
-
-ECHO ... GRID or Tiling Functions
-ECHO ...... Tiling Functions: 
-find /I src/general/STTiling.sql "CREATE FUNCTION" | find /I "CREATE"
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STTiling.sql          -o log/STTiling.log 
-ECHO ...... GRID Function STNumGrids 
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STNumGrids.sql        -o log/STNumGrids.log 
+ECHO ...... STRemoveOffsetSegments Function
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STRemoveOffsetSegments.sql -o log/STRemoveOffsetSegments.log
 
 ECHO ... AFFINE Functions
 ECHO ...... STRotate Function
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STRotate.sql          -o log/STRotate.log 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STRotate.sql   -o log/STRotate.log 
 ECHO ...... STMove Function
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STMove.sql            -o log/STMove.log 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STMove.sql     -o log/STMove.log 
 ECHO ...... STScale Function
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STScale.sql           -o log/STScale.log 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STScale.sql    -o log/STScale.log 
 ECHO ...... PostGIS Functions...
 find /I src/general/STPostGIS.sql "CREATE FUNCTION" | find /I "CREATE"
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STPostGIS.sql         -o log/STPostGIS.log 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STPostGIS.sql  -o log/STPostGIS.log 
+
+ECHO ... TILING Functions
+ECHO ...... STTileXY Function: 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STTileXY.sql          -o log/STTileXY.log 
+ECHO ...... STTileGeom Function: 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STTileGeom.sql        -o log/STTileGeom.log 
+ECHO ...... STTileGeomByPoint Function: 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STTileGeomByPoint.sql -o log/STTileGeomByPoint.log 
+ECHO ...... STTileGeogByPoint Function: 
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STTileGeogByPoint.sql -o log/STTileGeogByPoint.log 
+ECHO ...... STTileByNumGrids Function
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STTileByNumGrids.sql  -o log/STTileByNumGrids.log 
+ECHO ...... STTiler Function
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STTiler.sql           -o log/STTiler.log 
 
 ECHO LRS functions (schema %lrsowner%) ....
 ECHO ... STSetMeasure Function ....

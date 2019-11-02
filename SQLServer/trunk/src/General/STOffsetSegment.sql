@@ -425,7 +425,7 @@ select test,
        pSegment.AsTextZM() as tgeom, 
        [$(cogoowner)].[STFindCircleFromArc](pSegment).AsTextZM() as circle 
   from (
-select CONCAT('N:',g.IntValue) as test, d.segment.STPointN(g.IntValue).STBuffer(0.1) as pSegment from data as d cross apply $(owner).generate_series(1,3,1) as g 
+select CONCAT('N:',g.IntValue) as test, d.segment.STPointN(g.IntValue).STBuffer(0.1) as pSegment from data as d cross apply dbo.generate_series(1,3,1) as g 
 union all
 select 'Before' as test, [$(cogoowner)].[STFindCircleFromArc](d.segment).STBuffer(0.1) as pSegment from data as d
 union all

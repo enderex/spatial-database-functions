@@ -162,7 +162,7 @@ As
  *    union all
  *    select [GISDB].[$(owner)].[STGreatCircleDistance](0,0,45,45,default,default)       as Great_Circle_Distance
  *    union all
- *    select geography::Point(0,0,4326).STDistance(geography::Point(45,45,4326))    as Great_Circle_Distance;
+ *    select geography::Point(0,0,4326).STDistance(geography::Point(45,45,4326))         as Great_Circle_Distance;
  *
  *    Great_Circle_Distance
  *    6662444.94352008
