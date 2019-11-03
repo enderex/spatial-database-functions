@@ -78,11 +78,11 @@ BEGIN
     @v_GeometryType      varchar(100),
     @v_round_xy          int,
     @v_round_zm          int,
-	@v_isCCW             bit,
-	@v_is_collinear      bit,
+    @v_isCCW             bit,
+    @v_is_collinear      bit,
     @v_nGeom             int,
-	@v_geomN             geometry,
-	@v_ccw_linestring    geometry,
+    @v_geomN             geometry,
+    @v_ccw_linestring    geometry,
     @v_interior_rings    geometry,
     @v_exterior_rings    geometry,
     @v_linestring        geometry,
@@ -105,16 +105,16 @@ BEGIN
     SET @v_round_zm   = ISNULL(@p_round_zm,2);
 
     SET @v_nGeom = 1;
-	WHILE (@v_nGeom <= @p_linestring.STNumGeometries() ) 
-	BEGIN
+    WHILE (@v_nGeom <= @p_linestring.STNumGeometries() ) 
+    BEGIN
       -- Get simple LinearRing.
       --
       SET @v_geomN = @p_linestring.STGeometryN(@v_nGeom)
 
-	  -- Check for simplicity
-	  --
+      -- Check for simplicity
+      --
       IF ( @v_geomN.STNumPoints() = 2 )
-	  BEGIN
+      BEGIN
         SET @v_linestring = [$(owner)].[STOffsetSegment] ( 
                                   @v_geomN,
                                   @p_distance,
@@ -126,12 +126,12 @@ BEGIN
         ELSE
           SET @v_result_geom = @v_result_geom.STUnion(@v_linestring);
         SET @v_nGeom = @v_nGeom + 1;
-		CONTINUE;
+        CONTINUE;
       END;
 
-	  -- TOBEDONE: Fix collinear threshold value
-	  IF ( [$(owner)].[STIsCollinear] ( @v_geomN,0.00001 ) = 1 )
-	  BEGIN
+      -- TOBEDONE: Fix collinear threshold value
+      IF ( [$(owner)].[STIsCollinear] ( @v_geomN,0.00001 ) = 1 )
+      BEGIN
         SELECT @v_linestring = [$(owner)].[STMakeLineFromGeometryCollection] (
                                   geometry::CollectionAggregate(
                                     [$(owner)].[STOffsetSegment] ( 
@@ -144,16 +144,16 @@ BEGIN
                                   @v_round_xy,
                                   @v_round_zm
                                )
-		  FROM [$(owner)].[STVectorize] ( @v_geomN ) as v;
+          FROM [$(owner)].[STVectorize] ( @v_geomN ) as v;
         IF ( @v_result_geom is null )
           SET @v_result_Geom = @v_linestring
         ELSE
           SET @v_result_geom = @v_result_geom.STUnion(@v_linestring);
         SET @v_nGeom = @v_nGeom + 1;
-		CONTINUE;
+        CONTINUE;
       END;
 
-	  SET @v_ccw_linestring = [$(owner)].[STInsertN] (
+      SET @v_ccw_linestring = [$(owner)].[STInsertN] (
                                  @v_geomN,
                                  @v_geomN.STStartPoint(),
                                  -1 /* Append at End */,
@@ -162,10 +162,10 @@ BEGIN
                               );
       SET @v_isCCW = [$(owner)].[STisCCW] ( @v_ccw_linestring );
 
-	  -- If LinearRing then do not modify it
-	  SET @v_linestring = CASE WHEN ( @v_geomN.STStartPoint().STEquals(@v_geomN.STEndPoint()) = 1 )
-	                           THEN @v_geomN
-							   ELSE [$(owner)].[STRemoveOffsetSegments] (
+      -- If LinearRing then do not modify it
+      SET @v_linestring = CASE WHEN ( @v_geomN.STStartPoint().STEquals(@v_geomN.STEndPoint()) = 1 )
+                               THEN @v_geomN
+                               ELSE [$(owner)].[STRemoveOffsetSegments] (
                                       @v_geomN.CurveToLineWithTolerance ( 0.5, 1 ),
                                       @p_distance,
                                       @v_round_xy, 
@@ -174,8 +174,8 @@ BEGIN
                             END;
 
       IF ( @v_linestring.STNumPoints() = 2 ) 
-	  BEGIN
-	    SET @v_linestring = [$(owner)].[STOffsetLineSegent] ( 
+      BEGIN
+        SET @v_linestring = [$(owner)].[STOffsetLineSegent] ( 
                                   @v_linestring,
                                   @p_distance,
                                   @v_round_xy,
@@ -186,12 +186,14 @@ BEGIN
         ELSE
           SET @v_result_geom = @v_result_geom.STUnion(@v_linestring);
         SET @v_nGeom = @v_nGeom + 1;
-		CONTINUE;
+        CONTINUE;
       END;
 
       SET @v_linestring = [$(owner)].[STRound] ( 
                              @v_linestring, 
                              @v_round_xy, 
+                             @v_round_xy, 
+                             @v_round_zm,
                              @v_round_zm 
                           );
 
@@ -212,10 +214,10 @@ BEGIN
              ) as f;
 
       -- Because we are processing a single linestring we will only get a single polygon back
-	  -- But in case
-	  IF ( @v_side_buffer.STGeometryType() = 'Polygon' )
+      -- But in case
+      IF ( @v_side_buffer.STGeometryType() = 'Polygon' )
         SET @v_exterior_rings = @v_side_buffer.STExteriorRing()
-	  ELSE
+      ELSE
         SELECT @v_exterior_rings = geometry::UnionAggregate(f.eGeom)
          FROM (SELECT v.geom.STExteriorRing() as eGeom
                   FROM [$(owner)].[STExtract](@v_side_buffer,1) as v
@@ -226,9 +228,11 @@ BEGIN
        SET @v_linestring_buffer = [$(owner)].[STRound] (
                                        @v_linestring.STBuffer(ROUND(1.0/POWER(10,@v_round_xy-1),@v_round_xy+1)),
                                        @v_round_xy+2,
+                                       @v_round_xy+2,
+                                       @v_round_zm,
                                        @v_round_zm 
                                   );
-	     
+         
        SELECT @v_result_geom =  [$(owner)].[STMakeLineFromMultiPoint] (
                 geometry::STGeomFromText('MULTIPOINT (' + STRING_AGG(REPLACE(geometry::Point(g.x,g.y,0).STAsText(),'POINT ',''),',' ) WITHIN GROUP (ORDER BY g.uid ASC) + ')',0)
               )
@@ -241,19 +245,19 @@ BEGIN
              ) g;
 
       -- Check and fix rotation.
-	  -- STOneSidedBuffer creates polygon that has CCW rotation for Exterior Ring and CW for Interior ring.
-	  -- May be different from original linestring.
-	  -- 1. ExteriorRing
-	  IF ( @v_isCCW <> 1 )
-	    SET @v_result_geom = [$(owner)].[STReverse] ( 
+      -- STOneSidedBuffer creates polygon that has CCW rotation for Exterior Ring and CW for Interior ring.
+      -- May be different from original linestring.
+      -- 1. ExteriorRing
+      IF ( @v_isCCW <> 1 )
+        SET @v_result_geom = [$(owner)].[STReverse] ( 
                                @v_result_geom, 
                                @v_round_xy, 
                                @v_round_zm 
                              );
 
-	  -- 2. InteriorRings
-	  IF ( @v_isCCW = 1 AND @v_interior_rings is not null and @v_interior_rings.STNumPoints() > 0 )
-	    SET @v_result_geom = @v_result_geom.STUnion(
+      -- 2. InteriorRings
+      IF ( @v_isCCW = 1 AND @v_interior_rings is not null and @v_interior_rings.STNumPoints() > 0 )
+        SET @v_result_geom = @v_result_geom.STUnion(
                                [$(owner)].[STReverse] ( 
                                  @v_interior_rings, 
                                  @v_round_xy, 
@@ -261,18 +265,18 @@ BEGIN
                                )
                              );
 
-	  SET @v_nGeom = @v_nGeom + 1;
+      SET @v_nGeom = @v_nGeom + 1;
      END; /* While Loop */
 
      -- Add Measures back in 
      -- (rough approach that does not take into account possible loss of segments)
      IF ( @p_linestring.HasM=1 )
-	   SET @v_result_geom = [lrs].[STAddMeasure] (
+       SET @v_result_geom = [lrs].[STAddMeasure] (
                                @v_result_geom,
                                @p_linestring.STStartPoint().M,
                                @p_linestring.STEndPoint().M,
-							   @v_round_xy,
-							   @v_round_zm
+                               @v_round_xy,
+                               @v_round_zm
                             );
      Return @v_result_geom;
   END;

@@ -80,9 +80,9 @@ as
  *           row,
  *           geom.STAsText() as Tile
  *      FROM [$(owner)].[STTileByNumGrids](
- *              geometry::STGeomFromText('LINESTRING(12.160367016481523 55.474850814352628,12.171397605408989 55.478619145167649)',0),
- *    	        2, 2,
- *              geometry::STGeomFromText('POINT(12.160367016481523 55.474850814352628)',0),
+ *              geometry::STGeomFromText('LINESTRING(12.160367016481 55.474850814352,12.171397605408 55.478619145167)',0),
+ *                2, 2,
+ *              geometry::STGeomFromText('POINT(12.160367016481 55.474850814352)',0),
  *              45
  *           ) as t;
  *    GO
@@ -102,14 +102,14 @@ as
 BEGIN
    DECLARE
      @v_wkt       nvarchar(max),
-	 @v_NumGridsX float,
-	 @v_NumGridsY float,
+     @v_NumGridsX float,
+     @v_NumGridsY float,
      @v_col       int,
      @v_row       int,
      @v_rPoint    geometry,
      @v_tile      geometry,
-	 @v_llx       float,
-	 @v_lly       float,
+     @v_llx       float,
+     @v_lly       float,
      @v_urx       float,
      @v_ury       float,
      @v_width     float,
@@ -131,12 +131,12 @@ Begin
      IF ( @p_rPoint is not null and @p_rPoint.STGeometryType() <> 'Point') 
        SET @v_rPoint = @p_rPoint.STPointN(1);
 
-	 SELECT TOP 1
-	        @v_llx = minx,
-			@v_lly = miny,
-			@v_urx = maxx,
-			@v_ury = maxy
-	   FROM [$(owner)].[STGeometry2MBR] ( @p_geometry );
+     SELECT TOP 1
+            @v_llx = minx,
+            @v_lly = miny,
+            @v_urx = maxx,
+            @v_ury = maxy
+       FROM [$(owner)].[STGeometry2MBR] ( @p_geometry );
 
      SET @v_width  = (@v_urx - @v_llx) / @p_NumGridsX;
      SET @v_height = (@v_ury - @v_lly) / @p_NumGridsY;
@@ -144,7 +144,7 @@ Begin
      SET @v_hiCol  = CEILING( @v_urx / @v_width  ) - 1;
      SET @v_loRow  = ROUND(   @v_lly / @v_height,0,1 );
      SET @v_hiRow  = CEILING( @v_ury / @v_height ) - 1;
-	 SET @v_col    = @v_loCol;
+     SET @v_col    = @v_loCol;
      WHILE ( @v_col < @v_hiCol )
      BEGIN
        SET @v_row = @v_loRow;
@@ -165,11 +165,11 @@ Begin
          IF ( @v_rPoint is not null and @p_rAngle <> 0 ) 
             SET @v_tile = [$(owner)].[STRotate]( 
                                    @v_tile,
-								   @p_rPoint.STX,
-								   @p_rPoint.STX,
-								   @p_rangle,
-								   15,
-								   15
+                                   @p_rPoint.STX,
+                                   @p_rPoint.STX,
+                                   @p_rangle,
+                                   15,
+                                   15
                                 );
 
          INSERT INTO @table (   col,   row,geom)
@@ -189,9 +189,9 @@ SELECT row_number() over (order by col, row) as tileId,
        geom.STAsText() as Tile
   FROM [$(owner)].[STTileByNumGrids](
        geometry::STGeomFromText('LINESTRING(12.160367016481523 55.474850814352628,12.171397605408989 55.478619145167649)',0),
-	   2, 2,
-	   geometry::STGeomFromText('POINT(12.160367016481523 55.474850814352628)',0),
-	   45) as t;
+       2, 2,
+       geometry::STGeomFromText('POINT(12.160367016481523 55.474850814352628)',0),
+       45) as t;
 GO
 
 QUIT

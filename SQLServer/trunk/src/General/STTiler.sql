@@ -57,16 +57,6 @@ AS
  *               @p_out_table nvarchar(128),
  *               @p_geography Int = 1
  *             )
- *  USAGE
- *    EXEC [$(owner)].[STTiler] 0, 0, 1000, 1000, 250, 250, 0, 0, 0, 0, '[$(owner)].GridLL', 0;
- *    GO
- *    SELECT COUNT(*) as tableCount FROM [$(owner)].[GridLL];
- *    GO
- *
- *    tableCount
- *    ----------
- *    16
- *    
  *  DESCRIPTION
  *    Procedure that takes a spatial extent (LL/UR), computes the number of tiles that cover it and
  *    The number of columns and rows that cover this area is calculated using @p_TileX/@p_TileY which
@@ -94,6 +84,15 @@ AS
  *      geom geometry   -- If @p_geography = 0
  *      geog geography  -- If @p_geography = 1
  *    );
+ *  EXAMPLE
+ *    EXEC [$(owner)].[STTiler] 0, 0, 1000, 1000, 250, 250, 0, 0, 0, 0, '[$(owner)].GridLL', 0;
+ *    GO
+ *    SELECT COUNT(*) as tableCount FROM [$(owner)].[GridLL];
+ *    GO
+ *
+ *    tableCount
+ *    ----------
+ *    16
  *  AUTHOR
  *    Simon Greener
  *  HISTORY
@@ -101,7 +100,7 @@ AS
  *    Simon Greener - October  2019 - Added rotation capability
  *  COPYRIGHT
  *    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
- ******/
+******/
 begin
    DECLARE
      @v_srid       Int,

@@ -291,7 +291,10 @@ BEGIN
                    else @v_side_geom
                end,
              @v_round_xy, 
-             @v_round_zm);
+             @v_round_xy, 
+             @v_round_zm,
+             @v_round_zm
+            );
   End;
 End
 GO

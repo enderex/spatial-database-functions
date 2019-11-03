@@ -399,7 +399,7 @@ Returns varchar(max)
  *      from [$(owner)].[Generate_Series] (0,-25,-5) as c
  *    )
  *    select f.offset,
- *           [$(owner)].[STRound]([$(cogoowner)].[STFindLineIntersectionBySegment] (first_segment,second_segment),3,1).STAsText() as geom,
+ *           [$(owner)].[STRound]([$(cogoowner)].[STFindLineIntersectionBySegment] (first_segment,second_segment),3,3,1,1).STAsText() as geom,
  *           [$(cogoowner)].[STFindLineIntersectionDetails](first_segment,second_segment) as reason
  *      from (select b.offset,
  *                   [$(owner)].[STOffsetSegment](                                                   a.geom,b.offset,8,8) as first_segment,
@@ -677,7 +677,7 @@ union all
 select -25 as offset, geometry::STGeomFromText('LINESTRING (0 25, 20 25)',0) as first_segment, geometry::STGeomFromText('LINESTRING (-5 0, -5 10)',0) as second_segment
 )
 select f.offset,
-       [$(owner)].[STRound]([$(cogoowner)].[STFindLineIntersectionBySegment](first_segment,second_segment),3,1).STAsText() as geom,
+       [$(owner)].[STRound]([$(cogoowner)].[STFindLineIntersectionBySegment](first_segment,second_segment),3,3,1,1).STAsText() as geom,
                             [$(cogoowner)].[STFindLineIntersectionDetails]  (first_segment,second_segment) as reason
   from data as f
 order by offset;

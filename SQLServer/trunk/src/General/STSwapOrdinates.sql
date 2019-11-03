@@ -39,14 +39,6 @@ As
  *               @p_swap     varchar(2) = 'XY'
  *             )
  *     Returns geometry 
- *  USAGE
- *    SELECT [$(owner)].[STSwapOrdinates] (
- *             geometry::STPointFromText('POINT(143.282374 20.293874)',4326),
- *             'XY'
- *           ).AsTextZM() as correctedOrdinates;
- *    correctedOrdinates
- *    POINT (20.293874 143.282374)
- *
  *  DESCRIPTION
  *    Sometimes the ordinates of a geometry can be swapped such as latitude for X
  *    and Longitude for Y when it should be reversed. This function allows for the
@@ -57,6 +49,13 @@ As
  *    @p_swap     (varchar 2) - The ordinate pair to swap: XY, XZ, XM, YZ, YM or ZM
  *  RESULT
  *    altered geom (geometry) - Changed Geometry;
+ *  EXAMPLE
+ *    SELECT [$(owner)].[STSwapOrdinates] (
+ *             geometry::STPointFromText('POINT(143.282374 20.293874)',4326),
+ *             'XY'
+ *           ).AsTextZM() as correctedOrdinates;
+ *    correctedOrdinates
+ *    POINT (20.293874 143.282374)
  *  AUTHOR
  *    Simon Greener
  *  HISTORY

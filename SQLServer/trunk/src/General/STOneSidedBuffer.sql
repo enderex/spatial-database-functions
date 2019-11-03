@@ -438,6 +438,8 @@ BEGIN
     SET @v_side_geom = [$(owner)].[STRound] ( 
                            case when @v_side_geom is null then @v_split_geom else @v_side_geom end,
                            @v_round_xy,
+                           @v_round_xy,
+                           @v_round_zm,
                            @v_round_zm
                        );
     Return case when @v_side_geom.STIsValid()=0 
