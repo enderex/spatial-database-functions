@@ -1,6 +1,14 @@
 USE $(usedbname)
 GO
 
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
+GO
+
+PRINT '***********************************************************************';
+PRINT 'Database Schema Variables are: COGO Owner($(cogoowner)) Owner($(owner))';
+GO
+
 IF EXISTS (
   SELECT * 
     FROM sysobjects 

@@ -1,4 +1,4 @@
-USE [$(usedbname)]
+USE $(usedbname)
 GO
 
 SET ANSI_NULLS ON
@@ -183,3 +183,4 @@ GO
 
 QUIT
 GO
+

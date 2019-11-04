@@ -6,29 +6,30 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 PRINT '*********************************************************************';
-PRINT 'Database Schema Variables are: lrsOwner($(lrsowner)) owner($(owner))';
+PRINT 'Database Schema Variables are: lrsOwner(lrs) owner(dbo)';
 GO
 
 IF EXISTS (
     SELECT * 
       FROM sysobjects 
-     WHERE id = object_id(N'[$(lrsowner)].[STFindSegmentByZRange]') 
+     WHERE id = object_id(N'[lrs].[STFindSegmentByZRange]') 
     AND xtype IN (N'FN', N'IF', N'TF')
 )
 BEGIN
-  DROP FUNCTION [$(lrsowner)].[STFindSegmentByZRange];
-  PRINT 'Dropped [$(lrsowner)].[STFindSegmentByZRange]';
+  DROP FUNCTION [lrs].[STFindSegmentByZRange];
+  PRINT 'Dropped [lrs].[STFindSegmentByZRange]';
 END;
 GO
 
-Print 'Creating [$(lrsowner)].[STFindSegmentByZRange] ...';
+Print 'Creating [lrs].[STFindSegmentByZRange] ...';
 GO
 
-CREATE FUNCTION [$(lrsowner)].[STFindSegmentByZRange]
+CREATE FUNCTION [lrs].[STFindSegmentByZRange]
 (
   @p_linestring geometry,
   @p_start_Z    Float,
   @p_end_Z      Float = null,
+  @p_offset     Float = 0,
   @p_round_xy   int   = 3,
   @p_round_zm   int   = 2
 )
@@ -38,7 +39,7 @@ as
  *  NAME
  *    STFindSegmentByZRange -- Extracts, and possibly offet, linestring using supplied start and end measures and @p_offset value.
  *  SYNOPSIS 
- *    Function [$(lrsowner)].[STFindSegmentByZRange] (
+ *    Function [lrs].[STFindSegmentByZRange] (
  *               @p_linestring    geometry,
  *               @p_start_Z Float,
  *               @p_end_Z   Float = null,
@@ -113,7 +114,7 @@ begin
 
     -- Check if zero measure range  
     If ( @v_start_Z = @v_end_Z )
-      Return [$(lrsowner)].[STFindPointByZ] (
+      Return [lrs].[STFindPointByZ] (
                               /* @p_linestring */ @p_linestring,
                               /* @p_Z          */ @v_start_Z,
                               /* @p_round_xy   */ @v_round_xy,
@@ -137,7 +138,7 @@ begin
             v.startLength,
             v.measureRange,
             v.geom
-       FROM [$(lrsowner)].[STFilterLineSegmentByMeasure] (
+       FROM [lrs].[STFilterLineSegmentByMeasure] (
                 @p_linestring,
                 @v_start_Z,
                 @v_end_Z,
@@ -183,7 +184,7 @@ begin
        IF ( @v_segment_geom.STGeometryType() = 'LineString' ) 
        BEGIN
           SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitLineSegmentByMeasure] (
+                 [lrs].[STSplitLineSegmentByMeasure] (
                     /* @p_linestring     */ @v_segment_geom,
                     /* @p_start_Z  */ @v_start_Z,
                     /* @p_end_Z    */ @v_end_Z,
@@ -195,7 +196,7 @@ begin
        ELSE -- IF ( @v_segment_geom.STGeometryType() = 'LineString' ) ... ELSE 
        BEGIN
           SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitCircularStringByMeasure] (
+                 [lrs].[STSplitCircularStringByMeasure] (
                     /* @p_linestring     */ @v_segment_geom,
                     /* @p_start_Z  */ @v_start_Z,
                     /* @p_end_Z    */ @v_end_Z,
@@ -229,12 +230,14 @@ begin
      BEGIN
        -- Add this segment to output linestring.
        SET @v_return_geom = case when @v_return_geom is null
-                                 then [$(owner)].[STRound] (
+                                 then [dbo].[STRound] (
                                         /* @p_linestring */ @v_segment_geom,
-                                        /* @p_round_xy   */ @v_round_xy,
-                                        /* @p_round_zm   */ @v_round_zm
+                                        /* @p_round_x    */ @v_round_xy,
+                                        /* @p_round_y    */ @v_round_xy,
+                                        /* @p_round_z    */ @v_round_zm,
+                                        /* @p_round_m    */ @v_round_zm
                                       )
-                                 else [$(owner)].[STAppend] (
+                                 else [dbo].[STAppend] (
                                        /* @p_linestring1 */ @v_return_geom,
                                        /* @p_linestring1 */ @v_segment_geom,
                                        /* @p_round_xy    */ @v_round_xy,
@@ -252,7 +255,7 @@ begin
        IF ( @v_segment_geom.STGeometryType() = 'LineString' ) 
        BEGIN
           SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitLineSegmentByMeasure] (
+                 [lrs].[STSplitLineSegmentByMeasure] (
                     /* @p_linestring    */ @v_segment_geom,
                     /* @p_start_Z */ @v_segment_geom.STStartPoint().M,
                     /* @p_end_Z   */ @v_end_Z,
@@ -264,7 +267,7 @@ begin
        ELSE -- IF ( @v_segment_geom.STGeometryType() = 'LineString' ) ... ELSE 
        BEGIN
           SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitCircularStringByMeasure] (
+                 [lrs].[STSplitCircularStringByMeasure] (
                     /* @p_linestring    */ @v_segment_geom,
                     /* @p_start_Z */ @v_segment_geom.STStartPoint().M,
                     /* @p_end_Z   */ @v_end_Z,
@@ -278,7 +281,7 @@ begin
          -- Add segment to return geom
          SET @v_return_geom = case when @v_return_geom is null
                                    then @v_new_segment_geom
-                                   else [$(owner)].[STAppend] (
+                                   else [dbo].[STAppend] (
                                           /* @p_linestring1 */ @v_return_geom,
                                           /* @p_linestring1 */ @v_new_segment_geom,
                                           /* @p_round_xy    */ @v_round_xy,
@@ -309,13 +312,13 @@ begin
                then @v_return_geom 
                else case when ( ( @v_return_geom.STGeometryType() = 'CircularString' and @v_return_geom.STNumCurves() = 1 )
                              OR ( @v_return_geom.STGeometryType() = 'LineString'     and @v_return_geom.STNumPoints() = 2 ) )
-                         then [$(owner)].[STOffsetlSegment] (
+                         then [dbo].[STOffsetSegment] (
                                 /* @p_linestring */ @v_return_geom,
                                 /* @p_offset     */ @v_offset,
                                 /* @p_round_xy   */ @v_round_xy,
                                 /* @p_round_zm   */ @v_round_zm
                               )
-                         else [$(owner)].[STOffsetLine] (
+                         else [dbo].[STOffsetLine] (
                                 /* @p_linestring */ @v_return_geom,
                                 /* @p_offset     */ @v_offset,
                                 /* @p_round_xy   */ @v_round_xy,
@@ -334,7 +337,12 @@ PRINT 'Testing....';
 GO
 
 PRINT 'STFindSegmentByZRange -> LineString ...';
-PRINT 'LINESTRING(-4 -4 0  1, 0  0 0  5.6, 10  0 0 15.61, 10 10 0 25.4)';
+GO
+
+SELECT [lrs].[STFindSegmentByZRange](
+                geometry::STGeomFromText('LINESTRING(-4 -4 0  1, 0  0 0  5.6, 10  0 0 15.61, 10 10 0 25.4)',0),
+				2.0,9.0,0.0,3,2)
+				.STAsText();
 GO
 
 QUIT

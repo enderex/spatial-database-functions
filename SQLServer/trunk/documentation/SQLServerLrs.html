@@ -7,7 +7,7 @@
 <meta http-equiv="Content-type" content="text/html; charset=ISO-8859-1" />
 <link rel="stylesheet" href="./SQLServerLrs.css" type="text/css" />
 <title>./documentation/SQLServerLrs</title>
-<!-- Source: ./src/LRS/ -->
+<!-- Source: ./documentation/ -->
 </head>
 <body>
 <div id="logo">
@@ -15,55 +15,86 @@
 </div> <!-- logo -->
 <h3>TABLE OF CONTENTS</h3>
 <ul>
-<li>1. <a href="#robo0">LRS/STAddMeasure (2012)</a></li>
-<li>2. <a href="#robo1">LRS/STEndMeasure (2012)</a></li>
-<li>3. <a href="#robo2">LRS/STFilterLineSegmentByLength (2012)</a></li>
-<li>4. <a href="#robo3">LRS/STFilterLineSegmentByMeasure (2012)</a></li>
-<li>5. <a href="#robo4">LRS/STFindArcPointByMeasure (2012)</a></li>
-<li>6. <a href="#robo5">LRS/STFindMeasure (2012)</a></li>
-<li>7. <a href="#robo6">LRS/STFindMeasureByPoint  (2012)</a></li>
-<li>8. <a href="#robo7">LRS/STFindOffset (2012)</a></li>
-<li>9. <a href="#robo8">LRS/STFindPointByLength (2012)</a></li>
-<li>10. <a href="#robo9">LRS/STFindPointByMeasure (2012)</a></li>
-<li>11. <a href="#robo10">LRS/STFindPointByRatio (2012)</a></li>
-<li>12. <a href="#robo11">LRS/STFindSegmentByLengthRange (2012)</a></li>
-<li>13. <a href="#robo12">LRS/STFindSegmentByMeasureRange (2012)</a></li>
-<li>14. <a href="#robo13">LRS/STFindSegmentByZRange (2012)</a></li>
-<li>15. <a href="#robo14">LRS/STInterpolatePoint (2012)</a></li>
-<li>16. <a href="#robo15">LRS/STIsMeasureDecreasing (2012)</a></li>
-<li>17. <a href="#robo16">LRS/STIsMeasureIncreasing (2012)</a></li>
-<li>18. <a href="#robo17">LRS/STLineInterpolatePoint (2012)</a></li>
-<li>19. <a href="#robo18">LRS/STLineLocatePoint  (2012)</a></li>
-<li>20. <a href="#robo19">LRS/STLineSubstring (2012)</a></li>
-<li>21. <a href="#robo20">LRS/STLocateAlong (2012)</a></li>
-<li>22. <a href="#robo21">LRS/STLocateBetween (2012)</a></li>
-<li>23. <a href="#robo22">LRS/STLocateBetweenElevations (2008)</a></li>
-<li>24. <a href="#robo23">LRS/STMeasureRange (2012)</a></li>
-<li>25. <a href="#robo24">LRS/STMeasureToPercentage (2012)</a></li>
-<li>26. <a href="#robo25">LRS/STPercentageToMeasure (2012)</a></li>
-<li>27. <a href="#robo26">LRS/STPointToCircularArc (2012)</a></li>
-<li>28. <a href="#robo27">LRS/STProjectPoint (2012)</a></li>
-<li>29. <a href="#robo28">LRS/STRemoveMeasure (2012)</a></li>
-<li>30. <a href="#robo29">LRS/STResetMeasure (2012)</a></li>
-<li>31. <a href="#robo30">LRS/STReverseMeasure (2012)</a></li>
-<li>32. <a href="#robo31">LRS/STScaleMeasure (2012)</a></li>
-<li>33. <a href="#robo32">LRS/STSetM (2012)</a></li>
-<li>34. <a href="#robo33">LRS/STSetMeasure (2012)</a></li>
-<li>35. <a href="#robo34">LRS/STSplit (2012)</a></li>
-<li>36. <a href="#robo35">LRS/STSplitCircularStringByLength (2012)</a></li>
-<li>37. <a href="#robo36">LRS/STSplitCircularStringByMeasure (2012)</a></li>
-<li>38. <a href="#robo37">LRS/STSplitLineSegmentByLength (2012)</a></li>
-<li>39. <a href="#robo38">LRS/STSplitLineSegmentByMeasure (2012)</a></li>
-<li>40. <a href="#robo39">LRS/STSplitProcedure (2012)</a></li>
-<li>41. <a href="#robo40">LRS/STStartMeasure (2012)</a></li>
-<li>42. <a href="#robo41">LRS/STUpdateMeasure (2012)</a></li>
-<li>43. <a href="#robo42">LRS/STValidLrsGeometry (2012)</a></li>
-<li>44. <a href="#robo43">LRS/STValidLrsPoint (2012)</a></li>
-<li>45. <a href="#robo44">LRS/STValidMeasure (2012)</a></li>
+<li>1. <a href="#robo0">ROBODoc/ROBODoc Cascading Style Sheet</a></li>
+<li>2. <a href="#robo1">LRS/STAddMeasure (2012)</a></li>
+<li>3. <a href="#robo2">LRS/STEndMeasure (2012)</a></li>
+<li>4. <a href="#robo3">LRS/STFilterLineSegmentByLength (2012)</a></li>
+<li>5. <a href="#robo4">LRS/STFilterLineSegmentByMeasure (2012)</a></li>
+<li>6. <a href="#robo5">LRS/STFindArcPointByLength (2012)</a></li>
+<li>7. <a href="#robo6">LRS/STFindArcPointByMeasure (2012)</a></li>
+<li>8. <a href="#robo7">LRS/STFindMeasure (2012)</a></li>
+<li>9. <a href="#robo8">LRS/STFindMeasureByPoint  (2012)</a></li>
+<li>10. <a href="#robo9">LRS/STFindOffset (2012)</a></li>
+<li>11. <a href="#robo10">LRS/STFindPointByLength (2012)</a></li>
+<li>12. <a href="#robo11">LRS/STFindPointByMeasure (2012)</a></li>
+<li>13. <a href="#robo12">LRS/STFindPointByRatio (2012)</a></li>
+<li>14. <a href="#robo13">LRS/STFindSegmentByLengthRange (2012)</a></li>
+<li>15. <a href="#robo14">LRS/STFindSegmentByMeasureRange (2012)</a></li>
+<li>16. <a href="#robo15">LRS/STInterpolatePoint (2012)</a></li>
+<li>17. <a href="#robo16">LRS/STIsMeasured (2012)</a></li>
+<li>18. <a href="#robo17">LRS/STIsMeasureDecreasing (2012)</a></li>
+<li>19. <a href="#robo18">LRS/STIsMeasureIncreasing (2012)</a></li>
+<li>20. <a href="#robo19">LRS/STLineInterpolatePoint (2012)</a></li>
+<li>21. <a href="#robo20">LRS/STLineLocatePoint  (2012)</a></li>
+<li>22. <a href="#robo21">LRS/STLineSubstring (2012)</a></li>
+<li>23. <a href="#robo22">LRS/STLocateAlong (2012)</a></li>
+<li>24. <a href="#robo23">LRS/STLocateBetween (2012)</a></li>
+<li>25. <a href="#robo24">LRS/STLocateBetweenElevations (2008)</a></li>
+<li>26. <a href="#robo25">LRS/STMeasureRange (2012)</a></li>
+<li>27. <a href="#robo26">LRS/STMeasureToPercentage (2012)</a></li>
+<li>28. <a href="#robo27">LRS/STPercentageToMeasure (2012)</a></li>
+<li>29. <a href="#robo28">LRS/STPointToCircularArc (2012)</a></li>
+<li>30. <a href="#robo29">LRS/STProjectPoint (2012)</a></li>
+<li>31. <a href="#robo30">LRS/STRemoveMeasure (2012)</a></li>
+<li>32. <a href="#robo31">LRS/STResetMeasure (2012)</a></li>
+<li>33. <a href="#robo32">LRS/STReverseMeasure (2012)</a></li>
+<li>34. <a href="#robo33">LRS/STScaleMeasure (2012)</a></li>
+<li>35. <a href="#robo34">LRS/STSetM (2012)</a></li>
+<li>36. <a href="#robo35">LRS/STSetMeasure (2012)</a></li>
+<li>37. <a href="#robo36">LRS/STSplit (2012)</a></li>
+<li>38. <a href="#robo37">LRS/STSplitCircularStringByLength (2012)</a></li>
+<li>39. <a href="#robo38">LRS/STSplitCircularStringByMeasure (2012)</a></li>
+<li>40. <a href="#robo39">LRS/STSplitLineSegmentByLength (2012)</a></li>
+<li>41. <a href="#robo40">LRS/STSplitLineSegmentByMeasure (2012)</a></li>
+<li>42. <a href="#robo41">LRS/STSplitProcedure (2012)</a></li>
+<li>43. <a href="#robo42">LRS/STStartMeasure (2012)</a></li>
+<li>44. <a href="#robo43">LRS/STUpdateMeasure (2012)</a></li>
+<li>45. <a href="#robo44">LRS/STValidLrsGeometry (2012)</a></li>
+<li>46. <a href="#robo45">LRS/STValidLrsPoint (2012)</a></li>
+<li>47. <a href="#robo46">LRS/STValidMeasure (2012)</a></li>
 </ul>
 <a name="robo0"></a>
+<a name="ROBODoc2fROBODoc20Cascading20Style20Sheet"></a>
+<h1>1.  ROBODoc/ROBODoc Cascading Style Sheet [ Modules ]  </h1>
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Modules ]</p>
+<p class="item_name">FUNCTION</p>
+<pre>   This is the default cascading style sheet for documentation
+   generated with ROBODoc.
+   You can edit this file to your own liking and then use
+   it with the option
+      --css &lt;filename&gt;
+
+   This style-sheet defines the following layout
+      +----------------------------------------+
+      |    logo                                |
+      +----------------------------------------+
+      |    extra                               |
+      +----------------------------------------+
+      |                              | navi-   |
+      |                              | gation  |
+      |      content                 |         |
+      |                              |         |
+      +----------------------------------------+
+      |    footer                              |
+      +----------------------------------------+
+
+   This style-sheet is based on a style-sheet that was automatically
+   generated with the Strange Banana stylesheet generator.
+   See <a href="http://www.strangebanana.com/generator.aspx">http://www.strangebanana.com/generator.aspx</a>
+</pre>
+<a name="robo1"></a>
 <a name="LRS2fSTAddMeasure2028201229"></a>
-<h1>1.  LRS/STAddMeasure (2012) [ Functions ]  </h1>
+<h1>2.  LRS/STAddMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STAddMeasure -- Function that adds measures to the supplied linestring point.
@@ -117,9 +148,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo1"></a>
+<a name="robo2"></a>
 <a name="LRS2fSTEndMeasure2028201229"></a>
-<h1>2.  LRS/STEndMeasure (2012) [ Functions ]  </h1>
+<h1>3.  LRS/STEndMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STEndMeasure -- Returns M value of last point in a measured geometry.
@@ -166,9 +197,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2012-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo2"></a>
+<a name="robo3"></a>
 <a name="LRS2fSTFilterLineSegmentByLength2028201229"></a>
-<h1>3.  LRS/STFilterLineSegmentByLength (2012) [ Functions ]  </h1>
+<h1>4.  LRS/STFilterLineSegmentByLength (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFilterLineSegmentByLength -- This function detects and returns all segments (2 point linestring, 3 point circularString) that fall within the defined by the range @p_start_length .. @p_end_length .
@@ -259,9 +290,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo3"></a>
+<a name="robo4"></a>
 <a name="LRS2fSTFilterLineSegmentByMeasure2028201229"></a>
-<h1>4.  LRS/STFilterLineSegmentByMeasure (2012) [ Functions ]  </h1>
+<h1>5.  LRS/STFilterLineSegmentByMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFilterLineSegmentByMeasure -- This function detects and returns all segments (2 point linestring, 3 point circularString) that fall within the defined by the range @p_start_measure .. @p_end_measure .
@@ -352,9 +383,54 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo4"></a>
+<a name="robo5"></a>
+<a name="LRS2fSTFindArcPointByLength2028201229"></a>
+<h1>6.  LRS/STFindArcPointByLength (2012) [ Functions ]  </h1>
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
+<p class="item_name">NAME</p>
+<pre>   STFindArcPointByLength - Computes point on @p_circular_arc (CircularString) @p_length from start with @p_offset
+</pre>
+<p class="item_name">SYNOPSIS</p>
+<pre>    Function STFindArcPointByLength (
+               @p_circular_arc geometry 
+               @p_length       float,
+               @p_offset       Float = 0.0,
+               @p_round_xy     int   = 3,
+               @p_round_zm     int   = 2
+           )
+   Returns Geometry (Point)
+</pre>
+<p class="item_name">DESCRIPTION</p>
+<pre>    Supplied with a circular linestring, a distance from the start, and an offset, 
+    this function computes the the point on the circular arc.
+    If the @p_offset value is &lt;&gt; 0, the function computes a new position for the point at a 
+    distance of @p_offset on the left (-ve) or right (+ve) side of the circular arc.
+    The returned vertex has its ordinate values rounded using the relevant decimal place values.
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    @p_circular_arc (geometry) - A circular linestring 
+    @p_length          (float) - Distance from start vertex to required point.
+    @p_offset          (float) - The perpendicular distance to offset the generated point.
+                                 A negative value instructs the function to offet the point to the left (start-end),
+                                 and a positive value to the right. 
+    @p_round_xy          (int) - Number of decimal digits of precision for an X or Y ordinate.
+    @p_round_zm          (int) - Number of decimal digits of precision for an Z or M ordinate.
+</pre>
+<p class="item_name">RESULT</p>
+<pre>    point          (geometry) - The computed point.
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>    Simon Greener
+</pre>
+<p class="item_name">HISTORY</p>
+<pre>    Simon Greener - January 2017 - Original coding.
+</pre>
+<p class="item_name">COPYRIGHT</p>
+<pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
+</pre>
+<a name="robo6"></a>
 <a name="LRS2fSTFindArcPointByMeasure2028201229"></a>
-<h1>5.  LRS/STFindArcPointByMeasure (2012) [ Functions ]  </h1>
+<h1>7.  LRS/STFindArcPointByMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>   STFindArcPointByMeasure - Computes point on circular arc @p_measure from start with offset
@@ -397,9 +473,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo5"></a>
+<a name="robo7"></a>
 <a name="LRS2fSTFindMeasure2028201229"></a>
-<h1>6.  LRS/STFindMeasure (2012) [ Functions ]  </h1>
+<h1>8.  LRS/STFindMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFindMeasure -- Snaps input point to measured linestring returning measure value
@@ -457,9 +533,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo6"></a>
+<a name="robo8"></a>
 <a name="LRS2fSTFindMeasureByPoint202028201229"></a>
-<h1>7.  LRS/STFindMeasureByPoint  (2012) [ Functions ]  </h1>
+<h1>9.  LRS/STFindMeasureByPoint  (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFindMeasureByPoint -- Returns value of the measure dimension of a point on the provided linesting closest to the provided point.
@@ -518,9 +594,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo7"></a>
+<a name="robo9"></a>
 <a name="LRS2fSTFindOffset2028201229"></a>
-<h1>8.  LRS/STFindOffset (2012) [ Functions ]  </h1>
+<h1>10.  LRS/STFindOffset (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFindOffset -- Compute smallest perpendicular offset from supplied point to the supplied linestring.
@@ -580,9 +656,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo8"></a>
+<a name="robo10"></a>
 <a name="LRS2fSTFindPointByLength2028201229"></a>
-<h1>9.  LRS/STFindPointByLength (2012) [ Functions ]  </h1>
+<h1>11.  LRS/STFindPointByLength (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFindPointByLength -- Returns (possibly offset) point geometry at supplied distance along linestring.
@@ -714,9 +790,9 @@
 <p class="item_name">HISTORY</p>
 <pre>    Simon Greener - December 2017 - Original Coding.
 </pre>
-<a name="robo9"></a>
+<a name="robo11"></a>
 <a name="LRS2fSTFindPointByMeasure2028201229"></a>
-<h1>10.  LRS/STFindPointByMeasure (2012) [ Functions ]  </h1>
+<h1>12.  LRS/STFindPointByMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFindPointByMeasure -- Returns (possibly offset) point geometry at supplied measure along linestring.
@@ -852,9 +928,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo10"></a>
+<a name="robo12"></a>
 <a name="LRS2fSTFindPointByRatio2028201229"></a>
-<h1>11.  LRS/STFindPointByRatio (2012) [ Functions ]  </h1>
+<h1>13.  LRS/STFindPointByRatio (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFindPointByRatio -- Returns (possibly offset) point geometry at supplied length ratio along linestring.
@@ -1004,9 +1080,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo11"></a>
+<a name="robo13"></a>
 <a name="LRS2fSTFindSegmentByLengthRange2028201229"></a>
-<h1>12.  LRS/STFindSegmentByLengthRange (2012) [ Methods ]  </h1>
+<h1>14.  LRS/STFindSegmentByLengthRange (2012) [ Methods ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Methods ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFindSegmentByLengthRange -- Extracts, and possibly offet, linestring using supplied start and end lengths and @p_offset value.
@@ -1104,9 +1180,9 @@
 <p class="item_name">HISTORY</p>
 <pre>    Simon Greener - December 2017 - Original Coding.
 </pre>
-<a name="robo12"></a>
+<a name="robo14"></a>
 <a name="LRS2fSTFindSegmentByMeasureRange2028201229"></a>
-<h1>13.  LRS/STFindSegmentByMeasureRange (2012) [ Functions ]  </h1>
+<h1>15.  LRS/STFindSegmentByMeasureRange (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STFindSegmentByMeasureRange -- Extracts, and possibly offet, linestring using supplied start and end measures and @p_offset value.
@@ -1152,57 +1228,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo13"></a>
-<a name="LRS2fSTFindSegmentByZRange2028201229"></a>
-<h1>14.  LRS/STFindSegmentByZRange (2012) [ Functions ]  </h1>
-<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
-<p class="item_name">NAME</p>
-<pre>    STFindSegmentByZRange -- Extracts, and possibly offet, linestring using supplied start and end measures and @p_offset value.
-</pre>
-<p class="item_name">SYNOPSIS</p>
-<pre>    Function [$(lrsowner)].[STFindSegmentByZRange] (
-               @p_linestring    geometry,
-               @p_start_Z Float,
-               @p_end_Z   Float = null,
-               @p_offset        Float = 0,
-               @p_round_xy      int   = 3,
-               @p_round_zm      int   = 2
-             )
-     Returns geometry 
-</pre>
-<p class="item_name">DESCRIPTION</p>
-<pre>    Given a start and end measure, this function extracts the line segment defined between them (a point if start=end).
-
-    If a non-zero value is suppied for @p_offset, the extracted line is then offset to the left (if @p_offset &lt; 0) or to the right (if @p_offset &gt; 0).
-
-    Computes Z and M values if exist on @p_linestring.
-</pre>
-<p class="item_name">NOTES</p>
-<pre>    Supports linestrings with CircularString elements.
-</pre>
-<p class="item_name">INPUTS</p>
-<pre>    @p_linestring (geometry) - Linestring geometry with measures.
-    @p_start_Z (float) - Measure defining start point of located geometry.
-    @p_end_Z   (float) - Measure defining end point of located geometry.
-    @p_offset        (float) - Offset (distance) value left (negative) or right (positive) in SRID units.
-    @p_round_xy        (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
-    @p_round_zm        (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
-</pre>
-<p class="item_name">RESULT</p>
-<pre>    line          (geometry) - Line between start/end measure with offset.
-</pre>
-<p class="item_name">AUTHOR</p>
-<pre>    Simon Greener
-</pre>
-<p class="item_name">HISTORY</p>
-<pre>    Simon Greener - December 2017 - Original Coding.
-</pre>
-<p class="item_name">COPYRIGHT</p>
-<pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
-</pre>
-<a name="robo14"></a>
+<a name="robo15"></a>
 <a name="LRS2fSTInterpolatePoint2028201229"></a>
-<h1>15.  LRS/STInterpolatePoint (2012) [ Functions ]  </h1>
+<h1>16.  LRS/STInterpolatePoint (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STInterpolatePoint -- Returns value of the measure dimension or length of a point on the provided linesting closest to the provided point.
@@ -1286,9 +1314,72 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo15"></a>
+<a name="robo16"></a>
+<a name="LRS2fSTIsMeasured2028201229"></a>
+<h1>17.  LRS/STIsMeasured (2012) [ Methods ]  </h1>
+<p>[ <a href="#robo_top_of_doc">Top</a> ] [ Methods ]</p>
+<p class="item_name">NAME</p>
+<pre>    STIsMeasured -- Function checks if supplied linestring has measures.
+</pre>
+<p class="item_name">SYNOPSIS</p>
+<pre>    Function [$(lrsowner)].[STIsMeasured] (
+       @@p_geometry geometry
+     )
+     Returns varchar(5)
+</pre>
+<p class="item_name">USAGE</p>
+<pre>    WITH data AS (
+     select geometry::STGeomFromText('COMPOUNDCURVE (CIRCULARSTRING (3 6.3 1.1 0, 0 7 1.1 3.1, -3 6.3 1.1 9.3), (-3 6.3 1.1 9.3, 0 0 1.4 16.3, 3 6.3 1.6 20.2))',0) as Geom
+     union all
+     select geometry::STGeomFromText('LINESTRING(0 0, 100 100)',0) 
+     union all
+     select geometry::STGeomFromText('LINESTRING(0 0 0.1, 100 100 99.8)',0) 
+     union all
+     select geometry::STGeomFromText('LINESTRING(0 0 0 0.1, 100 100 0 99.8)',0) 
+     union all
+     select geometry::STPointFromText('POINT(0 0)',0) 
+     union all
+     select geometry::STPointFromText('POINT(0 0 1.1)',0) 
+     union all
+     select geometry::STPointFromText('POINT(0 0 1.1 2.2)',0) 
+    )
+    SELECT d.geom.STGeometryType() as gType, 
+           dbo.STCoordDim(d.geom) as cDim,
+           [lrs].[STIsMeasured]( d.geom ) as isMeasured
+      FROM data as d;
+    GO
+    
+    gType         cDim isMeasured
+    CompoundCurve 4          TRUE
+    LineString    2         FALSE
+    LineString    3         FALSE
+    LineString    4          TRUE
+    Point         2         FALSE
+    Point         3         FALSE
+    Point         4          TRUE
+</pre>
+<p class="item_name">DESCRIPTION</p>
+<pre>    Returns TRUE if @p_linestring has measures, FALSE otherwise.
+    Supports CircularString and CompoundCurve geometry objects and subelements from 2012 onewards.
+</pre>
+<p class="item_name">INPUTS</p>
+<pre>    @p_geometry (geometry) - Supplied geometry.
+</pre>
+<p class="item_name">RESULT</p>
+<pre>    BOOLEAN (varchar5) - True if @p_geometry has measures otherwise False.
+</pre>
+<p class="item_name">AUTHOR</p>
+<pre>    Simon Greener
+</pre>
+<p class="item_name">HISTORY</p>
+<pre>    Simon Greener - December 2018 - Original Coding.
+</pre>
+<p class="item_name">COPYRIGHT</p>
+<pre>    (c) 2008-2017 by TheSpatialDBAdvisor/Simon Greener
+</pre>
+<a name="robo17"></a>
 <a name="LRS2fSTIsMeasureDecreasing2028201229"></a>
-<h1>16.  LRS/STIsMeasureDecreasing (2012) [ Functions ]  </h1>
+<h1>18.  LRS/STIsMeasureDecreasing (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STIsMeasureDecreasing -- Checks if M values decrease in value over the whole linestring.
@@ -1332,9 +1423,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2012-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo16"></a>
+<a name="robo18"></a>
 <a name="LRS2fSTIsMeasureIncreasing2028201229"></a>
-<h1>17.  LRS/STIsMeasureIncreasing (2012) [ Functions ]  </h1>
+<h1>19.  LRS/STIsMeasureIncreasing (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STIsMeasureIncreasing -- Checks if M values increase in value over the whole linestring.
@@ -1378,9 +1469,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2012-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo17"></a>
+<a name="robo19"></a>
 <a name="LRS2fSTLineInterpolatePoint2028201229"></a>
-<h1>18.  LRS/STLineInterpolatePoint (2012) [ Functions ]  </h1>
+<h1>20.  LRS/STLineInterpolatePoint (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STLineInterpolatePoint -- Returns point geometry at supplied fraction along linestring.
@@ -1480,9 +1571,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo18"></a>
+<a name="robo20"></a>
 <a name="LRS2fSTLineLocatePoint202028201229"></a>
-<h1>19.  LRS/STLineLocatePoint  (2012) [ Functions ]  </h1>
+<h1>21.  LRS/STLineLocatePoint  (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STLineLocatePoint -- Returns a float between 0 and 1 representing the location of the closest point on LineString to the given Point
@@ -1546,9 +1637,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo19"></a>
+<a name="robo21"></a>
 <a name="LRS2fSTLineSubstring2028201229"></a>
-<h1>20.  LRS/STLineSubstring (2012) [ Functions ]  </h1>
+<h1>22.  LRS/STLineSubstring (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>  STLineSubstring -- Returns a substring of the providec linestring starting and ending at the given fractions (between 0 and 1) of total 2d length or measure range.
@@ -1628,9 +1719,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo20"></a>
+<a name="robo22"></a>
 <a name="LRS2fSTLocateAlong2028201229"></a>
-<h1>21.  LRS/STLocateAlong (2012) [ Functions ]  </h1>
+<h1>23.  LRS/STLocateAlong (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STLocateAlong -- Returns (possibly offset) point geometry at supplied measure along linestring.
@@ -1759,9 +1850,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo21"></a>
+<a name="robo23"></a>
 <a name="LRS2fSTLocateBetween2028201229"></a>
-<h1>22.  LRS/STLocateBetween (2012) [ Functions ]  </h1>
+<h1>24.  LRS/STLocateBetween (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STLocateBetween -- Extracts, and possibly offet, linestring using supplied start and end measures and @p_offset value.
@@ -1811,9 +1902,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo22"></a>
+<a name="robo24"></a>
 <a name="LRS2fSTLocateBetweenElevations2028200829"></a>
-<h1>23.  LRS/STLocateBetweenElevations (2008) [ Functions ]  </h1>
+<h1>25.  LRS/STLocateBetweenElevations (2008) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STLocateBetweenElevations -- Computes and returns elements that intersect the specified Z range.
@@ -1899,9 +1990,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo23"></a>
+<a name="robo25"></a>
 <a name="LRS2fSTMeasureRange2028201229"></a>
-<h1>24.  LRS/STMeasureRange (2012) [ Functions ]  </h1>
+<h1>26.  LRS/STMeasureRange (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STMeasureRange -- Returns (Last Point M Value) - (First Point M Value) or length if not measured.
@@ -1952,9 +2043,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2012-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo24"></a>
+<a name="robo26"></a>
 <a name="LRS2fSTMeasureToPercentage2028201229"></a>
-<h1>25.  LRS/STMeasureToPercentage (2012) [ Functions ]  </h1>
+<h1>27.  LRS/STMeasureToPercentage (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STMeasureToPercentage --Converts supplied measure value to a percentage.
@@ -2002,9 +2093,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2012-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo25"></a>
+<a name="robo27"></a>
 <a name="LRS2fSTPercentageToMeasure2028201229"></a>
-<h1>26.  LRS/STPercentageToMeasure (2012) [ Functions ]  </h1>
+<h1>28.  LRS/STPercentageToMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STPercentageToMeasure -- Converts supplied Percentage value to a Measure.
@@ -2061,9 +2152,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2012-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo26"></a>
+<a name="robo28"></a>
 <a name="LRS2fSTPointToCircularArc2028201229"></a>
-<h1>27.  LRS/STPointToCircularArc (2012) [ Methods ]  </h1>
+<h1>29.  LRS/STPointToCircularArc (2012) [ Methods ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Methods ]</p>
 <p class="item_name">NAME</p>
 <pre>    STPointToCircularArc -- Return a measured point by snapping provided point to the provided circularstring
@@ -2140,9 +2231,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo27"></a>
+<a name="robo29"></a>
 <a name="LRS2fSTProjectPoint2028201229"></a>
-<h1>28.  LRS/STProjectPoint (2012) [ Methods ]  </h1>
+<h1>30.  LRS/STProjectPoint (2012) [ Methods ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Methods ]</p>
 <p class="item_name">NAME</p>
 <pre>    STProjectPoint --  Return a measured point by snapping provided point to the provided line.
@@ -2250,9 +2341,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo28"></a>
+<a name="robo30"></a>
 <a name="LRS2fSTRemoveMeasure2028201229"></a>
-<h1>29.  LRS/STRemoveMeasure (2012) [ Functions ]  </h1>
+<h1>31.  LRS/STRemoveMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STRemoveMeasure -- Function that removes measure values from all points in linestring.
@@ -2329,9 +2420,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo29"></a>
+<a name="robo31"></a>
 <a name="LRS2fSTResetMeasure2028201229"></a>
-<h1>30.  LRS/STResetMeasure (2012) [ Functions ]  </h1>
+<h1>32.  LRS/STResetMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STResetMeasure -- Function that sets all existing assigned measures to NULL.
@@ -2383,9 +2474,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo30"></a>
+<a name="robo32"></a>
 <a name="LRS2fSTReverseMeasure2028201229"></a>
-<h1>31.  LRS/STReverseMeasure (2012) [ Functions ]  </h1>
+<h1>33.  LRS/STReverseMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STReverseMeasure -- Function that reverses measures assigned to the points of a linestring.
@@ -2433,9 +2524,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo31"></a>
+<a name="robo33"></a>
 <a name="LRS2fSTScaleMeasure2028201229"></a>
-<h1>32.  LRS/STScaleMeasure (2012) [ Functions ]  </h1>
+<h1>34.  LRS/STScaleMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STScaleMeasure -- Rescales geometry measures and optionally offsets them, stretching the geometry.
@@ -2498,9 +2589,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo32"></a>
+<a name="robo34"></a>
 <a name="LRS2fSTSetM2028201229"></a>
-<h1>33.  LRS/STSetM (2012) [ Functions ]  </h1>
+<h1>35.  LRS/STSetM (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STSetM -- Function that adds or updates (replaces) M value of supplied geometry point.
@@ -2549,9 +2640,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo33"></a>
+<a name="robo35"></a>
 <a name="LRS2fSTSetMeasure2028201229"></a>
-<h1>34.  LRS/STSetMeasure (2012) [ Functions ]  </h1>
+<h1>36.  LRS/STSetMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STSetMeasure -- Function that adds or updates (replaces) M value of supplied geometry point.
@@ -2597,9 +2688,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo34"></a>
+<a name="robo36"></a>
 <a name="LRS2fSTSplit2028201229"></a>
-<h1>35.  LRS/STSplit (2012) [ Methods ]  </h1>
+<h1>37.  LRS/STSplit (2012) [ Methods ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Methods ]</p>
 <p class="item_name">NAME</p>
 <pre>    STSplit -- Function that splits a line into two parts.
@@ -2639,7 +2730,7 @@
     select s.line1.AsTextZM() as line1, s.line2.AsTextZM() as line2
       from data as a
            cross apply 
-           [$(lrsowner)].STSplit(
+           [$(lrsowner)].[STSplit](
                  a.line,
                  a.point,
                  3,
@@ -2657,9 +2748,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo35"></a>
+<a name="robo37"></a>
 <a name="LRS2fSTSplitCircularStringByLength2028201229"></a>
-<h1>36.  LRS/STSplitCircularStringByLength (2012) [ Functions ]  </h1>
+<h1>38.  LRS/STSplitCircularStringByLength (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STLocateBetween -- Extracts, and possibly offets, that part of the supplied (single) CircularString identified by the @p_start_length and @p_end_length parameters.
@@ -2716,9 +2807,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo36"></a>
+<a name="robo38"></a>
 <a name="LRS2fSTSplitCircularStringByMeasure2028201229"></a>
-<h1>37.  LRS/STSplitCircularStringByMeasure (2012) [ Functions ]  </h1>
+<h1>39.  LRS/STSplitCircularStringByMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STSplitCircularStringByMeasure -- Extracts, and possibly offets, that part of the supplied (single) CircularString identified by the @p_start_measure and @p_end_measure parameters.
@@ -2763,9 +2854,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo37"></a>
+<a name="robo39"></a>
 <a name="LRS2fSTSplitLineSegmentByLength2028201229"></a>
-<h1>38.  LRS/STSplitLineSegmentByLength (2012) [ Functions ]  </h1>
+<h1>40.  LRS/STSplitLineSegmentByLength (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STSplitLineSegmentByLength -- Extracts, and possibly offets, that part of the supplied (single) LineString identified by the @p_start_length and @p_end_length parameters.
@@ -2808,9 +2899,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo38"></a>
+<a name="robo40"></a>
 <a name="LRS2fSTSplitLineSegmentByMeasure2028201229"></a>
-<h1>39.  LRS/STSplitLineSegmentByMeasure (2012) [ Functions ]  </h1>
+<h1>41.  LRS/STSplitLineSegmentByMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STSplitLineSegmentByMeasure -- Extracts, and possibly offets, that part of the supplied (single) LineString identified by the @p_start_measure and @p_end_measure parameters.
@@ -2864,9 +2955,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo39"></a>
+<a name="robo41"></a>
 <a name="LRS2fSTSplitProcedure2028201229"></a>
-<h1>40.  LRS/STSplitProcedure (2012) [ Methods ]  </h1>
+<h1>42.  LRS/STSplitProcedure (2012) [ Methods ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Methods ]</p>
 <p class="item_name">NAME</p>
 <pre>    STSplitProcedure -- Procedure that splits a line into two parts.
@@ -2887,7 +2978,7 @@
             @v_point      geometry = geometry::STGeomFromText('POINT(50 50)',0),
             @v_line1      geometry,
             @v_line2      geometry;
-    exec [$(lrsowner)].STSplitProcedure @p_linestring=@v_linestring,
+    exec [$(lrsowner)].[STSplitProcedure] @p_linestring=@v_linestring,
                               @p_point=@v_point,
                               @p_line1=@v_line1 OUTPUT,
                               @p_line2=@v_line2 OUTPUT,
@@ -2923,9 +3014,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo40"></a>
+<a name="robo42"></a>
 <a name="LRS2fSTStartMeasure2028201229"></a>
-<h1>41.  LRS/STStartMeasure (2012) [ Functions ]  </h1>
+<h1>43.  LRS/STStartMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STStartMeasure -- Returns M value of first point in measured geometry.
@@ -2972,9 +3063,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2012-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo41"></a>
+<a name="robo43"></a>
 <a name="LRS2fSTUpdateMeasure2028201229"></a>
-<h1>42.  LRS/STUpdateMeasure (2012) [ Functions ]  </h1>
+<h1>44.  LRS/STUpdateMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STUpdateMeasure -- Rescales (multi)linestring vertex measures from start to end using provided values.
@@ -3041,9 +3132,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo42"></a>
+<a name="robo44"></a>
 <a name="LRS2fSTValidLrsGeometry2028201229"></a>
-<h1>43.  LRS/STValidLrsGeometry (2012) [ Functions ]  </h1>
+<h1>45.  LRS/STValidLrsGeometry (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STValidLrsGeometry -- Checks if supplied @p_linestring is a valid measured linestring. 
@@ -3089,9 +3180,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo43"></a>
+<a name="robo45"></a>
 <a name="LRS2fSTValidLrsPoint2028201229"></a>
-<h1>44.  LRS/STValidLrsPoint (2012) [ Functions ]  </h1>
+<h1>46.  LRS/STValidLrsPoint (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STValidLrsPoint -- Checks if supplied @p_point is a valid LRS point.
@@ -3136,9 +3227,9 @@
 <p class="item_name">COPYRIGHT</p>
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
-<a name="robo44"></a>
+<a name="robo46"></a>
 <a name="LRS2fSTValidMeasure2028201229"></a>
-<h1>45.  LRS/STValidMeasure (2012) [ Functions ]  </h1>
+<h1>47.  LRS/STValidMeasure (2012) [ Functions ]  </h1>
 <p>[ <a href="#robo_top_of_doc">Top</a> ] [ Functions ]</p>
 <p class="item_name">NAME</p>
 <pre>    STValidMeasure -- Checks if supplied measure falls within the linestring's measure range.
@@ -3195,7 +3286,7 @@
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
 <div id="footer">
-<p>Generated from ./src/LRS/ on Fri Nov 01 2019 13:09:37
+<p>Generated from ./documentation/ on Mon Nov 04 2019 14:20:40
 </p>
 </div> <!-- footer -->
 </body>

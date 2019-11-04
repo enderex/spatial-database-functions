@@ -18,7 +18,7 @@ IF EXISTS (
        AND xtype IN (N'FN', N'IF', N'TF')
 )
 BEGIN
-  DROP FUNCTION EXISTS [$(owner)].[STOrientationIndexFilter];
+  DROP FUNCTION [$(owner)].[STOrientationIndexFilter];
   PRINT 'Dropped [$(owner)].[STOrientationIndexFilter] ...';
 END;
 GO
@@ -40,7 +40,7 @@ GO
 PRINT 'Creating [$(owner)].[STOrientationIndexFilter]...'
 GO
 
-Create Function [$(owner)].[STOrientationIndexFilter] (
+CREATE FUNCTION [$(owner)].[STOrientationIndexFilter] (
  @p_pa geometry,  /* All points */
  @p_pb geometry,
  @p_pc geometry

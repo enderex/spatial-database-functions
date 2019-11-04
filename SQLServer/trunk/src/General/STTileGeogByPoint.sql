@@ -147,7 +147,7 @@ Begin
                          geography::Point(@p_point.Lat+0.1,@p_point.Long+0.1,@p_point.STSrid),
                          'Latitude'
                         );
-     IF ( COALESCE(@p_rAngle,0) <> 0 ) 
+     IF ( COALESCE(@p_rAngle,0) = 0 ) 
      BEGIN
        SET @v_geogX = 0.1 / @v_metersX * @p_TileX;
        SET @v_geogY = 0.1 / @v_metersY * @p_TileY;

@@ -1,4 +1,4 @@
-USE [$(usedbname)]
+USE $(usedbname)
 GO
 
 SET ANSI_NULLS ON
@@ -27,7 +27,7 @@ GO
 PRINT 'Creating [$(lrsowner)].[STPointToCircularArc] ...'
 GO
 
-Create Function [$(lrsowner)].[STPointToCircularArc] (
+CREATE FUNCTION [$(lrsowner)].[STPointToCircularArc] (
    @p_circularString geometry,
    @p_vertex         geometry,
    @p_round_xy       int   = 3,
@@ -208,9 +208,9 @@ Begin
 
     -- Short circuit if centre = @p_vertex
     -- SGG: Precision Model??
-    IF (   [$(owner)].[STRound](@v_centre,@v_round_xy,@v_round_zm)
+    IF (   [$(owner)].[STRound](@v_centre,@v_round_xy,@v_round_xy,@v_round_zm,@v_round_zm)
          .STEquals(
-           [$(owner)].[STRound](@v_vertex,@v_round_xy,@v_round_zm)
+           [$(owner)].[STRound](@v_vertex,@v_round_xy,@v_round_xy,@v_round_zm,@v_round_zm)
          )=1 ) Begin
       Return @p_circularString.STPointN(1);
     End;
@@ -384,3 +384,4 @@ go
 
 QUIT
 GO
+

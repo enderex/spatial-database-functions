@@ -1,4 +1,4 @@
-USE [$(usedbname)]
+USE $(usedbname)
 GO
 
 SET ANSI_NULLS ON
@@ -65,7 +65,7 @@ AS
  *            @v_point      geometry = geometry::STGeomFromText('POINT(50 50)',0),
  *            @v_line1      geometry,
  *            @v_line2      geometry;
- *    exec [$(lrsowner)].STSplitProcedure @p_linestring=@v_linestring,
+ *    exec [$(lrsowner)].[STSplitProcedure] @p_linestring=@v_linestring,
  *                              @p_point=@v_point,
  *                              @p_line1=@v_line1 OUTPUT,
  *                              @p_line2=@v_line2 OUTPUT,
@@ -137,7 +137,7 @@ BEGIN
 	       [$(lrsowner)].[STFindSegmentByMeasureRange] (
              /* @p_linestring    */ @p_Linestring,
              /* @p_start_measure */ @v_projectedPoint.M,
-             /* @p_end_measure   */ [$(lrsowner)].STEndMeasure(@p_Linestring),
+             /* @p_end_measure   */ [$(lrsowner)].[STEndMeasure](@p_Linestring),
              /* @p_offset        */ 0,
              /* @p_round_xy      */ @p_round_xy,
              /* @p_round_zm      */ @p_round_zm
@@ -171,7 +171,8 @@ GO
 PRINT 'Creating [$(lrsowner)].[STSplit]...'
 GO
 
-CREATE FUNCTION [$(lrsowner)].STSplit (
+CREATE FUNCTION [$(lrsowner)].[STSplit] 
+(
   @p_linestring geometry,
   @p_point      geometry,
   @p_round_xy   int   = 3,
@@ -217,7 +218,7 @@ AS
  *    select s.line1.AsTextZM() as line1, s.line2.AsTextZM() as line2
  *      from data as a
  *           cross apply 
- *           [$(lrsowner)].STSplit(
+ *           [$(lrsowner)].[STSplit](
  *                 a.line,
  *                 a.point,
  *                 3,
@@ -276,7 +277,7 @@ BEGIN
 	       [$(lrsowner)].[STFindSegmentByMeasureRange] (
              /* @p_linestring    */ @p_Linestring,
              /* @p_start_measure */ @v_projectedPoint.M,
-             /* @p_end_measure   */ [$(lrsowner)].STEndMeasure(@p_Linestring),
+             /* @p_end_measure   */ [$(lrsowner)].[STEndMeasure](@p_Linestring),
              /* @p_offset        */ 0,
              /* @p_round_xy      */ @p_round_xy,
              /* @p_round_zm      */ @p_round_zm
@@ -315,7 +316,7 @@ declare @v_linestring geometry = geometry::STGeomFromText('LINESTRING(0 0,10 10,
         @v_point      geometry = geometry::STGeomFromText('POINT(50 50)',0),
         @v_line1      geometry,
         @v_line2      geometry;
-exec [$(lrsowner)].STSplitProcedure 
+exec [$(lrsowner)].[STSplitProcedure]
                     @p_linestring=@v_linestring,
                     @p_point=@v_point,
 					@p_line1=@v_line1 OUTPUT,

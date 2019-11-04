@@ -1,5 +1,5 @@
-use [$(usedbname)]
-go
+USE $(usedbname)
+GO
 
 IF EXISTS (SELECT * 
              FROM sys.objects 
@@ -30,10 +30,6 @@ Returns Float
  *               @p_dN2 float
  *             )
  *     Returns float 
- *  USAGE
- *    SELECT [$(cogoowner)].[STAzimuth](0,0,45,45) as Bearing;
- *    Bearing
- *    45
  *  DESCRIPTION
  *    Function that computes the azimuth from the supplied start point (@p_dx1) to the supplied end point (@p_dx2).
  *    The result is expressed as a whole circle bearing in decimal degrees.
@@ -45,6 +41,10 @@ Returns Float
  *    @p_dN2 (float) - M ordinate of start point.
  *  RESULT
  *    decimal degrees (float) - Azimuth between point 1 and 2 from 0-360.
+ *  EXAMPLE
+ *    SELECT [$(cogoowner)].[STAzimuth](0,0,45,45) as Bearing;
+ *    Bearing
+ *    45
  *  AUTHOR
  *    Simon Greener
  *  HISTORY

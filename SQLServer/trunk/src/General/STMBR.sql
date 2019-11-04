@@ -1,4 +1,4 @@
-USE [$(usedbname)]
+USE $(usedbname)
 GO
 
 SET ANSI_NULLS ON
@@ -352,10 +352,8 @@ Begin
 End;
 Go
 
-/* ********************************************************** */
-
-use DEVDB
-go
+PRINT 'Creating Function [$(owner)].[STMBRShortestSide]...';
+GO
 
 CREATE FUNCTION [$(owner)].[STMBRShortestSide]
 (
@@ -378,7 +376,7 @@ as
  *    SELECT [$(owner)].[STMBRShortestSide] (a.geom) as length
  *      FROM data as a;
  *    GO
-  *
+ *
  *    length 
  *    ------
  *     100.0
@@ -419,7 +417,8 @@ begin
 End;
 Go
 
-/* ******************************************************** */
+PRINT 'Creating Function [$(owner)].[STMBRLongestSide]...';
+GO
 
 CREATE FUNCTION [$(owner)].[STMBRLongestSide]
 (
@@ -483,7 +482,9 @@ begin
 End;
 Go
 
-/* **************************** TESTING *********************/
+PRINT '============';
+PRINT 'Testing ....';
+GO
 
 select f.*
   from [$(owner)].[STGeometry2MBR](geometry::STGeomFromText('POLYGON((0 0,10 0,10 20,0 20,0 0))',0)) as f;

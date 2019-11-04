@@ -32,7 +32,7 @@ CREATE PROCEDURE [$(owner)].[STTiler]
   @p_TileY     float,
   @p_rx        float,
   @p_ry        float,
-  @p_rangle    float
+  @p_rangle    float,
   @p_Srid      Int,
   @p_out_table nvarchar(128),
   @p_geography Int = 1
@@ -62,7 +62,7 @@ AS
  *    The number of columns and rows that cover this area is calculated using @p_TileX/@p_TileY which
  *    are in @p_SRID units.
  *    All rows and columns are visited, with polygons being created that represent each tile.
- *    If @p_rx/@p_ry/@p_rangle are supplied, the resultant grid is rotated around @p_rx and @p_ry angle @p_angle.
+ *    If @p_rx/@p_ry/@p_rangle are supplied, the resultant grid is rotated around @p_rx and @p_ry angle @p_rAgle.
  *  INPUTS
  *    @p_ll_x         (float) - Spatial Extent's lower left X/Longitude ordinate.
  *    @p_ll_y         (float) - Spatial Extent's lower left Y/Latitude  ordinate.
@@ -72,7 +72,7 @@ AS
  *    @p_TileY        (float) - Size of a Tile's Y dimension in decimal degrees.
  *    @p_rX           (float) - X ordinate of rotation point.
  *    @p_rY           (float) - Y ordinate of rotation point.
- *    @p_angle        (float) - Rotation angle expressed in decimal degrees between 0 and 360.
+ *    @p_rAngle       (float) - Rotation angle expressed in decimal degrees between 0 and 360.
  *    @p_srid           (int) - Geographic SRID (default is 4326)
  *    @p_out_table (nvarchar) - Name of table to hold tiles. Can be expressed as DB.OWNER.OBJECT.
  *    @p_geography      (int) - If 1 (True) column in table will be geography; if 0, geometry.
@@ -204,8 +204,8 @@ begin
                  CONVERT(varchar(30),CAST(  @v_col * @p_TileX              as DECIMAL(24,12))) + ' ' + 
                  CONVERT(varchar(30),CAST(  @v_row * @p_TileY              as DECIMAL(24,12))) + '))';
          SET @v_tile = geometry::STGeomFromText(@v_WKT,@v_srid);
-         IF ( @p_rx is not null and @p_ry is not null and COALESCE(@p_angle,0) <> 0 ) 
-            SET @v_tile = [$(owner)].[STRotate]( @v_tile, @p_rx, @p_ry, @p_angle, 15, 15 );
+         IF ( @p_rx is not null and @p_ry is not null and COALESCE(@p_rAngle,0) <> 0 ) 
+            SET @v_tile = [$(owner)].[STRotate]( @v_tile, @p_rx, @p_ry, @p_rAngle, 15, 15 );
          SET @v_wkt = @v_tile.STAsText();
          SET @v_sql = N'INSERT INTO ' + @p_out_table + N' (' + @v_geo + N') ' +
                       N'VALUES(' + @v_geo_type + N'::STPolyFromText(@IN_WKT,@IN_Srid))';

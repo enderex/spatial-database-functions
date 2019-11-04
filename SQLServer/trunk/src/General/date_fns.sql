@@ -23,7 +23,10 @@ GO
 PRINT 'Creating [$(owner)].[dhms] ...'
 GO
 
-CREATE FUNCTION [$(owner)].[dhms]( @p_seconds float ) 
+CREATE FUNCTION [$(owner)].[dhms] 
+( 
+  @p_seconds float 
+) 
 RETURNS varchar(100)
 /****f* TOOLS/dhms (2008)
  *  NAME

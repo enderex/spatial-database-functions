@@ -311,7 +311,9 @@ begin
                                  then [$(owner)].[STRound] (
                                         /* @p_linestring */ @v_segment_geom,
                                         /* @p_round_xy   */ @v_round_xy,
-                                        /* @p_round_zm   */ @v_round_zm
+                                        /* @p_round_y    */ @v_round_xy,
+                                        /* @p_round_z    */ @v_round_zm,
+                                        /* @p_round_m    */ @v_round_zm
                                       )
                                  else [$(owner)].[STAppend] (
                                         /* @p_linestring1 */ @v_return_geom,

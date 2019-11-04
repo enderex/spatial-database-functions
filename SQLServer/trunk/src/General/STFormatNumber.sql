@@ -23,7 +23,7 @@ GO
 PRINT 'Creating [$(owner)].[STFormatNumber] ...';
 GO
 
-CREATE FUNCTION [$(owner)].[STFORMATNUMBER] 
+CREATE FUNCTION [$(owner)].[STFormatNumber] 
 (
   @number        decimal(38,15), 
   @decimalplaces int=0, 

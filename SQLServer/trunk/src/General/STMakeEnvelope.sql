@@ -1,5 +1,5 @@
-use spatialdb
-go
+USE $(usedbname)
+GO
 
 SET ANSI_NULLS ON
 SET ARITHABORT ON 

@@ -26,146 +26,178 @@ GO
 
 create function [$(cogoowner)].[STInverseVincenty]
 (
-  @p1 geography,
-  @p2 geography
+  @p_point1 geography,
+  @p_point2 geography
 ) 
 returns Float
 As
-/**
- * Vincenty inverse calculation.
+/****f* COGO/STInverseVincenty (2008)
+ *  NAME
+ *    STInverseVincenty -- Vincenty inverse calculation.
+ *  SYNOPSIS
+ *    Function [$(cogoowner)].[STInverseVincenty] (
+ *       @p_point1 geography,
+ *       @p_point2 geography
+ *    )
+ *    Returns float
+ *  DESCRIPTION
+ *    Computes distance in meters between two geographic points.
  *
- * Ellipsoid parameters are taken from datum of 'this' point. Height is ignored.
- * Point must be on the surface of the ellipsoid
+ *    Vincenty Inverse Solution of Geodesics on the Ellipsoid (c) Chris Veness 2002-2019
+ *    www.movable-type.co.uk/scripts/latlong-ellipsoidal-vincenty.html
+ *    www.movable-type.co.uk/scripts/geodesy-library.html#latlon-ellipsoidal-vincenty
  *
- * @private
- * @param   {LatLon} point - Latitude/longitude of destination point.
- * @returns {Object} Object including distance, initialBearing, finalBearing.
- * @throws  {TypeError}  Invalid point.
- * @throws  {RangeError} Points must be on surface of ellipsoid.
- * @throws  {EvalError}  Formula failed to converge.
-*/
+ *    Distances & bearings between points, and destination points given start points & initial bearings,
+ *    calculated on an ellipsoidal earth model using direct solution of geodesics on the ellipsoid 
+ *    devised by Thaddeus Vincenty.
+ *  SEE ALSO
+ *    [$(cogoowner)].[STGeographicDistance]
+ *  NOTES
+ *    1. From: T Vincenty, "Direct and Inverse Solutions of Geodesics on the Ellipsoid with application of
+ *    nested equations", Survey Review, vol XXIII no 176, 1975. www.ngs.noaa.gov/PUBS_LIB/inverse.pdf.
+ *    2. Ellipsoid parameters are taken from sys.spatial_reference_systems.
+ *  INPUTS
+ *    @p_point1 (geography) - First Latitude/Longitude Point
+ *    @p_point2 (geography) - Second Latitude/Longitude Point
+ *  RESULT
+ *    distance     (float) - Distance between @p_point1 and @p_point2 in meters.
+ *  EXAMPLE
+ *    SELECT [$(cogoowner)].[STInverseVincenty] (
+ *             geography::Point(12.1603670,55.4748508,4326),
+ *             geography::Point(12.1713976,55.4786191,4326)) as meters;
+ *    GO
+ *
+ *    meters
+ *    1287.32279362667
+ *  AUTHOR
+ *    Simon Greener
+ *  HISTORY
+ *    Chris Veness  - Original JavaScript coding
+ *    Simon Greener - October 2019 - Ported to SQL Server TSQL.
+ *  COPYRIGHT
+ *    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
+ *    MIT Licence
+ ******/
 Begin
   Declare
     -- Ellipsoid parameters (default WGS84)
-    @a         float = 6378137,           -- Semi-major axis
-    @b         float = 6356752.314245,    -- Semi-minor axis
-    @f         float = 1.0/298.257223563, -- Flattening
-    @a_f       varchar(100),
+    @a          float = 6378137,           -- Semi-major axis
+    @b          float = 6356752.314245,    -- Semi-minor axis
+    @f          float = 1.0/298.257223563, -- Flattening
+    @a_f        varchar(100),
+    @Epsilon    Float = 2.220446049250313e-16,
 
-    @φ1        Float,
-	@λ1        Float,
-    @φ2        Float,
-	@λ2        Float,
-    @L         Float,
-    @tanU1     Float,
-    @tanU2     Float,
-	@cosU1     Float,
-	@sinU1     Float,
-	@cosU2     Float,
-	@sinU2     Float,
+    @Phi1       Float,
+	@Lambda1    Float,
+    @Phi2       Float,
+	@Lambda2    Float,
+    @L          Float,
+    @tanU1      Float,
+    @tanU2      Float,
+	@cosU1      Float,
+	@sinU1      Float,
+	@cosU2      Float,
+	@sinU2      Float,
 
-    @ε         Float,
-    @λ         Float,
-	@sinλ      Float,
-	@cosλ      Float,  -- λ = difference in longitude on an auxiliary sphere
-    @σ         Float,
-	@sinσ      Float,
-	@cosσ      Float,
-	@sinSqσ    Float,  -- σ = angular distance P₁ P₂ on the sphere
-    @cos2σm    Float,  -- σM = angular distance on the sphere from the equator to the midpoint of the line
-    @sinα      Float,
-	@cosSqα    Float,  -- α = azimuth of the geodesic at the equator
-    @C         Float,
-    @λp        Float,
-	@π         Float,
-	@uSq       Float,
-    @capA      Float,
-    @capB      Float,
-    @Δσ        Float, 
-    @s         Float,
-    @α1        Float,
-    @α2        Float,
+    @Lambda     Float,
+	@sinLambda  Float,
+	@cosLambda  Float,  -- Lambda = difference in longitude on an auxiliary sphere
+    @Sigma      Float,
+	@sinSigma   Float,
+	@cosSigma   Float,
+	@sinSqSigma Float,  -- Sigma = angular distance P₁ P₂ on the sphere
+    @cos2Sigmam Float,  -- SigmaM = angular distance on the sphere from the equator to the midpoint of the line
+    @sinAlpha   Float,
+	@cosSqAlpha Float,  -- Alpha = azimuth of the geodesic at the equator
+    @C          Float,
+    @Lambdap    Float,
+	@uSq        Float,
+    @capA       Float,
+    @capB       Float,
+    @DeltaSigma Float, 
+    @s          Float,
+    @Alpha1     Float,
+    @Alpha2     Float,
     @antipodal      bit,
 	@iterationCheck float,
 	@iterations     integer;
 
-    SET @φ1 = Radians(@p1.Lat); 
-	SET @λ1 = Radians(@p1.Long);
-    SET @φ2 = Radians(@p2.Lat); 
-    SET @λ2 = Radians(@p2.Long);
+    SET @Phi1    = Radians(@p_point1.Lat); 
+	SET @Lambda1 = Radians(@p_point1.Long);
+    SET @Phi2    = Radians(@p_point2.Lat); 
+    SET @Lambda2 = Radians(@p_point2.Long);
 
     -- allow alternative ellipsoid to be specified
     -- allow alternative ellipsoid to be specified
-    SET @a_f = [$(cogoowner)].[STEllipsoidParameters] ( @p1.STSrid ); 
+    SET @a_f = [$(cogoowner)].[STEllipsoidParameters] ( @p_point1.STSrid ); 
     SET @a = CAST(SUBSTRING(@a_f,1,CHARINDEX(',',@a_f)-1) as float);
     SET @a = ISNULL(@a,6378137);
 	SET @b = 6356752.314245;
     SET @f = 1.0 / CAST(SUBSTRING(@a_f,CHARINDEX(',',@a_f)+1,100) as float);
     SET @f = ISNULL(@f,1.0/298.257223563);
 
-    SET @L = @λ2 - @λ1; -- L = difference in longitude, U = reduced latitude, defined by tan U = (1-f)·tanφ.
-    SET @tanU1 = (1-@f) * TAN(@φ1);
-	SET @cosU1 = 1 / SQRT((1 + @tanU1*@tanU1));
+    SET @L     = @Lambda2 - @Lambda1; -- L = difference in longitude, U = reduced latitude, defined by tan U = (1-f)·tanφ.
+    SET @tanU1 = (1.0-@f) * TAN(@Phi1);
+	SET @cosU1 = 1.0 / SQRT((1.0 + @tanU1*@tanU1));
 	SET @sinU1 = @tanU1 * @cosU1;
-    SET @tanU2 = (1-@f) * TAN(@φ2);
-	SET @cosU2 = 1 / SQRT((1 + @tanU2*@tanU2));
+    SET @tanU2 = (1.0-@f) * TAN(@Phi2);
+	SET @cosU2 = 1.0 / SQRT((1.0 + @tanU2*@tanU2));
 	SET @sinU2 = @tanU2 * @cosU2;
-    SET @antipodal = case when ABS(@L) > @π/2 or ABS(@φ2-@φ1) > @π/2 then 1 else 0 end;
+    SET @antipodal = case when ABS(@L) > PI()/2.0 or ABS(@Phi2-@Phi1) > PI()/2.0 then 1 else 0 end;
 
-    SET @λ      = @L;
-	SET @sinλ   = 0.0;
-	SET @cosλ   = 0.0;               -- λ = difference in longitude on an auxiliary sphere
-    SET @σ      = case when @antipodal = 1 then @π else 0 end;
-	SET @sinσ   = 0;
-	SET @cosσ   = case when @antipodal = 1 then -1 else 1 end;
-	SET @sinSqσ = 0.0;              -- σ = angular distance P₁ P₂ on the sphere
-    SET @cos2σm = 1;                 -- σM = angular distance on the sphere from the equator to the midpoint of the line
-    SET @sinα   = 0.0;
-	SET @cosSqα = 1;                 -- α = azimuth of the geodesic at the equator
-    SET @C      = 0.0;
+    SET @Lambda     = @L;
+	SET @sinLambda  = 0.0;
+	SET @cosLambda  = 0.0;               -- Lambda = difference in longitude on an auxiliary sphere
+    SET @Sigma      = case when @antipodal = 1 then PI() else 0 end;
+	SET @sinSigma   = 0;
+	SET @cosSigma   = case when @antipodal = 1 then -1 else 1 end;
+	SET @sinSqSigma = 0.0;              -- Sigma = angular distance P₁ P₂ on the sphere
+    SET @cos2Sigmam = 1;                 -- SigmaM = angular distance on the sphere from the equator to the midpoint of the line
+    SET @sinAlpha   = 0.0;
+	SET @cosSqAlpha = 1;                 -- Alpha = azimuth of the geodesic at the equator
+    SET @C          = 0.0;
 
-    SET @λp = 0.0;
+    SET @Lambdap    = 0.0;
 	SET @iterations = 0;
-	WHILE (abs(@λ-@λp) > 1e-12 AND @iterations<1000)
+	WHILE (abs(@Lambda-@Lambdap) > 1e-12 AND @iterations<1000)
     BEGIN
-      SET @sinλ = sin(@λ);
-      SET @cosλ = cos(@λ);
-      SET @sinSqσ = (@cosU2*@sinλ) * (@cosU2*@sinλ) + (@cosU1*@sinU2-@sinU1*@cosU2*@cosλ) * (@cosU1*@sinU2-@sinU1*@cosU2*@cosλ);
-      if (abs(@sinSqσ) < @ε) break;  -- co-incident/antipodal points (falls back on λ/σ = L)
-      SET @sinσ = sqrt(@sinSqσ);
-      SET @cosσ = @sinU1*@sinU2 + @cosU1*@cosU2*@cosλ;
-      SET @σ    = atn2(@sinσ, @cosσ);
-      SET @sinα = @cosU1 * @cosU2 * @sinλ / @sinσ;
-      SET @cosSqα = 1 - @sinα*@sinα;
-      SET @cos2σm = case when (@cosSqα != 0) then (@cosσ - 2*@sinU1*@sinU2/@cosSqα) else 0.0 end; -- on equatorial line @cos²α = 0 (§6)
-      SET @C = @f/16*@cosSqα*(4+@f*(4-3*@cosSqα));
-      SET @λp = @λ;
-      SET @λ = @L + (1-@C) * @f * @sinα * (@σ + @C*@sinσ*(@cos2σm+@C*@cosσ*(-1+2*@cos2σm*@cos2σm)));
-      SET @iterationCheck = case when @antipodal= 1 then abs(@λ)-@π else abs(@λ) end;
-      if (@iterationCheck > @π) 
-	    Return 0.0; --  RAISERROR('λ > π',16,1);
+      SET @sinLambda  = sin(@Lambda);
+      SET @cosLambda  = cos(@Lambda);
+      SET @sinSqSigma = (@cosU2*@sinLambda) * (@cosU2*@sinLambda) + 
+                        (@cosU1*@sinU2-@sinU1*@cosU2*@cosLambda) * (@cosU1*@sinU2-@sinU1*@cosU2*@cosLambda);
+      if (abs(@sinSqSigma) < @Epsilon) break;  -- co-incident/antipodal points (falls back on Lambda/Sigma = L)
+      SET @sinSigma   = sqrt(@sinSqSigma);
+      SET @cosSigma   = @sinU1*@sinU2 + @cosU1*@cosU2*@cosLambda;
+      SET @Sigma      = atn2(@sinSigma, @cosSigma);
+      SET @sinAlpha   = @cosU1 * @cosU2 * @sinLambda / @sinSigma;
+      SET @cosSqAlpha = 1.0 - @sinAlpha*@sinAlpha;
+      SET @cos2Sigmam = case when (@cosSqAlpha != 0.0) then (@cosSigma - 2.0*@sinU1*@sinU2/@cosSqAlpha) else 0.0 end; -- on equatorial line @cos²Alpha = 0 (§6)
+      SET @C          = @f/16.0*@cosSqAlpha*(4.0+@f*(4.0-3.0*@cosSqAlpha));
+      SET @Lambdap    = @Lambda;
+      SET @Lambda     = @L + (1.0-@C) * @f * @sinAlpha * (@Sigma + @C*@sinSigma*(@cos2Sigmam+@C*@cosSigma*(-1.0+2.0*@cos2Sigmam*@cos2Sigmam)));
+      SET @iterationCheck = case when @antipodal= 1 then abs(@Lambda)-PI() else abs(@Lambda) end;
+      if (@iterationCheck > PI()) 
+	    Return 0.0; --  RAISERROR('Lambda > PI()',16,1);
       SET @iterations = @iterations + 1;
     END;
     if (@iterations >= 1000) 
 	  Return 0.0; -- RAISERROR('Vincenty formula failed to converge',16,1);
 
-    SET @uSq  = @cosSqα * (@a*@a - @b*@b) / (@b*@b);
-    SET @capA = 1 + @uSq/16384*(4096+@uSq*(-768+@uSq*(320-175*@uSq)));
-    SET @capB = @uSq/1024 * (256+@uSq*(-128+@uSq*(74-47*@uSq)));
-    SET @Δσ   = @capB*@sinσ*(@cos2σm+@capB/4*(@cosσ*(-1+2*@cos2σm*@cos2σm) - 
-                @capB/6*@cos2σm*(-3+4*@sinσ*@sinσ)*(-3+4*@cos2σm*@cos2σm)));
-    SET @s    = @b*@capA*(@σ-@Δσ); -- s = length of the geodesic
+    SET @uSq        = @cosSqAlpha * (@a*@a - @b*@b) / (@b*@b);
+    SET @capA       = 1.0 + @uSq/16384.0*(4096.0+@uSq*(-768.0+@uSq*(320.0-175.0*@uSq)));
+    SET @capB       = @uSq/1024.0 * (256.0+@uSq*(-128.0+@uSq*(74.0-47.0*@uSq)));
+    SET @DeltaSigma = @capB*@sinSigma*(@cos2Sigmam+@capB/4.0*(@cosSigma*(-1.0+2.0*@cos2Sigmam*@cos2Sigmam) - 
+                      @capB/6.0*@cos2Sigmam*(-3.0+4.0*@sinSigma*@sinSigma)*(-3.0+4.0*@cos2Sigmam*@cos2Sigmam)));
+    SET @s          = @b*@capA*(@Sigma-@DeltaSigma); -- s = length of the geodesic
 
-    -- note special handling of exactly antipodal points where sin²σ = 0 (due to discontinuity
-    -- atan2(0, 0) = 0 but atan2(ε, 0) = π/2 / 90°) - in which case bearing is always meridional,
+    -- note special handling of exactly antipodal points where sin²Sigma = 0 (due to discontinuity
+    -- atan2(0, 0) = 0 but atan2(Epsilon, 0) = PI()/2 / 90°) - in which case bearing is always meridional,
     -- due north (or due south!)
-    -- α = azimuths of the geodesic; α2 the direction P₁ P₂ produced
-    SET @α1 = case when abs(@sinSqσ) < @ε then 0.0 else atn2(@cosU2*@sinλ,  @cosU1*@sinU2-@sinU1*@cosU2*@cosλ) end;
-    SET @α2 = case when abs(@sinSqσ) < @ε then @π  else atn2(@cosU1*@sinλ, -@sinU1*@cosU2+@cosU1*@sinU2*@cosλ) end;
+    -- Alpha = azimuths of the geodesic; Alpha2 the direction P₁ P₂ produced
+    SET @Alpha1 = case when abs(@sinSqSigma) < @Epsilon then 0.0  else atn2(@cosU2*@sinLambda,  @cosU1*@sinU2-@sinU1*@cosU2*@cosLambda) end;
+    SET @Alpha2 = case when abs(@sinSqSigma) < @Epsilon then PI() else atn2(@cosU1*@sinLambda, -@sinU1*@cosU2+@cosU1*@sinU2*@cosLambda) end;
 
   Return @s;
-  -- initialBearing: abs(s) < ε ? NaN : Dms.wrap360(α1.toDegrees()),
-  -- finalBearing:   abs(s) < ε ? NaN : Dms.wrap360(α2.toDegrees()),
 End;
 Go
 

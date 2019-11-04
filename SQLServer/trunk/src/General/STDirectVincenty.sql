@@ -31,35 +31,49 @@ create function [$(cogoowner)].[STDirectVincenty](
 ) 
 returns geography
 As
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-/* Vincenty Direct and Inverse Solution of Geodesics on the Ellipsoid (c) Chris Veness 2002-2019  */
-/*                                                                                   MIT Licence  */
-/* www.movable-type.co.uk/scripts/latlong-ellipsoidal-vincenty.html                               */
-/* www.movable-type.co.uk/scripts/geodesy-library.html#latlon-ellipsoidal-vincenty                */
-/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  */
-/**
- * Distances & bearings between points, and destination points given start points & initial bearings,
- * calculated on an ellipsoidal earth model using ‘direct and inverse solutions of geodesics on the
- * ellipsoid’ devised by Thaddeus Vincenty.
+/****f* COGO/STDirectVincenty (2008)
+ *  NAME
+ *    STDirectVincenty -- Vincenty Direct Solution of Geodesics on the Ellipsoid
+ *  SYNOPSIS
+ *    Function [$(owner)].[STDirectVincenty] (
+ *       @p_point      geography,
+ *       @p_initialBearing float,
+ *       @p_distance       float
+ *    )
+ *    Returns geography
+ *  DESCRIPTION
+ *    Vincenty Direct and Inverse Solution of Geodesics on the Ellipsoid (c) Chris Veness 2002-2019
+ *    www.movable-type.co.uk/scripts/latlong-ellipsoidal-vincenty.html
+ *    www.movable-type.co.uk/scripts/geodesy-library.html#latlon-ellipsoidal-vincenty
  *
- * From: T Vincenty, "Direct and Inverse Solutions of Geodesics on the Ellipsoid with application of
- * nested equations", Survey Review, vol XXIII no 176, 1975. www.ngs.noaa.gov/PUBS_LIB/inverse.pdf.
+ *    Distances & bearings between points, and destination points given start points & initial bearings,
+ *    calculated on an ellipsoidal earth model using direct solution of geodesics on the ellipsoid 
+ *    devised by Thaddeus Vincenty.
+ *  NOTES
+ *    1. From: T Vincenty, "Direct and Inverse Solutions of Geodesics on the Ellipsoid with application of
+ *    nested equations", Survey Review, vol XXIII no 176, 1975. www.ngs.noaa.gov/PUBS_LIB/inverse.pdf.
+ *    2. Ellipsoid parameters are taken from sys.spatial_reference_systems.
+ *  INPUTS
+ *    @p_point      (geography) - Latitude/Longitude Point
+ *    @p_initialBearing (float) - Initial bearing in degrees from north.
+ *    @p_distance       (float) - Distance along bearing in metres.
+ *  RESULT
+ *    point         (geography) - Destination point, bearing and distance from @p_point.
+ *  EXAMPLE
+ *    select [$(cogoowner)].[STDirectVincenty](geography::Point(-42.5,147.23,4326),90.0,100.0).STAsText() as newPoint
+ *    GO
  *
- * @module latlon-ellipsoidal-vincenty
- */
-
-/**
-    * Vincenty direct calculation.
-    *
-    * Ellipsoid parameters are taken from datum of 'this' point. Height is ignored.
-    *
-    * @private
-    * @param   {number} distance - Distance along bearing in metres.
-    * @param   {number} initialBearing - Initial bearing in degrees from north.
-    * @returns (Object} Object including point (destination point), finalBearing.
-    * @throws  {RangeError} Point must be on surface of ellipsoid.
-    * @throws  {EvalError}  Formula failed to converge.
-    */
+ *    newPoint
+ *    POINT (147.23121655963791 -42.499999993543213)
+ *  AUTHOR
+ *    Simon Greener
+ *  HISTORY
+ *    Chris Veness  - Original JavaScript coding
+ *    Simon Greener - October 2019 - Ported to SQL Server TSQL.
+ *  COPYRIGHT
+ *    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
+ *    MIT Licence
+ ******/
 Begin
   Declare 
     -- Ellipsoid parameters (default WGS84)
@@ -67,105 +81,100 @@ Begin
     @b                float = 6356752.314245,    -- Semi-minor axis
     @f                float = 1.0/298.257223563, -- Flattening
     @a_f              varchar(100),
-
-    @π                float = PI(),
-    @ε                float = 2.2204460492503130808472633361816E-16,
-    @σ                float,
-    @sinσ             float,
-    @cosσ             float, 
-    @Δσ               float, -- σ = angular distance P₁ P₂ on the sphere
-    @cos2σm           float, -- σₘ = angular distance on the sphere from the equator to the midpoint of the line
-
-    @φ1               Float,
-    @λ1               Float,
-    @α1               Float,
+    @Sigma            float,
+    @sinSigma         float,
+    @cosSigma         float, 
+    @DeltaSigma       float, -- Sigma = angular distance P₁ P₂ on the sphere
+    @cos2Sigmam       float, -- Sigmaₘ = angular distance on the sphere from the equator to the midpoint of the line
+    @Phi1             Float,
+    @Lambda1          Float,
+    @Alpha1           Float,
     @s                Float,
-    @sinα1            Float,
-    @cosα1            Float,
-
+    @sinAlpha1        Float,
+    @cosAlpha1        Float,
     @tanU1            Float,
     @cosU1            Float,
     @sinU1            Float,
-    @σ1               Float, --angular distance on the sphere from the equator to P1
-    @sinα             Float, -- α = azimuth of the geodesic at the equator
-    @cosSqα           Float,
+    @Sigma1           Float, --angular distance on the sphere from the equator to P1
+    @sinAlpha         Float, -- Alpha = azimuth of the geodesic at the equator
+    @cosSqAlpha       Float,
     @uSq              Float,
     @capA             Float,
     @capB             Float,
-    @σP               Float,
+    @SigmaP           Float,
 	@iterations       integer,
     @x                Float,
-    @φ2               Float,
-    @λ                Float,
+    @Phi2             Float,
+    @Lambda           Float,
     @C                Float,
     @L                Float,
-    @λ2               Float,
-    @α2               Float,
-	@height           float,
+    @Lambda2          Float,
+    @Alpha2           Float,
 	@finalBearing     varchar(100),
 	@destinationPoint geography;
 
-    SET @height = 0; -- point must be on the surface of the ellipsoid;
-
-    SET @φ1 = Radians(@p_point.Lat);
-    SET @λ1 = Radians(@p_point.Long);
-    SET @α1 = Radians(@p_initialBearing);
-    SET @s  = @p_distance;
+    SET @Phi1    = Radians(@p_point.Lat);
+    SET @Lambda1 = Radians(@p_point.Long);
+    SET @Alpha1  = Radians(@p_initialBearing);
+    SET @s       = @p_distance;
 
     -- allow alternative ellipsoid to be specified
     SET @a_f = [$(cogoowner)].[STEllipsoidParameters] ( @p_point.STSrid ); 
-    SET @a = CAST(SUBSTRING(@a_f,1,CHARINDEX(',',@a_f)-1) as float);
-    SET @a = ISNULL(@a,6378137);
-	SET @b = 6356752.314245;
-    SET @f = 1.0 / CAST(SUBSTRING(@a_f,CHARINDEX(',',@a_f)+1,100) as float);
-    SET @f = ISNULL(@f,1.0/298.257223563);
+    IF ( @a_f is not null AND LEN(@a_f) > 0 ) 
+    BEGIN
+      SET @a = CAST(SUBSTRING(@a_f,1,CHARINDEX(',',@a_f)-1) as float);
+      SET @a = ISNULL(@a,6378137);
+      SET @b = 6356752.314245;
+      SET @f = 1.0 / CAST(SUBSTRING(@a_f,CHARINDEX(',',@a_f)+1,100) as float);
+      SET @f = ISNULL(@f,1.0/298.257223563);
+    END;
 
-    SET @sinα1 = SIN(@α1);
-    SET @cosα1 = COS(@α1);
+    SET @sinAlpha1 = SIN(@Alpha1);
+    SET @cosAlpha1 = COS(@Alpha1);
 
-    SET @tanU1  = (1.0 - @f) * TAN(@φ1);
-    SET @cosU1  = 1.0 / SQRT((1 + @tanU1*@tanU1));
-    SET @sinU1  = @tanU1 * @cosU1;
-    SET @σ1     = ATN2(@tanU1, @cosα1); -- σ1 = angular distance on the sphere from the equator to P1
-    SET @sinα   = @cosU1 * @sinα1;       -- α = azimuth of the geodesic at the equator
-    SET @cosSqα = 1.0 - @sinα*@sinα;
-    SET @uSq    = @cosSqα * (@a*@a - @b*@b) / (@b*@b);
-    SET @capA      = 1.0 + @uSq / 16384.0*(4096.0 + @uSq * (-768.0 + @uSq * (320.0 - 175.0 * @uSq)));
-    SET @capB      = @uSq / 1024.0 *      (256.0  + @uSq * (-128.0 + @uSq * (74.0  - 47.0  * @uSq)));
+    SET @tanU1      = (1.0 - @f) * TAN(@Phi1);
+    SET @cosU1      = 1.0 / SQRT((1 + @tanU1*@tanU1));
+    SET @sinU1      = @tanU1 * @cosU1;
+    SET @Sigma1     = ATN2(@tanU1, @cosAlpha1); -- Sigma1 = angular distance on the sphere from the equator to P1
+    SET @sinAlpha   = @cosU1 * @sinAlpha1;       -- Alpha = azimuth of the geodesic at the equator
+    SET @cosSqAlpha = 1.0 - @sinAlpha*@sinAlpha;
+    SET @uSq        = @cosSqAlpha * (@a*@a - @b*@b) / (@b*@b);
+    SET @capA       = 1.0 + @uSq / 16384.0*(4096.0 + @uSq * (-768.0 + @uSq * (320.0 - 175.0 * @uSq)));
+    SET @capB       = @uSq / 1024.0 *      (256.0  + @uSq * (-128.0 + @uSq * (74.0  - 47.0  * @uSq)));
 
-    SET @σ      = @s / (@b*@capA);
-	SET @sinσ   = 0.0;
-    SET @cosσ   = 0.0; 
-    SET @Δσ     = 0.0;
-    SET @cos2σm = 0.0;
+    SET @Sigma      = @s / (@b*@capA);
+	SET @sinSigma   = 0.0;
+    SET @cosSigma   = 0.0; 
+    SET @DeltaSigma = 0.0;
+    SET @cos2Sigmam = 0.0;
 
-    SET @σP = 0;
+    SET @SigmaP = 0;
 	SET @iterations = 0;
-    while (ABS(@σ-@σP) > 1e-12 AND @iterations < 100)
+    while (ABS(@Sigma-@SigmaP) > 1e-12 AND @iterations < 100)
 	Begin
-        SET @cos2σm = COS(2.0*@σ1 + @σ);
-        SET @sinσ   = SIN(@σ);
-        SET @cosσ   = COS(@σ);
-        SET @Δσ     = @capB*@sinσ * (@cos2σm + @capB/4.0 * (@cosσ*(-1.0 + 2.0*@cos2σm*@cos2σm) -
-                      @capB/6.0 * @cos2σm * (-3.0 + 4.0*@sinσ*@sinσ) * (-3.0 + 4.0*@cos2σm*@cos2σm)));
-        SET @σP     = @σ;
-        SET @σ      = @s / (@b*@capA) + @Δσ;
+        SET @cos2Sigmam = COS(2.0*@Sigma1 + @Sigma);
+        SET @sinSigma   = SIN(@Sigma);
+        SET @cosSigma   = COS(@Sigma);
+        SET @DeltaSigma = @capB*@sinSigma * (@cos2Sigmam + @capB/4.0 * (@cosSigma*(-1.0 + 2.0*@cos2Sigmam*@cos2Sigmam) -
+                          @capB/6.0 * @cos2Sigmam * (-3.0 + 4.0*@sinSigma*@sinSigma) * (-3.0 + 4.0*@cos2Sigmam*@cos2Sigmam)));
+        SET @SigmaP     = @Sigma;
+        SET @Sigma      = @s / (@b*@capA) + @DeltaSigma;
 		SET @iterations = @iterations + 1;
     END;
     if (@iterations >= 100) 
-		RAISERROR('Vincenty formula failed to converge',16,1);
+       return null; -- RAISERROR('Vincenty formula failed to converge',16,1);
 
-    SET @x  = @sinU1 * @sinσ - @cosU1 * @cosσ * @cosα1;
-    SET @φ2 = atn2(@sinU1*@cosσ + @cosU1*@sinσ*@cosα1, (1.0 - @f) * SQRT(@sinα * @sinα + @x * @x));
-    SET @λ  = atn2(@sinσ*@sinα1, @cosU1*@cosσ - @sinU1 * @sinσ * @cosα1);
-    SET @C  = @f/16.0 * @cosSqα * (4.0+@f*(4.0 - 3.0*@cosSqα));
-    SET @L  = @λ - (1.0-@C) * @f*@sinα*(@σ+@C * @sinσ*(@cos2σm + @C*@cosσ *(-1.0 + 2.0*@cos2σm*@cos2σm)));
-    SET @λ2 = @λ1 + @L;
+    SET @x       = @sinU1 * @sinSigma - @cosU1 * @cosSigma * @cosAlpha1;
+    SET @Phi2    = atn2(@sinU1*@cosSigma + @cosU1*@sinSigma*@cosAlpha1, (1.0 - @f) * SQRT(@sinAlpha * @sinAlpha + @x * @x));
+    SET @Lambda  = atn2(@sinSigma*@sinAlpha1, @cosU1*@cosSigma - @sinU1 * @sinSigma * @cosAlpha1);
+    SET @C       = @f/16.0 * @cosSqAlpha * (4.0+@f*(4.0 - 3.0*@cosSqAlpha));
+    SET @L       = @Lambda - (1.0-@C) * @f*@sinAlpha*(@Sigma+@C * @sinSigma*(@cos2Sigmam + @C*@cosSigma *(-1.0 + 2.0*@cos2Sigmam*@cos2Sigmam)));
+    SET @Lambda2 = @Lambda1 + @L;
 
-    SET @α2 = atn2(@sinα, -@x);
+    SET @Alpha2 = atn2(@sinAlpha, -@x);
 
-    SET @destinationPoint = geography::Point(Degrees(@φ2),Degrees(@λ2),@p_point.STSrid);
-    SET @finalBearing     = [$(cogoowner)].[DD2DMS](Degrees(@α2),DEFAULT,DEFAULT,DEFAULT);
+    SET @destinationPoint = geography::Point(Degrees(@Phi2),Degrees(@Lambda2),@p_point.STSrid);
+    SET @finalBearing     = [$(cogoowner)].[DD2DMS](Degrees(@Alpha2),DEFAULT,DEFAULT,DEFAULT);
 
 	return @destinationPoint;
 End;
