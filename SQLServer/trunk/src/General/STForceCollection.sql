@@ -42,8 +42,7 @@ As
  *    )
  *    Returns geometry
  *  DESCRIPTION
- *    This function extracts the rings of a polygon and returns them within 
- *    a GeometryCollection or a MultLineString.
+ *    This function extracts the rings of a polygon and returns them within a GeometryCollection or a MultLineString.
  *    Polygons rings as polygons can only be returned in a GeometryCollection.
  *    Polygon rings can be converted to LineStrings and returned in a GeometryCollection with no checking of validity by SQL Server Spatial.
  *    Polygon rings can be converted to LineStrings and returned in a MultiLineStrings but are subject to validition by SQL Server Spatial.
@@ -56,7 +55,7 @@ As
  *    @p_linestrings     (int) - Rings are to be converted to LineStrings if 1, otherwise Polygons.
  *    @p_multilinestring (int) - Return rings using GeometryCollection (0) or MultiLineString (1)
  *  RESULT
- *    collection    (geometry) - Eithre MultiLineString or GeometryCollection.
+ *    collection    (geometry) - Either MultiLineString or GeometryCollection.
  *  EXAMPLE
  *    select [$(owner)].[STForceCollection](
  *                 geometry::STGeomFromText('POLYGON ((98.4 883.585, 115.729 ... 101.533 902.06))',0),

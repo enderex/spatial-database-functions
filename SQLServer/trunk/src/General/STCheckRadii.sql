@@ -33,8 +33,7 @@ CREATE FUNCTION [$(owner)].[STCheckRadii](
 AS
 /****f* GEOPROCESSING/STCheckRadii (2008)
  *  NAME
- *    STCheckRadii -- Checks if radius of any three points in a linestring.
- are less than the desired amount.
+ *    STCheckRadii -- Checks if radius of any three points in a linestring are less than the desired amount.
  *  SYNOPSIS 
  *    Function [$(owner)].[STCheckRadii] (
  *      @p_geom       geometry, 

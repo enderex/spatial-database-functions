@@ -201,7 +201,7 @@ BEGIN
     @v_hiPt    geometry;
 
     -- # of points without closing endpoint
-    SET @v_nPts = @p_ring.STNumPoints();
+    SET @v_nPts = @p_ring.STNumPoints() - 1;
     -- sanity check
     if (@v_nPts < 3)
       Return null;
@@ -209,10 +209,10 @@ BEGIN
 
     -- find highest point
     SET @v_hiPt    = @p_ring.STStartPoint();
-    SET @v_hiIndex = 1;
-    SET @v_i       = 2;
-    WHILE ( @v_i <= @v_nPts) BEGIN
-      SET @v_point = @p_ring.STPointN(@v_i);
+    SET @v_hiIndex = 0;
+    SET @v_i       = 1;
+    WHILE (@v_i <= @v_nPts) BEGIN
+      SET @v_point = @p_ring.STPointN(@v_i+1);
       if (@v_point.STY > @v_hiPt.STY) BEGIN
         SET @v_hiPt    = @v_point;
         SET @v_hiIndex = @v_i;
@@ -222,24 +222,24 @@ BEGIN
 
     -- find distinct point before highest point
     SET @v_iPrev = @v_hiIndex;
-    WHILE (@v_iPrev >= 1 ) BEGIN
+    SET @v_iPrev = @v_iPrev - 1;
+    IF (@v_iPrev < 1)
+      SET @v_iPrev = @v_nPts;
+    WHILE (@p_ring.STPointN(@v_iPrev+1).STEquals(@v_hiPt)=1 AND @v_iPrev != @v_hiIndex) BEGIN
       SET @v_iPrev = @v_iPrev - 1;
-      if (@v_iPrev < 0)
+      if (@v_iPrev < 1)
         SET @v_iPrev = @v_nPts;
-      IF ( NOT @p_ring.STPointN(@v_iPrev).STEquals(@v_hiPt)=1 AND @v_iPrev != @v_hiIndex )
-        BREAK;
     END;
 
     -- find distinct point after highest point
     SET @v_iNext = @v_hiIndex;
-    WHILE (@v_iNext >= @v_hiIndex) BEGIN
+    SET @v_iNext = (@v_iNext + 1) % @v_nPts;
+    WHILE (@p_ring.STPointN(@v_iNext+1).STEquals(@v_hiPt)=1 AND @v_iNext <> @v_hiIndex) BEGIN
       SET @v_iNext = (@v_iNext + 1) % @v_nPts;
-      IF NOT (@p_ring.STPointN(@v_iNext).STEquals(@v_hiPt)=1 AND @v_iNext != @v_hiIndex)
-        BREAK;
     END;
 
-    SET @v_prev = @p_ring.STPointN(@v_iPrev);
-    SET @v_next = @p_ring.STPointN(@v_iNext);
+    SET @v_prev = @p_ring.STPointN(@v_iPrev+1);
+    SET @v_next = @p_ring.STPointN(@v_iNext+1);
 
     /**
      * This check catches cases where the ring contains an A-B-A configuration
@@ -252,9 +252,11 @@ BEGIN
         @v_prev.STEquals(@v_next)=1 )
       return 0;
 
+    -- SET @v_disc = [dbo].[STomputeOrientation(@v_prev, @v_hiPt, @v_next);
+
     -- fast filter for orientation index
     -- avoids use of slow extended-precision arithmetic in many cases
-    SET @v_index = [$(owner)].[STOrientationIndexFilter](@v_prev, @v_hiPt,@v_next);
+    SET @v_index = [dbo].[STOrientationIndexFilter](@v_prev, @v_hiPt,@v_next);
     IF (@v_index <= 1) 
       SET @v_disc = @v_index;
     ELSE
@@ -309,6 +311,26 @@ go
 SELECT [$(owner)].[STisCCW] ([$(owner)].[STReverse](geometry::STGeomFromText('LINESTRING (63.29 914.361, 73.036 899.855, 80.023 897.179, 79.425 902.707, 91.228 903.305, 79.735 888.304, 98.4 883.584, 115.73 903.305, 102.284 923.026, 99.147 899.271, 110.8 902.707, 90.78 887.02, 96.607 926.911, 95.71 926.313, 95.412 928.554, 101.238 929.002, 119.017 922.279,63.29 914.361)',0),3,1)) as isCCW;
 GO
 
+select [dbo].[STisCCW](geometry::STGeomFromText(
+'LINESTRING(
+  148.04452460167477 -36.391801308813505,
+  148.04481426832533 -36.391801308813427,
+  148.04481426826769 -36.391881931347953,
+  148.04452460173229 -36.391881931347996,
+  148.04452460167477 -36.391801308813505
+)',4326));
+go
+
+select dbo.STisCCW(geometry::STGeomFromText(
+'LINESTRING(
+  148.04452460167477 -36.391801308813505,
+  148.04452460173229 -36.391881931347996,
+  148.04481426826769 -36.391881931347953,
+  148.04481426832533 -36.391801308813427,
+  148.04452460167477 -36.391801308813505)',4326));
+go
+
 QUIT;
 GO
+
 
