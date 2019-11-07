@@ -170,7 +170,7 @@ sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogo
 find /I src/general/STCogoFunctions.sql "CREATE FUNCTION" | find /I "CREATE"
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STCOGOFunctions.sql       -o log/COGO_STCOGOFunctions.log
 ECHO ...... STIsCollinear 
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STIsCollinear .sql        -o log/COGO_STIsCollinear .log
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STIsCollinear.sql         -o log/COGO_STIsCollinear.log
 ECHO ...... STGeographicDistance
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i src/general/STGeographicDistance.sql  -o log/COGO_STGeographicDistance.log
 ECHO ...... STEllipsoidParameters
