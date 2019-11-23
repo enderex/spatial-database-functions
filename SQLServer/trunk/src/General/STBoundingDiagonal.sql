@@ -23,6 +23,9 @@ GO
 
 /* ================================================== */
 
+PRINT 'Creating [$(owner)].[STBoundingDiagonal] ...';
+GO
+
 CREATE FUNCTION [$(owner)].[STBoundingDiagonal]
 (
   @p_geom     geometry,
@@ -116,5 +119,3 @@ select [$(owner)].[STBoundingDiagonal] (b.geom,3,2).STAsText() as bLine
   from data as b;
 GO
 
-QUIT;
-GO

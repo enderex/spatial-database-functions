@@ -475,6 +475,4 @@ UNION ALL
 SELECT 'After' as text, [$(owner)].[STOffsetSegment] (d.segment,1,3,2).AsTextZM() as rGeom from data as d;
 go
 
-QUIT
-GO
 

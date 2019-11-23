@@ -198,6 +198,4 @@ select d.ltype, 'After'  as status, [$(owner)].[STSetZ] (d.geom,-999,3,1).AsText
 order by 1,2 desc
 go
 
-QUIT
-GO
 

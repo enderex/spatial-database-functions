@@ -622,5 +622,3 @@ GO
 select [$(lrsowner)].[STIsMeasureDecreasing](geometry::STGeomFromText('CIRCULARSTRING (3 6.325 NULL 0, 0 7 NULL 3.08, -3 6.325 NULL 6.15)',0))
 GO
 
-QUIT
-GO

@@ -390,5 +390,3 @@ select [$(owner)].[STDensify](
        ).AsTextZM() as dGeom;
 GO
 
-QUIT
-GO

@@ -35,7 +35,8 @@ CREATE PROCEDURE [$(owner)].[STTiler]
   @p_rangle    float,
   @p_Srid      Int,
   @p_out_table nvarchar(128),
-  @p_geography Int = 1
+  @p_geography Int = 1,
+  @p_AsPoint   bit = 0
 )
 AS
 /****f* TILING/STTiler (2012)
@@ -55,7 +56,8 @@ AS
  *               @p_rangle    float
  *               @p_srid      int,
  *               @p_out_table nvarchar(128),
- *               @p_geography Int = 1
+ *               @p_geography Int = 1,
+ *               @p_AsPoint   bit = 0
  *             )
  *  DESCRIPTION
  *    Procedure that takes a spatial extent (LL/UR), computes the number of tiles that cover it and
@@ -76,6 +78,7 @@ AS
  *    @p_srid           (int) - Geographic SRID (default is 4326)
  *    @p_out_table (nvarchar) - Name of table to hold tiles. Can be expressed as DB.OWNER.OBJECT.
  *    @p_geography      (int) - If 1 (True) column in table will be geography; if 0, geometry.
+ *    @p_AsPoint        (bit) - Rturn tile as point or polygon
  *  RESULT
  *    A Table with the name @p_out_table is created with this structure:
  *    Create Table + @p_out_table + 
@@ -204,11 +207,11 @@ begin
                  CONVERT(varchar(30),CAST(  @v_col * @p_TileX              as DECIMAL(24,12))) + ' ' + 
                  CONVERT(varchar(30),CAST(  @v_row * @p_TileY              as DECIMAL(24,12))) + '))';
          SET @v_tile = geometry::STGeomFromText(@v_WKT,@v_srid);
-         IF ( @p_rx is not null and @p_ry is not null and COALESCE(@p_rAngle,0) <> 0 ) 
+         IF (@p_rx is not null and @p_ry is not null and COALESCE(@p_rAngle,0) <> 0) 
             SET @v_tile = [$(owner)].[STRotate]( @v_tile, @p_rx, @p_ry, @p_rAngle, 15, 15 );
-         SET @v_wkt = @v_tile.STAsText();
+         SET @v_wkt = case when @p_AsPoint=1 then @v_tile.STCentroid().STAsText() else @v_tile.STAsText() end;
          SET @v_sql = N'INSERT INTO ' + @p_out_table + N' (' + @v_geo + N') ' +
-                      N'VALUES(' + @v_geo_type + N'::STPolyFromText(@IN_WKT,@IN_Srid))';
+                      N'VALUES(' + @v_geo_type + N'::STGeomFromText(@IN_WKT,@IN_Srid))';
          BEGIN TRY
            EXEC sp_executesql @query   = @v_sql, 
                               @params  = N'@in_WKT nvarchar(max), @IN_SRID Int', 
@@ -234,17 +237,14 @@ Print 'Testing [$(owner)].[STTiler] ...';
 GO
 
 DROP TABLE IF EXISTS [$(owner)].[GridLL]
-exec [$(owner)].[STTiler] 0, 0, 1000, 1000, 250, 250, 0,0,0, 0, '[$(owner)].GridLL', 0
+exec [$(owner)].[STTiler] 0, 0, 100, 100, 25, 25, 0,0,0, 0, '[$(owner)].GridLL', 0, 1;
 SELECT COUNT(*) as tableCount FROM [$(owner)].[GridLL]
-SELECT gid, geom.STAsText() FROM [$(owner)].[GridLL]
+SELECT gid, geom.STBuffer(0.2) as geom FROM [$(owner)].[GridLL]
 GO
 
 DROP TABLE IF EXISTS [$(owner)].[GridLL]
-exec [$(owner)].[STTiler] 0, 0, 1000, 1000, 250, 250, 0,0,45, 0, '[$(owner)].GridLL', 0
+exec [$(owner)].[STTiler] 0, 0, 100, 100, 25, 25, 0,0,45, 0, '[$(owner)].GridLL',0,0;
 SELECT COUNT(*) as tableCount FROM [$(owner)].[GridLL]
-SELECT gid, geom.STAsText() FROM [$(owner)].[GridLL]
-GO
-
-QUIT
+SELECT gid, geom FROM [$(owner)].[GridLL]
 GO
 

@@ -184,6 +184,4 @@ GO
 select [$(owner)].[STFORMATNUMBER] (null,3,null,0,'NULL')
 GO
 
-QUIT
-GO
 

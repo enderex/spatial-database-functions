@@ -121,5 +121,3 @@ GO
 SELECT [$(owner)].[STMakeEnvelopeFromText]('0@0@1@1','@',0) as mbr;
 GO
 
-QUIT
-GO

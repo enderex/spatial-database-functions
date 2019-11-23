@@ -461,7 +461,7 @@ GO:
 SELECT d.id, d.geom.AsTextZM() as geom
   FROM [$(owner)].[STDump] ( geometry::STGeomFromText('MULTIPOLYGON(((0 0, 10 0, 10 10, 0 10, 0 0),(1 1, 9 1,9 9,1 9,1 1)),((100 100,110 100,110 110, 100 110,100 100)))',0)) as d;
 GO
-:
+
 -- id   geom
 -- 1    POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0))
 -- 2    POLYGON ((1 1, 9 1, 9 9, 1 9, 1 1))
@@ -495,25 +495,25 @@ GO
 -- 1    CIRCULARSTRING (3 6.32, 0 7, -3 6.32)
 -- 2    LINESTRING (-3 6.32, 0 0)
 -- 3    LINESTRING (0 0, 3 6.32)
-i
+
 -- ****************************************************
 
 PRINT 'Testing STDumpRings ...';
 go
 
-select d.id,d.geom.STAsText() as geom 
+select d.gid,d.rid,d.geom.STAsText() as geom 
   from [$(owner)].[STDumpRings](geometry::STGeomFromText('MULTILINESTRING((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5))',0)) as d 
 GO
 
 -- id geom -- ie no rows
 
 -- Polygon
-select d.id,d.geom.STAsText() as geom 
+select d.gid,d.rid,d.geom.STAsText() as geom 
   from [$(owner)].[STDumpRings](geometry::STGeomFromText('POLYGON((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5))',0)) as d
 GO
 
 -- MultiPolygon with 3 Exterior rings and 2 interior rings
-select d.id,d.geom.STAsText() as geom 
+select d.gid,d.rid,d.geom.STAsText() as geom 
   from [$(owner)].[STDumpRings](geometry::STGeomFromText(
             'MULTIPOLYGON (((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5)), 
                            ((80 80, 100 80, 100 100, 80 100, 80 80)), 
@@ -521,20 +521,16 @@ select d.id,d.geom.STAsText() as geom
 GO
 
 -- Single CurvePolygon with exterior ring only
-select d.id,d.geom.STAsText() as geom 
+select d.gid,d.rid,d.geom.STAsText() as geom 
   from [$(owner)].[STDumpRings](geometry::STGeomFromText(
            'CURVEPOLYGON(COMPOUNDCURVE((0 -23.43778, 0 23.43778),CIRCULARSTRING(0 23.43778, -45 23.43778, -90 23.43778),(-90 23.43778, -90 -23.43778),CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778)))',0)) as d
 GO
 
 -- GeometryCollection with one internal Polygon
-select d.id,d.geom.STAsText() as geom 
+select d.gid,d.rid,d.geom.STAsText() as geom 
   from [$(owner)].[STDumpRings](geometry::STGeomFromText('GEOMETRYCOLLECTION(
                                                      LINESTRING(0 0,20 0,20 20,0 20,0 0), 
                                                      CURVEPOLYGON(COMPOUNDCURVE((0 -23.43778, 0 23.43778),CIRCULARSTRING(0 23.43778, -45 23.43778, -90 23.43778),(-90 23.43778, -90 -23.43778),CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778))), 
                                                      COMPOUNDCURVE(CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778), (0 -23.43778, 0 23.43778)))',0)) as d
 GO
-
-QUIT
-GO
-
 

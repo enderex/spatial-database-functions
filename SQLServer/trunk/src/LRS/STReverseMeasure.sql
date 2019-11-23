@@ -348,5 +348,3 @@ union all
 select 'After' as text, [$(lrsowner)].[STReverseMeasure](d.geom,3,2).AsTextZM() as rGeom from data as d;
 GO
 
-QUIT
-GO

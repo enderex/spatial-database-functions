@@ -208,6 +208,4 @@ SELECT [$(cogoowner)].[STInverseVincenty] (
          geography::Point(12.1713976,55.4786191,4326)) as meters;
 GO
 
-QUIT
-GO
 

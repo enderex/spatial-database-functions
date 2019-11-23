@@ -457,5 +457,3 @@ select case when g.IntValue = 1 then 'START'
 ) as f;
 GO
 
-QUIT
-GO

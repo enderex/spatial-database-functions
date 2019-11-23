@@ -273,4 +273,3 @@ select 'GEOC1' as gtype, gid,sid,geom.STAsText() as geom from [$(owner)].[STExtr
                                                                                                                        COMPOUNDCURVE(CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778), (0 -23.43778, 0 23.43778)))',0),1) as gElem
 GO
 
-QUIT

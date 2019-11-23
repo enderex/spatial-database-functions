@@ -1019,6 +1019,3 @@ select case when t.IntValue = 0 then 'All'
        [$(owner)].[GENERATE_SERIES](0,3,1) as t
 GO
 
-QUIT
-GO
-

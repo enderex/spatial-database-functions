@@ -93,4 +93,3 @@ select spatial_reference_id,
  where spatial_reference_id in (4283,4326,4222);
 GO
 
-QUIT

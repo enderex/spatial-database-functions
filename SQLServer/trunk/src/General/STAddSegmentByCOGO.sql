@@ -191,5 +191,3 @@ select text, f.bearing, /*f.newLine.STBuffer(0.1), */ CAST(f.newLine.AsTextZM() 
        ) as f;
 GO
 
-QUIT
-GO

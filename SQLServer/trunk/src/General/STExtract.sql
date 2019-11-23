@@ -407,5 +407,3 @@ select 'Geometry Collection with Compound elements' as test,
 GO
 
 
-QUIT
-GO

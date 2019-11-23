@@ -688,5 +688,3 @@ select [$(lrsowner)].[STFindOffset] (
          3,2)
 GO
 
-QUIT
-GO

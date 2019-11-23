@@ -151,5 +151,3 @@ select [$(owner)].[STDetermine] (
      ) as relations;
 GO
 
-QUIT
-GO

@@ -123,7 +123,7 @@ Begin
         SET @second     = @second + 1;
         SET @vector     = @vector + 1;
         IF ( @start_geom.STEquals(@end_geom) = 0 ) 
-		BEGIN
+        BEGIN
           SET @line = [$(owner)].[STMakeLine](@start_geom, @end_geom,15,15);
           INSERT INTO @Vectors ( 
                    [id],[element_id],[subelement_id],[vector_id],
@@ -142,7 +142,7 @@ Begin
                     end,
                    @line
           );
-		END;
+        END;
         SET @id = @id + 1;
       END;
       RETURN;
@@ -228,7 +228,7 @@ Begin
           SET @vector     = @vector + 1;
           SET @subVector  = @subVector + 1;
           IF ( @start_geom.STEquals(@end_geom) = 0 )
-		  BEGIN
+          BEGIN
             SET @line = [$(owner)].[STMakeLine](@start_geom,@end_geom,15,15);
             INSERT INTO @Vectors (
                      [id],
@@ -238,7 +238,7 @@ Begin
                      [sx],[sy],[sz],[sm],
                      [ex],[ey],[ez],[em],
                      [length],[geom]
-            ) VALUES ( @id,
+            ) VALUES (@id,
                      @geomn,
                      @ringn,
                      @subVector,
@@ -556,124 +556,6 @@ Begin
 END
 GO
 
-PRINT 'Creating [$(owner)].[STSegmentize] ...';
-GO
-
-CREATE FUNCTION [$(owner)].[STSegmentize]
-(
-  @p_geometry geometry
-)
-Returns @Vectors TABLE
-(
-  id            int,
-  element_id    int,
-  subelement_id int,
-  segment_id    int, 
-  sx            float,  /* Start Point */
-  sy            float,
-  sz            float,
-  sm            float,
-  mx            float,  /* Mid Point */
-  my            float,
-  mz            float,
-  mm            float,
-  ex            float,  /* End Point */
-  ey            float,
-  ez            float,
-  em            float,
-  length        float,
-  geom          geometry  /* Useful if vector is a circular arc */
-)
-AS
-/****f* GEOPROCESSING/STSegmentize (1.0)
- *  NAME
- *   STSegmentize - Extracts 2 point linestring or 3 point CircularString segments/vectors from non-point geometry objects.
- *  SYNOPSIS
- *   Function STSegmentize (
- *       @p_geometry  geometry 
- *    )
- *    Returns @Vector Table (
- *      id             int,
- *      element_id     int,
- *      subelement_id  int,
- *      segment_id     int,
- *      sx             float,  
- *      sy             float,
- *      sz             float,
- *      sm             float,
- *      mx             float,  
- *      my             float,
- *      mz             float,
- *      mm             float,
- *      ex             float, 
- *      ey             float,
- *      ez             float,
- *      em             float,
- *      length         float,
- *      geom           geometry
- *    )  
- *  DESCRIPTION
- *    This function is the same as STVectorize.
- *    This function segments the supplied geometry into 2-point linestrings or 3 point CircularStrings. 
- *    The returned data includes all the metadata about the segmented linestring:
- *    - Segment identifiers (ie from 1 through n);
- *    - Start/Mid/End Coordinates as ordinates;
- *    - Length of vector.
- *    - Geometry representation of segment.
- *  INPUTS
- *    @p_geometry (geometry) - Any non-point geometry object
- *  RESULT
- *    Table (Array) of Segments:
- *     id             (int)      - Unique identifier starting at segment 1.
- *     element_id     (int)      - Top level element identifier eg 1 for first polygon in multiPolygon.
- *     subelement_id  (int)      - SubElement identifier of subelement of element with parts eg OuterRing of Polygon
- *     segment_id     (int)      - Unique identifier for all segments of a specific element.
- *     sx             (float)    - Start Point X Ordinate 
- *     sy             (float)    - Start Point Y Ordinate 
- *     sz             (float)    - Start Point Z Ordinate 
- *     sm             (float)    - Start Point M Ordinate
- *     mx             (float)    - Mid Point X Ordinate (Only if CircularString)
- *     my             (float)    - Mid Point Y Ordinate (Only if CircularString)
- *     mz             (float)    - Mid Point Z Ordinate (Only if CircularString)
- *     mm             (float)    - Mid Point M Ordinate (Only if CircularString)
- *     ex             (float)    - End Point X Ordinate 
- *     ey             (float)    - End Point Y Ordinate 
- *     ez             (float)    - End Point Z Ordinate 
- *     em             (float)    - End Point M Ordinate 
- *     length         (float)    - Length of this segment in SRID units
- *     geom           (geometry) - Geometry representation of segment.
- *  AUTHOR
- *    Simon Greener
- *  HISTORY
- *    Simon Greener - January 2008 - Original coding.
- *    Simon Greener - January 2017 - Support for Circular Curve objects and subobjects.
- *  COPYRIGHT
- *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
- ******/
-Begin
-  INSERT INTO @Vectors ( 
-          [id],
-          [element_id],
-          [subelement_id],
-          [segment_id],
-          [sx],[sy],[sz],[sm],
-          [mx],[my],[mz],[mm],
-          [ex],[ey],[ez],[em],
-          [length],[geom]
-   )
-   SELECT [id],
-          [element_id],
-          [subelement_id],
-          [vector_id],
-          [sx],[sy],[sz],[sm],
-          [mx],[my],[mz],[mm],
-          [ex],[ey],[ez],[em],
-          [length],[geom]
-     FROM [$(owner)].[_STVectorize](@p_geometry,1);
-  Return;
-END
-GO
-
 PRINT 'Testing .....';
 GO
 
@@ -767,22 +649,4 @@ select  v.*
                           (0 -23.43778, 0 23.43778)))',0)) as v;
 GO
 
--- STSegmentize wrapper
-select  v.*
-  from [$(owner)].[STSegmentize](geometry::STGeomFromText(
-         'GEOMETRYCOLLECTION(
-                  LINESTRING(0 0,20 0,20 20,0 20,0 0), 
-                  CURVEPOLYGON(
-                       COMPOUNDCURVE(
-                               (0 -23.43778, 0 23.43778),
-                               CIRCULARSTRING(0 23.43778, -45 23.43778, -90 23.43778),
-                               (-90 23.43778, -90 -23.43778),
-                               CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778))), 
-                  COMPOUNDCURVE(
-                          CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778), 
-                          (0 -23.43778, 0 23.43778)))',0)) as v;
-GO
-
-QUIT
-GO
 

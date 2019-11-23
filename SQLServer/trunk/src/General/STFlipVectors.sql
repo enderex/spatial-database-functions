@@ -120,29 +120,22 @@ Print '... Result is 8 vectors with shared boundary duplicated...'
 GO
 
 With gc As (
-select geometry::STGeomFromText(
-'GEOMETRYCOLLECTION(
-POLYGON((10 0,20 0,20 20,10 20,10 0)),
-POLYGON((20 0,30 0,30 20,20 20,20 0)),
-POINT(0 0))',0) as geom
+select geometry::STGeomFromText( 'GEOMETRYCOLLECTION( POLYGON((10 0,20 0,20 20,10 20,10 0)), POLYGON((20 0,30 0,30 20,20 20,20 0)), POINT(0 0))',0) as geom
 )
 select v.sx,v.sy,v.ex,v.ey,count(*)
   from gc as a
        cross apply
        [$(owner)].[STVectorize](a.geom) as v
-group by v.sx,v.sy,v.ex,v.ey
+GROUP By v.sx,v.sy,v.ex,v.ey
 go
 
 Print 'Two polygons with single shared boundary ....'
 PRINT '... Point added to show that it is ignored.'
-Print '... Result is 7 vectors as shared is now same and is removed by group by...'
+Print '... Result is 7 vectors as shared is now same and is removed by group by...';
 GO
+
 With gc As (
-select geometry::STGeomFromText(
-'GEOMETRYCOLLECTION(
-POLYGON((10 0,20 0,20 20,10 20,10 0)),
-POLYGON((20 0,30 0,30 20,20 20,20 0)),
-POINT(0 0))',0) as geom
+select geometry::STGeomFromText( 'GEOMETRYCOLLECTION( POLYGON((10 0,20 0,20 20,10 20,10 0)), POLYGON((20 0,30 0,30 20,20 20,20 0)), POINT(0 0))',0) as geom
 )
 select v.sx,v.sy,v.ex,v.ey,count(*)
   from gc as a
@@ -156,11 +149,7 @@ go
 -- Could use this to remove the boundary and create a new polygon from both (dissolve)
 -- Yes, could just use STUnion in first place but this is just an example of what can be done once vectors are flipped.
 With gc As (
-select geometry::STGeomFromText(
-'GEOMETRYCOLLECTION(
-POLYGON((10 0,20 0,20 20,10 20,10 0)),
-POLYGON((20 0,30 0,30 20,20 20,20 0)),
-POINT(0 0))',0) as geom
+select geometry::STGeomFromText( 'GEOMETRYCOLLECTION( POLYGON((10 0,20 0,20 20,10 20,10 0)), POLYGON((20 0,30 0,30 20,20 20,20 0)), POINT(0 0))',0) as geom
 )
 select geometry::STGeomFromText(
          REPLACE(
@@ -183,8 +172,5 @@ select geometry::STGeomFromText(
          group by v.sx,v.sy,v.ex,v.ey
         having count(*) = 1  /* Get rid of duplicate lines */
        ) as f
-go
-
-quit
 go
 

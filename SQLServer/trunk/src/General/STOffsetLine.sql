@@ -349,7 +349,8 @@ Select f.pGeom.STBuffer(0.01) as pGeom
       ) as f;
 GO
 
-PRINT 'Testing Closed Loop Linestring +ve case fails'
+/* *****************
+PRINT 'Testing Closed Loop Linestring +ve case -- FAILS';
 GO
 
 with data as (
@@ -364,7 +365,7 @@ Select f.pGeom as pGeom
       ) as f;
 GO
 
-PRINT 'Last Test ...'
+PRINT 'Last Test -- FAILS';
 GO
 
 SELECT geometry::STGeomFromText('LINESTRING (63.29 914.361, 73.036 899.855, 80.023 897.179, 79.425 902.707, 91.228 903.305, 79.735 888.304, 98.4 883.584, 115.73 903.305, 102.284 923.026, 99.147 899.271, 110.8 902.707, 90.78 887.02, 96.607 926.911, 95.71 926.313, 95.412 928.554, 101.238 929.002, 119.017 922.279)',0)
@@ -379,6 +380,5 @@ SELECT [$(owner)].[STOffsetLine] (
        ).STAsText() as oGeom;
 GO
 
-QUIT
-GO
+******************* */
 

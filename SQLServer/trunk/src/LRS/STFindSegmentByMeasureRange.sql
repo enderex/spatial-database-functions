@@ -410,5 +410,3 @@ select 'SM/EM falls in gap between two segments',                 5.6,15.60,[$(l
 ) as f;
 GO
 
-QUIT
-GO    

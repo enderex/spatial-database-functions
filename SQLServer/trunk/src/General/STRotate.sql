@@ -270,20 +270,3 @@ select a.intValue as deg,
        [$(owner)].[generate_series](0,350,10) a
 GO
 
-QUIT
-GO
-
-with data as (
-select geometry::STGeomFromText('CURVEPOLYGON(COMPOUNDCURVE(CIRCULARSTRING(
-9.962 -0.872,
-10.1 0,
-9.962 0.872),(
-9.962 0.872,
-0 0,
-9.962 -0.872)))',0) as geom
-)
-select i.IntValue, d.geom.STPointN(i.IntValue).STAsText() as point
-  from data as d
-       cross apply 
-       [$(owner)].[generate_series](1,d.geom.STNumPoints(),1) as i;
-

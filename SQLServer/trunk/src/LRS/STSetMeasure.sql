@@ -200,6 +200,4 @@ GO
 SELECT [$(lrsowner)].[STSetMeasure](geometry::Point(0,0,28355),10.125,3,2).AsTextZM();
 GO
 
-QUIT
-GO
 

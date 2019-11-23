@@ -196,16 +196,4 @@ select [$(owner)].[STUpdateN](geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT
                               1,1).AsTextZM() as WKT
 GO
 
-QUIT
-GO
-
--- *******************************************************************************************************************************************************
-
-select 'FAILURE' as result,
-       [$(owner)].[STUpdateN](geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING(9.962 -0.872,10.1 0,9.962 0.872),(9.962 0.872,0 0,9.962 -0.872))',0),
-                              geometry::STGeomFromText('POINT(9.9 0.9)',0),
-                              3,
-                              1,1).AsTextZM() as WKT
-GO
-
 

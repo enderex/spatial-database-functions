@@ -150,5 +150,3 @@ union all
 select 'Long' as text,     f.geom.STBuffer(1)   as geom, ROUND(f.geom.STLength(),3) as gLen from (select [$(owner)].[STLineMerge](geometry::CollectionAggregate(a.geom),'L') as geom from tGeometry as a) as f
 GO
 
-QUIT
-GO

@@ -193,5 +193,3 @@ select a.linestring.STPointN(a.linestring.STNumPoints()).M as measure,
   from data as a;
 GO
 
-QUIT
-GO

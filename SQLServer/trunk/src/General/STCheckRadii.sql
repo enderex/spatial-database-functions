@@ -78,10 +78,10 @@ AS
  *           [$(owner)].[STCheckRadii](
  *                    circulararc,
  *                    gs.IntValue,
- *    				3).STAsText() as failingArc
+ *                    3).STAsText() as failingArc
  *      from data as a
  *           cross apply
- *    	   [$(owner)].[generate_series](5,15,5) as gs;
+ *           [$(owner)].[generate_series](5,15,5) as gs;
  *    
  *    requiredMinRadius ArcRadius failingArc
  *    5                 10        NULL
@@ -112,7 +112,7 @@ BEGIN
     @v_cx            float,
     @v_cy            float,
     @v_radius        float,
-	@v_round_xy      integer = CASE WHEN @p_round_xy IS NULL THEN 3 ELSE @p_round_xy END,
+    @v_round_xy      integer = CASE WHEN @p_round_xy IS NULL THEN 3 ELSE @p_round_xy END,
     @v_format_string varchar(50);
   Begin
     SET @v_format_string = 'FM999999999999.' + REPLICATE('9',@v_round_xy);
@@ -138,10 +138,10 @@ BEGIN
         -- Call FindCircle on CircularString
         SET @v_circle = [$(cogoowner)].[STFindCircleFromArc](@p_geom);
         IF ( @v_circle.Z IS NOT NULL AND @v_circle.Z <> -1 AND @v_circle.Z  < @p_min_radius ) BEGIN
-		  Return @p_geom;
+          Return @p_geom;
         END;
-		Return Null;
-	END;
+        Return Null;
+    END;
 
     SET @v_WKT  = 'MULTILINESTRING(';
     IF ( @v_GeometryType = 'LineString' ) BEGIN
@@ -150,7 +150,7 @@ BEGIN
       SET @v_second   = 2;
       SET @v_third    = 3;
       WHILE ( @v_third <= @p_geom.STNumPoints() ) 
-	  BEGIN
+      BEGIN
         SET @v_srt_point = @p_geom.STPointN(@v_first);
         SET @v_first     = @v_first  + 1;
         SET @v_mid_point = @p_geom.STPointN(@v_second);
@@ -170,8 +170,8 @@ BEGIN
           END;
           SET @v_WKT = @v_WKT + 
                           REPLACE([$(owner)].[STMakeCircularLine] (@v_srt_point,@v_mid_point,@v_end_point,
-						                                      @v_round_xy,null,null).STAsText(),
-                                 'CIRCULARSTRING','');
+                                                                   @v_round_xy,null,null).STAsText(),
+                          'CIRCULARSTRING','');
         END;
       END; -- LOOP 
       SET @v_WKT = @v_WKT + ')';
@@ -185,7 +185,7 @@ BEGIN
     IF ( @v_GeometryType = 'MultiLineString' ) BEGIN
       SET @v_geomn = 1;
       WHILE ( @v_geomn <= @p_geom.STNumGeometries() ) 
-	  BEGIN
+      BEGIN
         SET @v_badRadii = 0;
         SET @v_geom     = @p_geom.STGeometryN(@v_geomn);
         SET @v_geomn    = @v_geomn + 1;
@@ -197,7 +197,7 @@ BEGIN
            CONTINUE;
         END;
         WHILE ( @v_third <= @v_geom.STNumPoints() ) 
-		BEGIN
+        BEGIN
            SET @v_srt_point  = @v_geom.STPointN(@v_first);
            SET @v_first      = @v_first  + 1;
            SET @v_mid_point  = @v_geom.STPointN(@v_second);
@@ -216,8 +216,8 @@ BEGIN
               END;
              SET @v_WKT = @v_WKT + 
                              REPLACE([$(owner)].[STMakeCircularLine] (@v_srt_point,@v_mid_point,@v_end_point,
-		                                                         @v_round_xy,NULL,NULL).STAsText(),
-									'CIRCULARSTRING','');
+                                                                 @v_round_xy,NULL,NULL).STAsText(),
+                                    'CIRCULARSTRING','');
            END;
         END;
       END; 
@@ -245,10 +245,8 @@ select gs.IntValue as requiredMinRadius,
        [$(owner)].[STCheckRadii](
                 circulararc,
                 gs.IntValue,
-				3).STAsText() as failingArc
+                3).STAsText() as failingArc
   from data as a
        cross apply
-	   [$(owner)].[generate_series](5,15,5) as gs;
+       [$(owner)].[generate_series](5,15,5) as gs;
 
-QUIT
-GO

@@ -737,6 +737,4 @@ SET @v_cogo =
 select cogoLine, cogoLine.AsTextZM() as cogoLineWKT from (select [$(cogoowner)].[STCogo2Line] (@v_cogo, 3, 2) as cogoLine) as f;
 GO
 
-QUIT
-GO
 

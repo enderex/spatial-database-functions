@@ -116,12 +116,3 @@ SELECT d.geom.STGeometryType() as gType,
   FROM data as d;
 GO
 
-gType         cDim isMeasured
-CompoundCurve 4          TRUE
-LineString    2         FALSE
-LineString    3         FALSE
-LineString    4          TRUE
-Point         2         FALSE
-Point         3         FALSE
-Point         4          TRUE
-

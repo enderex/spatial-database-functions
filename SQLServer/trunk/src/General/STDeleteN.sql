@@ -132,30 +132,4 @@ Select 'LineString - Last Point' as message,
        [$(owner)].[STDeleteN](geometry::STGeomFromText('LINESTRING(1 1, 2 2, 3 3, 4 4)',0),-1,3,2).AsTextZM() as WKT 
 GO
 
-QUIT
-GO
-
--- *******************************************************************************************************************************************************
-
-Print 'These fail....'
-GO
-
-select 'Polygon - All Points' as message,
-       t.IntValue,
-       [$(owner)].[STDeleteN](geometry::STGeomFromText('POLYGON((1 1,10 1,10 10,1 10,1 1),(2 2,9 2,9 9,2 9,2 2))',0),t.intValue,3,2) as t
-  from [$(owner)].[generate_series](-1,11,1) as t
-GO
-
-select 'ExteriorRing -- Insufficient Points' as message, 
-       t.IntValue,
-       [$(owner)].[STDeleteN](geometry::STGeomFromText('POLYGON((326000.0 5455000.0,327000.0 5455000.0,326500.0 5456000.0,326000.0 5455000.0))',0),t.intValue,3,2) as t
-  from [$(owner)].[generate_series](2,5,1) as t
-GO
-
-select 'Polygon with InteriorRing (end up with insufficient points)' as message, 
-       [$(owner)].[STDeleteN](geometry::STGeomFromText('POLYGON((326000.0 5455000.0,327000.0 5455000.0,326500.0 5456000.0,326000.0 5455000.0),
-                                                               (326500.0 5455500.0,326550.0 5455200.0,326450.0 5455200.0,326500.0 5455500.0))',0),
-                             t.intValue,3,2) as t
-  from [$(owner)].[generate_series](-1,11,1) as t
-GO
 

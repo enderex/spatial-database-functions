@@ -297,5 +297,3 @@ select [$(cogoowner)].[STGreatCircleDistance] (
        As GCD_90_0_to_100_0;
 GO
 
-QUIT
-GO

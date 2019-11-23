@@ -132,6 +132,4 @@ select a.geom.AsTextZM() as geom, [$(owner)].[STNumDims](a.geom) as nDims
  from Geoms as a
 GO
 
-QUIT
-GO
 

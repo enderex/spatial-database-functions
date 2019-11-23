@@ -450,6 +450,4 @@ select TOP 1
        [$(lrsowner)].[STFilterLineSegmentByMeasure](d.linestring,g.IntValue,g.IntValue + 2.25,3,2) as s;
 GO
 
-QUIT
-GO
 

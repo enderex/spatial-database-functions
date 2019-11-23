@@ -451,6 +451,4 @@ select [$(cogoowner)].[DD2DMS](
        ) as dd_dms_dd
 GO
 
-QUIT
-GO
 

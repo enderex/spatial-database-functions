@@ -126,9 +126,6 @@ GO
 
 PRINT 'Testing STConvertToLineString ...'
 GO
-use DEVDB
-go
-
 
 With gc As (
   select geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(0 0), POLYGON((0 0,10 0,10 10,0 10,0 0)) )',0) as geom
@@ -145,7 +142,4 @@ SELECT [$(owner)].[STConvertToLineString](geom) as geom,
        [$(owner)].[STConvertToLineString](geom).STAsText() as geomWKT
   from gc as a
 go
-
-QUIT
-GO
 

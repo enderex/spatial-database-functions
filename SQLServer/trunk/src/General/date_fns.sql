@@ -82,6 +82,4 @@ GO
 
 SELECT [$(owner)].dhms((2.0 * 24.0 * 60.0 * 60.0) + 923.3) as dhms;
 
-QUIT
-GO
 

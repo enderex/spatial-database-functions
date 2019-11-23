@@ -478,5 +478,3 @@ SELECT 'Scaled' as LineType,
   from data as f;
 GO
 
-QUIT
-GO

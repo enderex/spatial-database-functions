@@ -397,6 +397,3 @@ GO
 SELECT [$(cogoowner)].[STPointFromCOGO] (geometry::Point(0,0,0),45,100,3).STAsText() as endPoint;
 GO
 
-QUIT
-GO
-

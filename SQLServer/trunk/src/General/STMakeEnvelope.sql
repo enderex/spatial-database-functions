@@ -87,5 +87,3 @@ GO
 
 SELECT [$(owner)].[STMakeEnvelope](0,0,1,1,null) as mbr;
 
-QUIT
-GO

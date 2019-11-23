@@ -29,7 +29,8 @@ CREATE FUNCTION [$(owner)].[STTileByNumGrids] (
   @p_NumGridsX integer,
   @p_NumGridsY integer, 
   @p_rPoint    geometry, -- Point(rx,ry)
-  @p_rAngle    float
+  @p_rAngle    float,
+  @p_AsPoint   bit
 )
 Returns @table table
 (
@@ -47,7 +48,8 @@ as
  *      @p_NumGridsX integer,
  *      @p_NumGridsY integer, 
  *      @p_rPoint    geometry, -- Point(rx,ry)
- *      @p_rAngle    float
+ *      @p_rAngle    float,
+ *      @p_AsPoint   bit
  *    )
  *    Returns @table table
  *    (
@@ -67,6 +69,7 @@ as
  *    @p_NumGridsY (integer) - The number of grids in the Y direction (rows)
  *    @p_rPoint   (geometry) - Rotation Point.
  *    @p_rAngle      (float) - Rotation angle expressed in decimal degrees between 0 and 360.
+ *    @p_AsPoint       (bit) - Return tile as point or polygon
  *  RESULT
  *    A Table of the following is returned
  *    (
@@ -83,7 +86,7 @@ as
  *              geometry::STGeomFromText('LINESTRING(12.160367016481 55.474850814352,12.171397605408 55.478619145167)',0),
  *                2, 2,
  *              geometry::STGeomFromText('POINT(12.160367016481 55.474850814352)',0),
- *              45
+ *              45,0
  *           ) as t;
  *    GO
  *
@@ -173,7 +176,8 @@ Begin
                                 );
 
          INSERT INTO @table (   col,   row,geom)
-                     VALUES (@v_col,@v_row,@v_tile);
+                     VALUES (@v_col,@v_row,
+                             case when @p_AsPoint=1 then @v_tile.STCentroid() else @v_tile end);
          SET @v_row = @v_row + 1;
        END;
        SET @v_col = @v_col + 1;
@@ -184,15 +188,23 @@ End
 GO
 
 SELECT row_number() over (order by col, row) as tileId,
-       col,
-       row,
-       geom.STAsText() as Tile
+       col,row,geom.STBuffer(0.00005) as Tile
   FROM [$(owner)].[STTileByNumGrids](
-       geometry::STGeomFromText('LINESTRING(12.160367016481523 55.474850814352628,12.171397605408989 55.478619145167649)',0),
-       2, 2,
-       geometry::STGeomFromText('POINT(12.160367016481523 55.474850814352628)',0),
-       45) as t;
+         geometry::STGeomFromText('LINESTRING(12.160367016481523 55.474850814352628,12.171397605408989 55.478619145167649)',0),
+         2, 2,
+         geometry::STGeomFromText('POINT(12.160367016481523 55.474850814352628)',0),
+         45,
+         1
+       ) as t
+union all
+SELECT row_number() over (order by col, row) as tileId,
+       col,row,geom as Tile
+  FROM [$(owner)].[STTileByNumGrids](
+         geometry::STGeomFromText('LINESTRING(12.160367016481523 55.474850814352628,12.171397605408989 55.478619145167649)',0),
+         2, 2,
+         geometry::STGeomFromText('POINT(12.160367016481523 55.474850814352628)',0),
+         45,
+         0
+        ) as t;
 GO
 
-QUIT
-GO

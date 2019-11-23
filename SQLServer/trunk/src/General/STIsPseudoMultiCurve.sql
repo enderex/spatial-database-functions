@@ -132,6 +132,4 @@ select f.MultiCurve.STGeometryType() as gType,
        ) as f;
 GO
 
-QUIT
-GO
 

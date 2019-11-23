@@ -369,6 +369,4 @@ select [$(owner)].[STOneSidedBuffer](geometry::STGeomFromText('LINESTRING (0 0, 
 union all
 select [$(owner)].[STOneSidedBuffer](geometry::STGeomFromText('LINESTRING (0 0, 10 0, 10 10, 0 10,0 0)',0),1.0,1,3,2);
 
-QUIT
-GO
 

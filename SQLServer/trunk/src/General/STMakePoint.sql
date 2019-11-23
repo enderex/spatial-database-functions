@@ -120,5 +120,3 @@ SELECT f.point.AsTextZM() as point,
   FROM (SELECT [$(owner)].[STMakePoint](1,2,3,4,28355) as point) as f;
 GO
 
-QUIT 
-GO

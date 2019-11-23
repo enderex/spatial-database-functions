@@ -12,6 +12,9 @@ BEGIN
 END;
 GO
 
+PRINT 'Creating [$(cogoowner)].[STAzimuth] ...';
+GO
+
 CREATE FUNCTION [$(cogoowner)].[STAzimuth] (
   @p_X0 float, 
   @p_Y0 float,
@@ -106,11 +109,12 @@ Begin
 END
 GO
 
+PRINT 'Testing [$(cogoowner)].[STAzimuth] ...';
+GO
+
 select case when [$(cogoowner)].[STDegrees]([$(cogoowner)].[STAzimuth] (10,0.123,0,0))
                  =
                  [$(cogoowner)].[STBearing](10,0.123,0,0)
 		    then 'Equals' else 'Not Equal' end;
 GO
 
-QUIT
-GO

@@ -340,5 +340,3 @@ select *
 order by 1,2;
 go
 
-QUIT
-go

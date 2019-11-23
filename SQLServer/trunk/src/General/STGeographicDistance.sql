@@ -108,6 +108,9 @@ Begin
 End;
 GO
 
+PRINT 'Testing [$(cogoowner)].[STGeographicDistance] ...';
+GO
+
 with two_points as (
   select geography::Point(55.4748508,12.1603670,4326) as point1,
          geography::Point(55.4786191,12.1713976,4326) as point2
@@ -123,7 +126,7 @@ select method, /* 4326's UOM is meters */ meters
         union all
         select 'Direct' as method,
                [$(cogoowner)].[STGeographicDistance] (point1,point2,'Direct') as meters
-        union all
+          from two_points
         ) as f
 GO
 
@@ -185,8 +188,6 @@ select parallel, parallel_meters, meridian, meridian_meters,
        (select 'Distance Along Constant Latitude' as meridian,
                [$(cogoowner)].[STGeographicDistance] (point1,point2,'Latitude') as meridian_meters
           from two_points
-        ) as f
+       ) as f
 GO
 
-QUIT
-go

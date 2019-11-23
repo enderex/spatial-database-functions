@@ -358,5 +358,3 @@ SELECT CAST(d.lString.AsTextZM() as varchar(50)) as wkt,
          round(d.lString.STLength()+1.0,3), 0.0,3,2 ).AsTextZM() as varchar(50)) as subString FROM data as d;
 GO
 
-QUIT
-GO

@@ -135,5 +135,3 @@ SELECT f.mGeom.AsTextZM() as mGeom, f.mGeom.STNumGeometries() as numGeometries
 	 ) as f;
 
 
-QUIT
-GO

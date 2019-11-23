@@ -380,7 +380,5 @@ select 12 as testid,
 GO
 
 
-QUIT
-GO
 
 

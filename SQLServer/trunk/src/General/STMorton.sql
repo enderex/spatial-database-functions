@@ -171,6 +171,4 @@ SELECT [$(owner)].[ST_MORTON]( f.gridCell.EnvelopeCenter() ) as MortonKey, f.gri
        ) as f
 GO
 
-QUIT
-GO
 

@@ -131,6 +131,3 @@ select a.geom.AsTextZM() as geom, $(owner).STCoordDim(a.geom) as cDim
  from Geoms as a;
 GO
 
-QUIT
-GO
-

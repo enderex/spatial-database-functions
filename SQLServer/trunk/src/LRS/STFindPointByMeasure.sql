@@ -475,6 +475,4 @@ select a.linestring.STGeometryType() as curve_type,
 order by curve_type, measure
 GO
 
-QUIT
-GO
 

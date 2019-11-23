@@ -205,4 +205,3 @@ select [$(owner)].[STForceCollection](
           1
        ).STAsText()  as gCollection;
 
-QUIT;

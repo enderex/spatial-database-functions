@@ -353,6 +353,4 @@ select id, action, geom
 order by id, action desc;
 GO
 
-QUIT
-GO
 

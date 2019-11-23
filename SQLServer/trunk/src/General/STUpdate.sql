@@ -202,6 +202,4 @@ select [$(owner)].[STUpdate](geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(
                              geometry::STGeomFromText('POINT(3.1 4.1 5.1)',0),2,1).AsTextZM() as WKT
 GO
 
-QUIT
-GO
 

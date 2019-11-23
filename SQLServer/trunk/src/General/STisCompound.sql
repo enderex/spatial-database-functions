@@ -90,6 +90,4 @@ SELECT [$(owner)].[STIsCompound](GEOMETRY::STGeomFromText('
 ',0))
 GO
 
-QUIT
-GO
 

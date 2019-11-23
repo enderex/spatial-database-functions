@@ -144,6 +144,4 @@ SELECT [$(owner)].[STToGeography](
        as geog
 GO
 
-QUIT
-GO
 

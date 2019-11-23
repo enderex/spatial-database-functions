@@ -278,6 +278,4 @@ GO
 SELECT [$(owner)].[STPointGeomAsText] (geometry::STPointFromText('POINT (0.1232332 0.21121 NULL 0.41)',0),3, 2, 1) as point;
 GO
 
-QUIT
-GO
 

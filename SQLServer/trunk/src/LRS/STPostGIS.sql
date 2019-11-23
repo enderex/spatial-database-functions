@@ -1239,7 +1239,5 @@ GO
 --POINT (1 2 6)
 --LINESTRING (6.1 7.1 6, 7 8 9)
 
-QUIT
-GO
 
 

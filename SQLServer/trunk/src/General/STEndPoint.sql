@@ -86,6 +86,4 @@ GO
 select [$(owner)].[STEndPoint](geometry::STGeomFromText('POLYGON((1 1, 1 6, 11 6, 11 1, 1 1))',0)).AsTextZM() as ENDPOINT
 GO
 
-QUIT
-GO
 

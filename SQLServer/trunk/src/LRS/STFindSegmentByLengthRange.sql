@@ -423,10 +423,10 @@ with mLine as (
 select 'ORGNL' as tSource, e.mLineString from mLine as e
 union all
 SELECT 'SGMNT', [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0, 0.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
-union all
-SELECT 'RIGHT', [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0, 1.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
-union all
-SELECT 'LEFT',  [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0,-1.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
+-- union all
+-- SELECT 'RIGHT', [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0, 1.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
+-- union all
+-- SELECT 'LEFT',  [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0,-1.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
 GO
 
 with data as (
@@ -526,6 +526,7 @@ select 0.0            as start_length,
                       ) as g;
 GO
 
+/*
 with data as (
 select geometry::STGeomFromText('COMPOUNDCURVE (CIRCULARSTRING (3 6.3246, 0 7, -3 6.3246),(-3 6.3246, 0 0, 3 6.3))',0) as cString
 )
@@ -539,6 +540,5 @@ select 0.0  as start_length,
            3,2) as fsegment
   from data as a
 GO
+*/
 
-QUIT
-GO

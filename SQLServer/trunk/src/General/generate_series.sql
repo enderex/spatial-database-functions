@@ -156,6 +156,3 @@ SELECT sa.IntValue as pointN,
        [$(owner)].[Generate_Series](1,a.geom.STNumPoints(),1) sa
 GO
 
-QUIT
-GO
-

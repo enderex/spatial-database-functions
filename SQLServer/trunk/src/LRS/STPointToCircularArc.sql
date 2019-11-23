@@ -382,6 +382,4 @@ select [$(lrsowner)].[STPointToCircularArc] (
           3,2).AsTextZM() as project_point
 go
 
-QUIT
-GO
 

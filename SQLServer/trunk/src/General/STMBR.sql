@@ -534,6 +534,4 @@ SELECT [$(owner)].[STMBRShortestSide] (a.geom) as length
   FROM data as a
 GO
 
-QUIT
-GO
 

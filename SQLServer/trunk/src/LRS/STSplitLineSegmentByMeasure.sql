@@ -347,5 +347,3 @@ SELECT CAST(d.lString.AsTextZM() as varchar(50)) as wkt,
          0.0,3,2 ).AsTextZM() as varchar(80)) as subString FROM data as d;
 GO
 
-QUIT
-GO

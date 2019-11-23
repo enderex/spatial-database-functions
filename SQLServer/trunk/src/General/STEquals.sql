@@ -120,5 +120,3 @@ select [$(owner)].[STEquals](geometry::STGeomFromText('POINT(-4 -4 NULL 1.126)',
                         3,2,2);
 GO
 
-QUIT
-GO

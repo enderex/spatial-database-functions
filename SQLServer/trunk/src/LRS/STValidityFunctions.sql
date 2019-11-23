@@ -241,6 +241,4 @@ select t.IntValue,
   from GENERATE_SERIES(-1,30,2) as t;
 GO
 
-QUIT
-GO
 

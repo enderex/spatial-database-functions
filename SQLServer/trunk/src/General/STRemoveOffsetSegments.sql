@@ -123,6 +123,4 @@ Begin
 End
 go
 
-QUIT
-GO
 

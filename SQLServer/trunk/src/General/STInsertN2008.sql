@@ -319,6 +319,4 @@ select [$(owner)].[STInsertN](geometry::STGeomFromText('CURVEPOLYGON(COMPOUNDCUR
 	                      5,3,2).AsTextZM() as geom
 GO
 
-QUIT
-GO
 

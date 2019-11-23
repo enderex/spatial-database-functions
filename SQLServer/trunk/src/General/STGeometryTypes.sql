@@ -133,5 +133,3 @@ geometry::STGeomFromText(
                           (0 -23.43778, 0 23.43778)))',0)) as gTypes;
 GO
 
-QUIT
-GO

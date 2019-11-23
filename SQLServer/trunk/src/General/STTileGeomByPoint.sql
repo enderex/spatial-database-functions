@@ -29,7 +29,8 @@ CREATE FUNCTION [$(Owner)].[STTileGeomByPoint]
   @p_numTileY integer,
   @p_TileX      float,
   @p_TileY      float,
-  @p_rAngle     float
+  @p_rAngle     float,
+  @p_AsPoint      bit
 )
 returns @table table
 (
@@ -48,7 +49,8 @@ AS
  *               @p_numTileY integer,
  *               @p_TileX      float,
  *               @p_TileY      float,
- *               @p_rAngle     float
+ *               @p_rAngle     float,
+ *               @p_AsPoint      bit
  *             )
  *     Returns @table table
  *    (
@@ -69,6 +71,7 @@ AS
  *    @p_TileX     (float) -- Size of a Tile's X dimension in real world units.
  *    @p_TileY     (float) -- Size of a Tile's Y dimension in real world units.
  *    @p_rAngle    (float) -- Rotation angle around anchor point.
+ *    @p_AsPoint     (bit) -- Return tile as point or polygon
  *  RESULT
  *    A Table of the following is returned
  *    (
@@ -77,12 +80,12 @@ AS
  *      geom geometry -- The polygon geometry covering the area of the Tile.
  *    )
  *  EXAMPLE
- *    select col,row,[dbo].[STRound](geom,3,3,1,1).STAsText() as tile
- *      from [dbo].[STTileGeomByPoint] ( 
+ *    select col,row,[$(Owner)].[STRound](geom,3,3,1,1).STAsText() as tile
+ *      from [$(Owner)].[STTileGeomByPoint] ( 
  *             geometry::Point(55,12,0),
  *             4,   4,
  *             10, 10,
- *             5.2
+ *             5.2,0
  *            ) as t;
  *    GO
  *    
@@ -150,14 +153,14 @@ Begin
                  CONVERT(varchar(30),CAST( @p_point.STY + (@v_row * @p_tileY)             as DECIMAL(24,12))) + '))';
          SET @v_tile = geometry::STGeomFromText(@v_WKT,@v_srid);
          IF ( COALESCE(@p_rAngle,0) <> 0 ) 
-            SET @v_tile = [$(owner)].[STRotate]( 
+            SET @v_tile = [$(Owner)].[STRotate]( 
                              @v_tile,
                              @p_point.STX,
                              @p_point.STY,
                              @p_rAngle,
                              15,15
                           );
-         INSERT INTO @table VALUES(@v_col,@v_row,@v_tile);
+         INSERT INTO @table VALUES(@v_col,@v_row,case when @p_AsPoint=1 then @v_tile.STCentroid() else @v_tile end);
          SET @v_row = @v_row + 1;
        END;
        SET @v_col = @v_col + 1;
@@ -167,7 +170,7 @@ Begin
 End
 GO
 
-PRINT 'Testing [$(owner)].[STTileGeomByPoint] ...';
+PRINT 'Testing [$(Owner)].[STTileGeomByPoint] ...';
 GO
 
 -- Top-left position of grid: 55.634269978244582 12.051864414446955
@@ -177,19 +180,26 @@ GO
 -- Grid cell width: 10 meters
 -- Grid cell height: 10 meters
 
-use DEVDB
-go
-
-select col,row,geom.STAsText() as tile
-  from [$(owner)].[STTileGeomByPoint] ( 
+select col,row,geom.STBuffer(0.5) as tile
+  from [$(Owner)].[STTileGeomByPoint] ( 
          geometry::Point(55,12,0),
          /*@p_numTileX*/ 4,
          /*@p_numTileY*/ 4,
          /*@p_TileX   */ 10,
          /*@p_TileY   */ 10,
-         /*@p_rAngle  */ 5.2
+         /*@p_rAngle  */ 5.2,
+         /*@p_AsPoint */ 1
+        ) as t
+union all
+select col,row,geom.STBuffer(0.1) as tile
+  from [$(Owner)].[STTileGeomByPoint] ( 
+         geometry::Point(55,12,0),
+         /*@p_numTileX*/ 4,
+         /*@p_numTileY*/ 4,
+         /*@p_TileX   */ 10,
+         /*@p_TileY   */ 10,
+         /*@p_rAngle  */ 5.2,
+         /*@p_AsPoint */ 0
         ) as t;
 GO
 
-QUIT
-GO

@@ -126,6 +126,4 @@ select 'Explode' as result, t.gid, t.sid, t.geom.AsTextZM() as geom
        [$(owner)].[STExplode](d.geom) as t;
 GO
 
-QUIT
-GO
 

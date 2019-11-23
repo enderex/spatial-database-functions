@@ -176,4 +176,3 @@ union all
 SELECT 'RESULT' as source, [$(owner)].[STExtractPolygon](d.geoma.STIntersection(d.geomb)).AsTextZM() as geom FROM data as d;
 GO
 
-QUIT

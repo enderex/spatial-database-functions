@@ -1783,6 +1783,3 @@ select [$(cogoowner)].[STSubtendedAngle] (-1,-1,0,0,0,-1) -- 315
 ) as b;
 GO
 
-QUIT
-GO
-

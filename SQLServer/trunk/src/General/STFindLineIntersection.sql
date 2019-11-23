@@ -686,34 +686,3 @@ GO
 PRINT '******************************************************************';
 GO
 
-QUIT
-GO
-
-select geometry::STGeomFromText('CIRCULARSTRING (0 0, 10 10, 20 0)',0) as circular
-union all
-select geometry::STGeomFromText('LINESTRING (-2 -2, 25 -2)',0) as circular;
-
-SELECT f.intersections.AsTextZM() as intersection,
-       f.intersections.STGeometryN(1).AsTextZM() as iPoint,
-       f.intersections.STGeometryN(2).AsTextZM() as iPointOnSegment1,
-       f.intersections.STGeometryN(3).AsTextZM() as iPointOnSegment1
-  FROM (SELECT [$(cogoowner)].[STFindLineIntersectionBySegment] (
-  geometry::STGeomFromText('LINESTRING (-2 -2, 25 -2)',0),
-  geometry::STGeomFromText('CIRCULARSTRING (30 0, 40 10, 50 0)',0) 
-  ) as intersections ) as f;
-GO
-
-select geometry::STGeomFromText('CIRCULARSTRING (0 0, 10 10, 20 0)',0) as circular
-union all
-select geometry::STGeomFromText('CIRCULARSTRING (30 0, 40 10, 50 0)',0) as circular;
-
-SELECT f.intersections.AsTextZM() as intersection,
-       f.intersections.STGeometryN(1).AsTextZM() as iPoint,
-       f.intersections.STGeometryN(2).AsTextZM() as iPointOnSegment1,
-       f.intersections.STGeometryN(3).AsTextZM() as iPointOnSegment1
-  FROM (SELECT [$(cogoowner)].[STFindLineIntersectionBySegment] (
-  geometry::STGeomFromText('CIRCULARSTRING (0 0, 10 10, 20 0)',0),
-  geometry::STGeomFromText('CIRCULARSTRING (30 0, 40 10, 50 0)',0) 
-  ) as intersections ) as f;
-GO
-

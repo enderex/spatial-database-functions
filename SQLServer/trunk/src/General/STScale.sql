@@ -255,6 +255,4 @@ SELECT a.stype, a.geom.AsTextZM() as geomWKT
         SELECT 'ScaledYOnly' as stype, [$(owner)].[STScale](geometry::STGeomFromText('POLYGON ((1 1, 2 1, 2 2, 1 2, 1 1))',0), null, 2.0, null,null, 2,1) as geom ) a
 GO
 
-QUIT
-GO
 

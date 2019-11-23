@@ -511,5 +511,3 @@ select TOP 1 g.intValue as start_length, g.IntValue+1.5          as end_length, 
        [$(lrsowner)].[STFilterLineSegmentByLength](d.linestring,g.IntValue,g.IntValue + 1.5,3,2) as s;
 GO
 
-QUIT
-GO

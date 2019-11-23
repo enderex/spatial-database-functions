@@ -204,6 +204,4 @@ Select 0, [$(cogoowner)].[STResection] (
             'I'
           ).STBuffer(2);
 
-QUIT
-GO
 

@@ -211,6 +211,4 @@ union all
 select d.linestring.STLength() as aLength, d.linestring.STBuffer(0.2) from data as d;
 GO
 
-QUIT
-GO
 

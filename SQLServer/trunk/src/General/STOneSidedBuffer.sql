@@ -168,7 +168,7 @@ BEGIN
                            @v_round_xy, 
                            @v_round_zm 
                          );
-    IF ( @v_linestring is null )
+    IF ( @v_linestring is null or @v_linestring.STIsEmpty()=1)
        return @p_linestring;
 
     SET @v_GeometryType = @v_linestring.STGeometryType();
@@ -480,6 +480,4 @@ select [$(owner)].[STOneSidedBuffer] (geometry::STGeomFromText('LINESTRING(0 0, 
 .STAsText() as pGeom;
 GO
 
-QUIT
-GO
 

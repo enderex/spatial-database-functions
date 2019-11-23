@@ -772,6 +772,4 @@ select null as ratio,
        geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING (3 6.3246 NULL 0, 0 7 NULL 3.08, -3 6.3246 NULL 6.15),(-3 6.3246 NULL 6.15, 0 0 NULL 10.1, 3 6.3246 NULL 20.2))',0).STBuffer(0.1)
 GO
 
-QUIT
-GO
 

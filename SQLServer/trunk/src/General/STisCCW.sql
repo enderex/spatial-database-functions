@@ -252,11 +252,9 @@ BEGIN
         @v_prev.STEquals(@v_next)=1 )
       return 0;
 
-    -- SET @v_disc = [dbo].[STomputeOrientation(@v_prev, @v_hiPt, @v_next);
-
     -- fast filter for orientation index
     -- avoids use of slow extended-precision arithmetic in many cases
-    SET @v_index = [dbo].[STOrientationIndexFilter](@v_prev, @v_hiPt,@v_next);
+    SET @v_index = [$(owner)].[STOrientationIndexFilter](@v_prev, @v_hiPt,@v_next);
     IF (@v_index <= 1) 
       SET @v_disc = @v_index;
     ELSE
@@ -300,7 +298,7 @@ GO
 with data as (
   SELECT geometry::STGeomFromText('POLYGON ((0 0, 10 0, 10 10, 0 10, 0 0), (1 1, 1 9, 9 9, 9 1, 1 1))',0) as polygon
 )
-select 'Exterior' as test, [$(owner)].[STisCCW](d.polygon.STExteriorRing()) as isCCW from data as d
+select 'Exterior' as test, [$(owner)].[STisCCW](d.polygon.STExteriorRing()) as isCCW from data  d
 union all
 select 'Interior' as test, [$(owner)].[STisCCW](d.polygon.STInteriorRingN(1)) as isCCW from data as d;
 GO
@@ -311,26 +309,9 @@ go
 SELECT [$(owner)].[STisCCW] ([$(owner)].[STReverse](geometry::STGeomFromText('LINESTRING (63.29 914.361, 73.036 899.855, 80.023 897.179, 79.425 902.707, 91.228 903.305, 79.735 888.304, 98.4 883.584, 115.73 903.305, 102.284 923.026, 99.147 899.271, 110.8 902.707, 90.78 887.02, 96.607 926.911, 95.71 926.313, 95.412 928.554, 101.238 929.002, 119.017 922.279,63.29 914.361)',0),3,1)) as isCCW;
 GO
 
-select [dbo].[STisCCW](geometry::STGeomFromText(
-'LINESTRING(
-  148.04452460167477 -36.391801308813505,
-  148.04481426832533 -36.391801308813427,
-  148.04481426826769 -36.391881931347953,
-  148.04452460173229 -36.391881931347996,
-  148.04452460167477 -36.391801308813505
-)',4326));
+select [$(owner)].[STisCCW](geometry::STGeomFromText('LINESTRING(148.04452460167477 -36.391801308813505, 148.04481426832533 -36.391801308813427, 148.04481426826769 -36.391881931347953, 148.04452460173229 -36.391881931347996, 148.04452460167477 -36.391801308813505)',4326));
 go
 
-select dbo.STisCCW(geometry::STGeomFromText(
-'LINESTRING(
-  148.04452460167477 -36.391801308813505,
-  148.04452460173229 -36.391881931347996,
-  148.04481426826769 -36.391881931347953,
-  148.04481426832533 -36.391801308813427,
-  148.04452460167477 -36.391801308813505)',4326));
+select [$(owner)].[STisCCW](geometry::STGeomFromText('LINESTRING(148.04452460167477 -36.391801308813505, 148.04452460173229 -36.391881931347996, 148.04481426826769 -36.391881931347953, 148.04481426832533 -36.391801308813427, 148.04452460167477 -36.391801308813505)',4326));
 go
-
-QUIT;
-GO
-
 

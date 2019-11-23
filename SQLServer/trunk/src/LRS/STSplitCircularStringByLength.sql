@@ -322,5 +322,3 @@ SELECT CAST(d.cString.AsTextZM() as varchar(50)) as wkt,
          (d.cString.STLength() / 3.0 * 2.0) + 1.0, 0.0,3,2 ).AsTextZM() as varchar(50)) as subString FROM data as d;
 GO
 
-QUIT
-GO

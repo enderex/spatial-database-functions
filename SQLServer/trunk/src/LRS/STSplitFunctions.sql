@@ -343,6 +343,4 @@ select s.line1.AsTextZM() as line1,
        ) as s;
 GO
 
-QUIT
-GO
 

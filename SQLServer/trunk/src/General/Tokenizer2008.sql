@@ -155,6 +155,4 @@ SELECT SUBSTRING(a.gtype,5,LEN(a.gtype)) + ''''''
         ) as a
 GO
 
-QUIT
-GO
 
