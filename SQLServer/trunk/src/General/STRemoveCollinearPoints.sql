@@ -1,6 +1,3 @@
-USE [$(usedbname)]
-GO
-
 PRINT '******************************************************************';
 PRINT 'Database Schema Variables are: Owner($(cogoowner)) owner($(owner))';
 GO

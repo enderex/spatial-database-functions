@@ -1,6 +1,3 @@
-﻿use $(usedbname)
-go
-
 SET ANSI_NULLS ON
 SET ARITHABORT ON 
 SET QUOTED_IDENTIFIER ON
