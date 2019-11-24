@@ -25,11 +25,6 @@ GO
 DROP FUNCTION [$(owner)].[STLineMerge]
 GO
 
--- =============================================
--- Author:      Simon Greener
--- Create date: 28 July 2018
--- Description: Simple Line Merge routine using recusive processing to generate longest line from group of linestrings.
--- =============================================
 CREATE FUNCTION [$(owner)].[STLineMerge]
 (
   @p_geometry geometry,
@@ -37,6 +32,11 @@ CREATE FUNCTION [$(owner)].[STLineMerge]
 )
 RETURNS geometry
 AS
+-- =============================================
+-- Author:      Simon Greener
+-- Create date: 28 July 2018
+-- Description: Simple Line Merge routine using recusive processing to generate longest line from group of linestrings.
+-- =============================================
 BEGIN
   DECLARE 
     @v_mode      varchar(1), 

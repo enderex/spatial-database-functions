@@ -132,6 +132,9 @@ SELECT TOP (100) PERCENT
   ORDER BY g.id,g.element_id, g.sub_element_id, g.vector_id;
 GO
 
+PRINT 'Testing [dbo].[STSegmentize] ...';
+GO
+
 -- NOT SUPPORTED DECLARE @p_geom geometry = geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(2 3 4),LINESTRING(2 3 4,3 4 5),POLYGON((326454.7 5455793.7 1,326621.3 5455813.7 2,326455.4 5455796.6 3,326454.7 5455793.7 4)))',0);
 --DECLARE @p_geom geometry = geometry::STGeomFromText('LINESTRING(0 0, 1 1, 2 2, 3 3)',0);
 --DECLARE @p_geom geometry = geometry::STGeomFromText('LINESTRING(0 1 2 2.1, 2 3 2.1 3.4, 4 5 2.3 5.4, 6 7 2.2 6.7)',0);
@@ -142,14 +145,12 @@ GO
 --DECLARE @p_geom geometry = geometry::STGeomFromText('MULTIPOLYGON (((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5)), ((80 80, 100 80, 100 100, 80 100, 80 80)), ((110 110, 150 110, 150 150, 110 150, 110 110)))',0);
 --DECLARE @p_geom geometry = geometry::STGeomFromText('CIRCULARSTRING(0 0, 1 2.1082, 3 6.3246, 0 7, -3 6.3246, -1 2.1082, 0 0)',0);
 --DECLARE @p_geom geometry = geometry::STGeomFromText('CIRCULARSTRING(10 0, 15 5, 15 -5)',0);
--- DECLARE @p_geom geometry = geometry::STGeomFromText('CIRCULARSTRING(10 0, 15 5, 15 -5, 10 -10,15 -15)',0);
---
+--DECLARE @p_geom geometry = geometry::STGeomFromText('CIRCULARSTRING(10 0, 15 5, 15 -5, 10 -10,15 -15)',0);
 --DECLARE @p_geom geometry = geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING(0 2, 2 0, 4 2), CIRCULARSTRING(4 2, 2 4, 0 2))',0);
 --DECLARE @p_geom geometry = geometry::STGeomFromText('COMPOUNDCURVE((3 5, 3 3), CIRCULARSTRING(3 3, 5 1, 7 3), (7 3, 7 5), CIRCULARSTRING(7 5, 5 7, 3 5))',0);
+--DECLARE @p_geom geometry = geometry::STGeomFromText('COMPOUNDCURVE ((4 4, 3 3, 2 2, 0 0),CIRCULARSTRING (0 0, 1 2.1082, 3 6.3246, 0 7, -3 6.3246, -1 2.1082, 0 0))',0);
 
-DECLARE @p_geom geometry = geometry::STGeomFromText('COMPOUNDCURVE ((4 4, 3 3, 2 2, 0 0),CIRCULARSTRING (0 0, 1 2.1082, 3 6.3246, 0 7, -3 6.3246, -1 2.1082, 0 0))',0);
-SELECT * FROM [dbo].[STSegmentize](@p_geom);
-
+/*
 -- STSegmentize wrapper
 select  v.*
   from [dbo].[STSegmentize](
@@ -168,8 +169,8 @@ select  v.*
          ) as v;
 GO
 
-declare @p_geom geometry;
-set @p_geom =   geometry::STGeomFromText(
+with data as (
+  select geometry::STGeomFromText(
          'GEOMETRYCOLLECTION(
                   LINESTRING(0 0,20 0,20 20,0 20,0 0), 
                   CURVEPOLYGON(
@@ -180,28 +181,31 @@ set @p_geom =   geometry::STGeomFromText(
                                CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778))), 
                   COMPOUNDCURVE(
                           CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778), 
-                          (0 -23.43778, 0 23.43778)))',0);
+                          (0 -23.43778, 0 23.43778)))',0) as p_geom
+)
 SELECT row_number() over (order by f.geomN) as geomn,
        (case when f.geom.STGeometryType() = 'CompoundCurve'
             then f.geom.STCurveN(gs2.IntValue)
             else f.geom.STGeometryN(gs2.IntValue)
         end).STAsText() as geom
   FROM (select gs.IntValue as geomN,
-               case when @p_geom.STGeometryType() = 'CompoundCurve'
-                    then @p_geom.STCurveN(gs.IntValue)
-                    else @p_geom.STGeometryN(gs.IntValue)
+               case when p_geom.STGeometryType() = 'CompoundCurve'
+                    then p_geom.STCurveN(gs.IntValue)
+                    else p_geom.STGeometryN(gs.IntValue)
                 end as geom
-          from dbo.Generate_Series(
+          from data as d
+               cross apply
+               dbo.Generate_Series(
                      1,
-                     case when @p_geom.STGeometryType() = 'CompoundCurve'
-                          then @p_geom.STNumCurves()
-                          else @p_geom.STNumGeometries()
+                     case when p_geom.STGeometryType() = 'CompoundCurve'
+                          then p_geom.STNumCurves()
+                          else p_geom.STNumGeometries()
                       end,
                       1
                ) as gs
        ) as f
-	   cross apply
-	   dbo.Generate_Series(
+       cross apply
+       dbo.Generate_Series(
                      1,
                      case when f.geom.STGeometryType() = 'CompoundCurve'
                           then f.geom.STNumCurves()
@@ -210,3 +214,6 @@ SELECT row_number() over (order by f.geomN) as geomn,
                       1
                ) as gs2
  where f.geom.STGeometryType() <> 'Point'
+GO
+
+*/

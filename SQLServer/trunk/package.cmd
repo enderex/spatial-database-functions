@@ -4,6 +4,7 @@ set path=%path%;..\..\tools\bin
 
 ECHO rename install.cmd to install_cmd ...
 rename install.cmd install_cmd
+rename installSQLAuthMode.cmd installSQLAuthMode_cmd
 
 ECHO Remove old deploy zip files ...
 REM del deploy\SC4SSSBE_SQL_Server_Spatial_Base_Edition.zip
@@ -27,7 +28,10 @@ zip -r deploy\SC4SSSCE_SQL_Server_Spatial_Complete_Edition.zip ^
        COPYING.LESSER ^
        CREATE_SCHEMA.sql ^
        Drop_All.sql ^
+       LoadGeneral.sql ^
+       LoadLRS.sql ^
        install_cmd ^
+       installSQLAuthMode_cmd ^
        Function_Count.sql ^
        src\General\*.* ^
        src\LRS\*.* ^
@@ -35,6 +39,7 @@ zip -r deploy\SC4SSSCE_SQL_Server_Spatial_Complete_Edition.zip ^
        Documentation\SQLServer*.* > NUL
 
 ECHO rename install_cmd to back to install.cmd ...
+rename installSQLAuthMode_cmd installSQLAuthMode.cmd
 rename install_cmd install.cmd
 
 pause

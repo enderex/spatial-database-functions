@@ -22,17 +22,6 @@ GO
 
 IF EXISTS (SELECT * 
              FROM sys.objects
-            WHERE object_id = OBJECT_ID(N'[$(owner)].[STSegmentize]') 
-              AND type in (N'FN', N'IF', N'TF', N'FS', N'FT')
-)
-BEGIN
-  DROP FUNCTION  [$(owner)].[STSegmentize];
-  PRINT 'Dropped [$(owner)].[STSegmentize] ...';
-END;
-GO
-
-IF EXISTS (SELECT * 
-             FROM sys.objects
             WHERE object_id = OBJECT_ID(N'[$(owner)].[_STVectorize]') 
               AND type in (N'FN', N'IF', N'TF', N'FS', N'FT')
 )
@@ -558,7 +547,6 @@ GO
 
 PRINT 'Testing .....';
 GO
-
 
 select v.*
   from [$(owner)].[STVectorize](geometry::STGeomFromText('COMPOUNDCURVE EMPTY',0)) as v;

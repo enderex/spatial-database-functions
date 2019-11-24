@@ -1,7 +1,4 @@
-IF EXISTS(SELECT DB_NAME() WHERE DB_NAME() not IN ('$(usedbname)')) USE [$(usedbname)]
-GO
-
-PRINT 'Functions/Pocedures Summary by schema...';
+PRINT 'Functions/Procedures Summary by schema...';
 GO
 
 select f.category,f.routine_type,
@@ -28,10 +25,10 @@ select f.category,f.routine_type,
 order by f.category desc,f.count_by_type;
 GO
 
-PRINT 'Total number of functons and procedures by type...'
+PRINT 'Total number of functions and procedures by type...'
 GO
 
-select case when routine_schema = 'lrs' then 'LRS'   else 'GENERAL' end category,
+select case when routine_schema = 'lrs' then 'LRS' else 'GENERAL' end category,
        count(*) as count_by_type
   from [INFORMATION_SCHEMA].[ROUTINES]
  where routine_schema in ('dbo','lrs','cogo')
@@ -39,7 +36,4 @@ select case when routine_schema = 'lrs' then 'LRS'   else 'GENERAL' end category
    and specific_name not like 'fn%'
 group by case when routine_schema = 'lrs' then 'LRS' else 'GENERAL' end;
 go
-
-QUIT
-GO
 

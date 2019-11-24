@@ -171,6 +171,7 @@ GO
 
 PRINT 'Testing [$(Owner)].[STTileGeogByPoint] ...';
 GO
+
 -- Top-left position of grid: 55.634269978244582 12.051864414446955
 -- Rotation: 45.0 degrees
 -- Number of grid rows: 4

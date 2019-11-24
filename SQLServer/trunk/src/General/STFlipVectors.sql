@@ -103,7 +103,7 @@ BEGIN
                                 ELSE c.SY 
                             END
                   End As End_Y
-            from [$(owner)].[STSegmentize] ( @p_line_collection ) as c
+            from [$(owner)].[STVectorize] ( @p_line_collection ) as c
          ) as D;
   RETURN @v_flipped_segments;
 END
