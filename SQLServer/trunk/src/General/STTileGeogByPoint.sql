@@ -121,11 +121,10 @@ Begin
   SET @v_loRow  = 0;
   SET @v_hiRow  = @p_numTileY - 1;
   SET @v_col    = @v_loCol;
-  SET @v_point1 = @p_point; -- First/Fifth point in exterior ring (CCW)
   WHILE ( @v_col <= @v_hiCol )
   BEGIN
     SET @v_row = @v_loRow;
-    SET @v_point1 = [$(CogoOwner)].[STDirectVincenty](@p_point,@v_rAngle+90.0,@p_TileY*(@v_col+1.0));
+    SET @v_point1 = [$(CogoOwner)].[STDirectVincenty](@p_point,@v_rAngle+90.0,@p_TileY*@v_col);
     WHILE ( @v_row <= @v_hiRow )
     BEGIN
       -- Generate Polygon Points in CCW order

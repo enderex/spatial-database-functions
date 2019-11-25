@@ -101,6 +101,12 @@ Begin
           END
           ELSE -- @v_token LIKE '[0-9]%' or @v_token = 'NULL'
           BEGIN
+             IF ( @v_coord = 0 ) BEGIN
+               SET @v_x = 'NULL';
+               SET @v_y = 'NULL';
+               SET @v_z = 'NULL';
+               SET @v_m = 'NULL';
+             END;
              SET @v_coord = @v_coord + 1;
              IF ( @v_coord = 1 ) SET @v_x = @v_token
              IF ( @v_coord = 2 ) SET @v_y = @v_token
@@ -114,31 +120,31 @@ Begin
                  SET @v_y    = @v_x;
                  SET @v_x    = @v_temp;
                END
-               ELSE IF ( @p_swap = 'XZ')
+               ELSE IF ( @p_swap IN ('XZ','ZX') )
                BEGIN
                  SET @v_temp = @v_z;
                  SET @v_z    = @v_x;
                  SET @v_x    = @v_temp;
                END
-               ELSE IF ( @p_swap = 'XM' )
+               ELSE IF ( @p_swap IN ('XM','MX') )
                BEGIN
                  SET @v_temp = @v_m;
                  SET @v_m    = @v_x;
                  SET @v_x    = @v_temp;
                END
-               ELSE IF ( @p_swap = 'YZ' )
+               ELSE IF ( @p_swap IN ('YZ','ZY') )
                BEGIN
                  SET @v_temp = @v_y;
                  SET @v_y    = @v_z;
                  SET @v_z    = @v_temp;
                END
-               ELSE IF ( @p_swap = 'YM' )
+               ELSE IF ( @p_swap IN ('YM','MY') )
                BEGIN
                  SET @v_temp = @v_y;
                  SET @v_y    = @v_m;
                  SET @v_m    = @v_temp;
                END
-               ELSE IF ( @p_swap = 'ZM' )
+               ELSE IF ( @p_swap IN ('ZM','MZ') )
                BEGIN
                  SET @v_temp = @v_z;
                  SET @v_z    = @v_m;
@@ -147,7 +153,13 @@ Begin
                SET @v_wkt = CONCAT(@v_wkt,
                                    @v_x,' ',
                                    @v_y,
-                                   CASE WHEN @v_z is null THEN '' ELSE CONCAT(' ',@v_z) END,
+                                   CASE WHEN @v_z is null 
+                                        THEN CASE WHEN @v_m is not null 
+                                                  THEN ' NULL'
+                                                  ELSE ''
+                                              END 
+                                        ELSE CONCAT(' ',@v_z) 
+                                    END,
                                    CASE WHEN @v_m is null THEN '' ELSE CONCAT(' ',@v_m) END,
                                    @v_delim);
                SET @v_coord = 0;
@@ -158,7 +170,6 @@ Begin
     END;
     CLOSE Tokens
     DEALLOCATE Tokens
-    -- RETURN @v_wkt;
     SET @v_geometry = geometry::STGeomFromText(@v_wkt,@p_geometry.STSrid);
     RETURN @v_geometry;
   End
