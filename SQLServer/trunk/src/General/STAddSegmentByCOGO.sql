@@ -166,10 +166,10 @@ Begin
                          );
     Return @v_linestring;
   END;
-END
+END;
 GO
 
-Print 'Test Function STAddSegmentByCOGO ...';
+Print 'Testing [$(cogoowner)].[STAddSegmentByCOGO] ...';
 GO
 
 With data as (

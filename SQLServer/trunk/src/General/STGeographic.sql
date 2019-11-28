@@ -261,7 +261,7 @@ Begin
 
     Return @v_distance;
   END;
-END
+END;
 GO
 
 Print 'Testing [$(cogoowner)].[STGreatCircleBearing] ...';
@@ -293,4 +293,5 @@ select [$(cogoowner)].[STGreatCircleDistance] (
           298.257223563 )
        As GCD_90_0_to_100_0;
 GO
+
 

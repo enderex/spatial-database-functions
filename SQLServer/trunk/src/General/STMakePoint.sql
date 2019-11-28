@@ -101,12 +101,12 @@ Begin
       Return NULL;
     Return geometry::STPointFromText('POINT(' + @v_wkt + ')',ISNULL(@p_srid,0));
   End;
-END
+END;
 GO
 
 -- ******************************* Testing ***************************
 
-Print 'Testing STMakePoint...';
+Print 'Testing [$(owner)].[STMakePoint] ...';
 GO
 
 SELECT [$(owner)].STMakePoint(10,10,null,null,0);

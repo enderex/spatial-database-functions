@@ -227,7 +227,7 @@ begin
      PRINT 'Created ' + CAST(@v_count as varchar(10)) + ' grids in: ' + RTRIM(CAST(DATEDIFF(ss,@v_start_time,GETDATE()) as char(10))) + ' seconds!';
      RETURN;
    END;
-End
+End;
 Go
 
 Print 'Testing [$(owner)].[STTiler] ...';
@@ -244,4 +244,5 @@ exec [$(owner)].[STTiler] 0, 0, 100, 100, 25, 25, 0,0,45, 0, '[$(owner)].GridLL'
 SELECT COUNT(*) as tableCount FROM [$(owner)].[GridLL]
 SELECT gid, geom FROM [$(owner)].[GridLL]
 GO
+
 

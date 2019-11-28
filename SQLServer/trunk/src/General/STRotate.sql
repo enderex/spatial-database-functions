@@ -202,7 +202,7 @@ Begin
 End
 Go
 
-Print 'Testing STRotate .....';
+Print 'Testing [$(owner)].[STRotate] ...';
 GO
 
 -- Rotate rectangle about itself and the origin

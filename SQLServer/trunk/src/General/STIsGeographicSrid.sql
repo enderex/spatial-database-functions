@@ -62,7 +62,7 @@ Begin
   select @v_is_geographic_srid = count(*) from [sys].[spatial_reference_systems] where spatial_reference_id = @p_srid;
   Return case when @v_is_geographic_srid = 0 then 0 else 1 end;
 End;
-go
+GO
 
 PRINT 'Testing [$(owner)].[STIsGeographicSrid] ...';
 GO

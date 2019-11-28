@@ -163,7 +163,7 @@ BEGIN
     SET @fmtxt = RIGHT(REPLICATE('0',@fillto#) + @fmtxt,@fillto#)
   END
   RETURN  @fmtxt;
-END
+END;
 GO
   
 GRANT EXEC on [$(owner)].[STFORMATNUMBER] to PUBLIC
@@ -172,13 +172,13 @@ GO
 PRINT 'Testing [$(owner)].[STFormatNumber] ...';
 GO
 
-select                    LTRIM(STR(16394506.234,24,3))
+select [$(owner)].[STFORMATNUMBER] (16394506.234,3,null,0,'NULL');
 GO
-select [$(owner)].[STFORMATNUMBER] (16394506.234,3,null,0,'NULL')
+
+select [$(owner)].[STFORMATNUMBER] (-5283738.5676878,3,null,0,'NULL');
 GO
-select [$(owner)].[STFORMATNUMBER] (-5283738.5676878,3,null,0,'NULL')
-GO
-select [$(owner)].[STFORMATNUMBER] (null,3,null,0,'NULL')
+
+select [$(owner)].[STFORMATNUMBER] (null,3,null,0,'NULL');
 GO
 
 

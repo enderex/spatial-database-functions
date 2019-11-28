@@ -18,10 +18,10 @@ BEGIN
 END;
 GO
 
-drop function [$(cogoowner)].[STResection];
-go
+PRINT 'Creating [$(cogoowner)].[STResection] ...';
+GO
 
-create function [$(cogoowner)].[STResection] (
+CREATE FUNCTION [$(cogoowner)].[STResection] (
   @p_point1     geometry,
   @p_angle1     float,
   @p_point2     geometry,
@@ -177,8 +177,11 @@ Begin
                           ( @v_f1 * @p_point1.STY + @v_f2 * @p_point2.STY + @v_f3 * @p_point3.STY ) / @v_F,
                           @p_point1.STSrid);
   Return @v_result_point;
-End
-Go
+End;
+GO
+
+PRINT 'Testing [$(cogoowner)].[STResection] ...';
+GO
 
 /*
 Location is 0,0;
@@ -188,17 +191,15 @@ Remote sites:
 3)  10, 0 angle 90.0
 */
 
-select 1 id, geometry::Point(  0,10,0).STBuffer(1) as point
-union all
-select 2,    geometry::Point( 10, 0,0).STBuffer(1)
-union all
-select 3,    geometry::Point(-10, 0,0).STBuffer(1)
-union all
+select 1 id, geometry::Point(  0,10,0).STBuffer(1) as point union all
+select 2,    geometry::Point( 10, 0,0).STBuffer(1)          union all
+select 3,    geometry::Point(-10, 0,0).STBuffer(1)          union all
 Select 0, [$(cogoowner)].[STResection] ( 
             geometry::Point(  0,10,0),120.0,
             geometry::Point( 10, 0,0),120.0,
             geometry::Point(-10, 0,0),120.0,
             'I'
           ).STBuffer(2);
+GO
 
 

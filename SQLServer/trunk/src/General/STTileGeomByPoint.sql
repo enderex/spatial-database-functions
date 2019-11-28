@@ -164,7 +164,7 @@ Begin
      END;
      RETURN;
    END;
-End
+End;
 GO
 
 PRINT 'Testing [$(Owner)].[STTileGeomByPoint] ...';

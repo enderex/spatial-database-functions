@@ -19,9 +19,6 @@ GO
 PRINT 'Creating [$(owner)].[STLineMerge] ...';
 GO
 
-DROP FUNCTION [$(owner)].[STLineMerge]
-GO
-
 CREATE FUNCTION [$(owner)].[STLineMerge]
 (
   @p_geometry geometry,
@@ -120,13 +117,11 @@ BEGIN
          ) as f
    where f.[segment_length] = f.[max_segment_length]
    order by f.[segment_length] desc;
-
   RETURN @v_geometry;
-
-END
+END;
 GO
 
-PRINT 'Testing STLineMerge....'
+PRINT 'Testing [$(owner)].[STLineMerge] ...';
 GO
 
 With tGeometry As (
@@ -144,6 +139,6 @@ select 'O' + f.id as text, f.geom.STBuffer(0.2) as geom, ROUND(f.geom.STLength()
 union all
 select 'MinX' as text,     f.geom.STBuffer(2)   as geom, ROUND(f.geom.STLength(),3) as gLen from (select [$(owner)].[STLineMerge](geometry::CollectionAggregate(a.geom),'X') as geom from tGeometry as a) as f
 union all
-select 'Long' as text,     f.geom.STBuffer(1)   as geom, ROUND(f.geom.STLength(),3) as gLen from (select [$(owner)].[STLineMerge](geometry::CollectionAggregate(a.geom),'L') as geom from tGeometry as a) as f
+select 'Long' as text,     f.geom.STBuffer(1)   as geom, ROUND(f.geom.STLength(),3) as gLen from (select [$(owner)].[STLineMerge](geometry::CollectionAggregate(a.geom),'L') as geom from tGeometry as a) as f;
 GO
 

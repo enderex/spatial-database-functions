@@ -344,12 +344,14 @@ Begin
 End;
 GO
 
+Print 'Testing [$(owner)].[STDensify] ...';
+GO
+
 -- Densify 2D line into 4 segments
 with data as (
 select geometry::STGeomFromText('LINESTRING(0 0,10 10)',0) as geom
 )
-select [$(owner)].[STDensify](a.geom,a.geom.STLength()/4.0,3,2).AsTextZM() as dGeom
-  from data as a;
+select [$(owner)].[STDensify](a.geom,a.geom.STLength()/4.0,3,2).AsTextZM() as dGeom from data as a;
 GO
 
 select [$(owner)].[STDensify](geometry::STGeomFromText('LINESTRING(0 0,5 5,10 10)',0),2.1,3,2).AsTextZM();
@@ -372,18 +374,10 @@ select [$(owner)].[STDensify](geometry::STGeomFromText('MULTILINESTRING ((0 0, 5
 GO
 
 -- Polygon 
-select [$(owner)].[STDensify](
-              geometry::STGeomFromText('POLYGON((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5))',0),
-              4.0,
-              3,2
-       ).AsTextZM() as dGeom;
+select [$(owner)].[STDensify](geometry::STGeomFromText('POLYGON((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5))',0), 4.0, 3,2).AsTextZM() as dGeom;
 GO
 
 -- MultiPolygon
-select [$(owner)].[STDensify](
-              geometry::STGeomFromText('MULTIPOLYGON(((100 100,110 100,110 110,100 110,100 100)),((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5)))',0),
-              4.0,
-              3,2
-       ).AsTextZM() as dGeom;
+select [$(owner)].[STDensify](geometry::STGeomFromText('MULTIPOLYGON(((100 100,110 100,110 110,100 110,100 100)),((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5)))',0), 4.0, 3,2).AsTextZM() as dGeom;
 GO
 

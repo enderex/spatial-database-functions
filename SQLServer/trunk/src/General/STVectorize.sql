@@ -400,7 +400,7 @@ Begin
     END;
   End;
   RETURN;
-End
+End;
 GO
 
 PRINT 'Creating [$(owner)].[STVectorize] ...'
@@ -539,7 +539,7 @@ Begin
           [length],[geom]
      FROM [$(owner)].[_STVectorize](@p_geometry,1);
   Return;
-END
+END;
 GO
 
 PRINT 'Testing .....';

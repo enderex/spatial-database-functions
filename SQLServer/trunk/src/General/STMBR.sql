@@ -137,7 +137,7 @@ begin
           @p_geometry.STEnvelope().STPointN(3).STY);
    Return;
 End;
-Go
+GO
 
 Print 'Creating [$(owner)].[STGeography2MBR] ....';
 GO
@@ -211,7 +211,7 @@ Begin
           @v_geometry.STEnvelope().STPointN(3).STY);
    Return;
 End;
-Go
+GO
 
 Print 'Creating [$(owner)].[STMBR2Geometry] ...';
 GO
@@ -279,7 +279,7 @@ Begin
                  STR(@p_minx,38,@v_round_xy) + ' ' + STR(@p_miny,38,@v_round_xy) + '))',
                  @p_srid);
 End;
-Go
+GO
 
 Print 'Creating [$(owner)].[STMBR2Geography] ...';
 GO
@@ -347,7 +347,7 @@ Begin
                  STR(@p_minx,38,@v_round_ll) + ' ' + STR(@p_miny,38,@v_round_ll) + '))',
                  @p_srid);
 End;
-Go
+GO
 
 PRINT 'Creating Function [$(owner)].[STMBRShortestSide]...';
 GO
@@ -412,7 +412,7 @@ begin
     Return @v_length;
   End;
 End;
-Go
+GO
 
 PRINT 'Creating Function [$(owner)].[STMBRLongestSide]...';
 GO
@@ -477,7 +477,7 @@ begin
    Return @v_length;
   End;
 End;
-Go
+GO
 
 PRINT '============';
 PRINT 'Testing ....';

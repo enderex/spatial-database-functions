@@ -109,30 +109,30 @@ Begin
      Where DataLength(a.token) <> 0 or DataLength(a.sep) <> 0;
     Return;
   End;
-End
+End;
 GO
 
 PRINT 'Testing [$(owner)].[TOKENIZER] ...';
 GO
 
 select t.token
- from [$(owner)].[TOKENIZER]('LineString:MultiLineString:MultiPoint:MultiPolygon:Point:Point:LineString:Polygon:Polygon',':') as t
+ from [$(owner)].[TOKENIZER]('LineString:MultiLineString:MultiPoint:MultiPolygon:Point:Point:LineString:Polygon:Polygon',':') as t;
 GO
 
 select distinct t.token
- from [$(owner)].[TOKENIZER]('LineString:MultiLineString:MultiPoint:MultiPolygon:Point:Point:LineString:Polygon:Polygon',':') as t
+ from [$(owner)].[TOKENIZER]('LineString:MultiLineString:MultiPoint:MultiPolygon:Point:Point:LineString:Polygon:Polygon',':') as t;
 GO
 
 SELECT t.*
-  FROM [$(owner)].[TOKENIZER]('The rain in spain, stays mainly on the plain.!',' ,.!') t
+  FROM [$(owner)].[TOKENIZER]('The rain in spain, stays mainly on the plain.!',' ,.!') t;
 GO
 
 SELECT t.id, t.token, t.separator
-  FROM [$(owner)].[TOKENIZER]('POLYGON((2300 400, 2300 700, 2800 1100, 2300 1100, 1800 1100, 2300 400), (2300 1000, 2400  900, 2200 900, 2300 1000))',' ,()') as t
+  FROM [$(owner)].[TOKENIZER]('POLYGON((2300 400, 2300 700, 2800 1100, 2300 1100, 1800 1100, 2300 400), (2300 1000, 2400  900, 2200 900, 2300 1000))',' ,()') as t;
 GO
 
 SELECT t.id, t.token, t.separator
-  FROM [$(owner)].[TOKENIZER]('POLYGON((2300 400, 2300 700, 2800 1100, 2300 1100, 1800 1100, 2300 400), (2300 1000, 2400  900, 2200 900, 2300 1000))',',()') as t
+  FROM [$(owner)].[TOKENIZER]('POLYGON((2300 400, 2300 700, 2800 1100, 2300 1100, 1800 1100, 2300 400), (2300 1000, 2400  900, 2200 900, 2300 1000))',',()') as t;
 GO
 
 SELECT SUBSTRING(a.gtype,5,LEN(a.gtype)) + ''''''
@@ -143,7 +143,7 @@ SELECT SUBSTRING(a.gtype,5,LEN(a.gtype)) + ''''''
                         ORDER BY ''''',''''' + a.gtype
                        FOR XML PATH(''), TYPE, ROOT).value('root[1]','nvarchar(max)'),1,1,'''')
                 ) AS gtype
-        ) as a
+        ) as a;
 GO
 
 

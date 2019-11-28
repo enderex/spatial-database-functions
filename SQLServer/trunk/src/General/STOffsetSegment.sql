@@ -331,11 +331,11 @@ BEGIN
     Return geometry::STGeomFromText(@v_wkt,
                                     @p_linestring.STSrid);
   End;
-End
+End;
 GO
 
 Print '******************************************************';
-Print 'Testing STOffsetSegment....';
+Print 'Testing [$(owner)].[STOffsetSegment]...';
 GO
 
 -- LineString
@@ -352,6 +352,7 @@ select 'Right' as test, [$(owner)].[STOffsetSegment](d.segment,  1.0, 3, 1) as p
 union all
 select 'Left'  as test, [$(owner)].[STOffsetSegment](d.segment, -1.0, 3, 1) as pSegment from data as d
 ) as g;
+GO
 
 With data as (
   select geometry::STGeomFromText('LINESTRING (0 7,3 6.3)',0) as segment
@@ -365,6 +366,7 @@ select 'Right' as test, [$(owner)].[STOffsetSegment](d.segment,  1.0, 3, 1) as p
 union all
 select 'Left'  as test, [$(owner)].[STOffsetSegment](d.segment, -1.0, 3, 1) as pSegment from data as d
 ) as g;
+GO
 
 -- Circular String
 With data as (
@@ -383,6 +385,7 @@ select 'Right' as test, [$(owner)].[STOffsetSegment](d.segment,  1.0, 3, 1) as p
 union all
 select 'Left'  as test, [$(owner)].[STOffsetSegment](d.segment, -1.0, 3, 1) as pSegment from data as d
 ) as g;
+GO
 
 With data as (
   select geometry::STGeomFromText('CIRCULARSTRING (-3 6.3,0 7,3 6.3)',0) as segment
@@ -400,6 +403,7 @@ select 'Right' as test, [$(owner)].[STOffsetSegment](d.segment, 1.0, 3, 1) as pS
 union all
 select 'Left'  as test, [$(owner)].[STOffsetSegment](d.segment, -1.0, 3, 1) as pSegment from data as d
 ) as g;
+GO
 
 -- *******************************************
 
@@ -413,6 +417,7 @@ select 'Right' as test, [$(owner)].[STOffsetSegment](d.segment,  1.0, 3, 1) as p
 union all
 select 'Left'  as test, [$(owner)].[STOffsetSegment](d.segment, -1.0, 3, 1) as pSegment from data as d
 ) as g;
+GO
 
 With data as (
   select geometry::STGeomFromText('CIRCULARSTRING (-3 6.3,0 5.6,3 6.3)',0) as segment
@@ -432,6 +437,7 @@ select 'Right' as test, [$(owner)].[STOffsetSegment](d.segment,  1.0, 3, 1) as p
 union all
 select 'Left'  as test, [$(owner)].[STOffsetSegment](d.segment, -1.0, 3, 1) as pSegment from data as d
 ) as g;
+GO
 
 -- Point difference calculations....
 With data as (
@@ -448,7 +454,7 @@ select 'Left'  as test,
        [$(owner)].[STOffsetSegment](d.segment,-1.0, 3, 1).STPointN(2).STDistance(d.segment.STPointN(2)) as midPointDist,
        [$(owner)].[STOffsetSegment](d.segment,-1.0, 3, 1).STEndPoint().STDistance(d.segment.STEndPoint()) as endPointDist
 from data as d;
-go
+GO
 
 WITH data AS (
   SELECT geometry::STGeomFromText('CIRCULARSTRING (3 6.3,0 7,-3 6.3 )',0) as segment
@@ -460,7 +466,7 @@ UNION ALL
 SELECT 'After Right' as text, [$(owner)].[STOffsetSegment] (d.segment,1,3,2).AsTextZM() as rGeom from data as d
 UNION ALL
 SELECT 'After Left'  as text, [$(owner)].[STOffsetSegment] (d.segment,-1,3,2).AsTextZM() as rGeom from data as d;
-go
+GO
 
 WITH data AS (
   SELECT geometry::STGeomFromText('CIRCULARSTRING (3 6.3 1.1 0, 0 7 1.1 3.1, -3 6.3 1.1 9.3)',0) as segment
@@ -470,6 +476,6 @@ WITH data AS (
 SELECT 'Before' as text, d.segment.AsTextZM() as rGeom from data as d
 UNION ALL
 SELECT 'After' as text, [$(owner)].[STOffsetSegment] (d.segment,1,3,2).AsTextZM() as rGeom from data as d;
-go
+GO
 
 

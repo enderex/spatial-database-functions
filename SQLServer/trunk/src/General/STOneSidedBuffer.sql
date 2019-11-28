@@ -448,7 +448,7 @@ End;
 GO
 
 Print '****************************';
-Print 'Test STOneSidedBuffer ...';
+Print 'Testing [$(owner)].[STOneSidedBuffer] ...';
 GO
 
 with data as (
@@ -473,8 +473,7 @@ GO
 -- Nearly closed
 select geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5)',0).STBuffer(0.01) as rGeom
 union all
-select [$(owner)].[STOneSidedBuffer] (geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5)',0),-0.5,1,3,1)
-.STAsText() as pGeom;
+select [$(owner)].[STOneSidedBuffer] (geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5)',0),-0.5,1,3,1).STAsText() as pGeom;
 GO
 
 

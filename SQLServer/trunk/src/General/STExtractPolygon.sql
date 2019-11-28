@@ -113,23 +113,27 @@ Begin
     END;
     RETURN @v_geom;
   End;
-End
+End;
 Go
 
 Print '************************************';
 Print 'Testing [$(owner)].[STExtractPolygon] ...';
 GO
 
-Print 'All these return null as non of inputs are polygons ....';
+PRINT '*********************************************';
+Print '1. All these return null as non of inputs are polygons ....';
 go
 
 select [$(owner)].[STExtractPolygon](geometry::STGeomFromText('POINT(0 0)',0)).STAsText() as ePoly union all
 select [$(owner)].[STExtractPolygon](geometry::STGeomFromText('MULTIPOINT((0 0),(20 0))',0)).STAsText() as ePoly union all
 select [$(owner)].[STExtractPolygon](geometry::STGeomFromText('LINESTRING(0 0,20 0,20 20,0 20,0 0)',0)).STAsText() as ePoly union all
-select [$(owner)].[STExtractPolygon](geometry::STGeomFromText('MULTILINESTRING((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5))',0)).STAsText() as ePoly
+select [$(owner)].[STExtractPolygon](geometry::STGeomFromText('MULTILINESTRING((0 0,20 0,20 20,0 20,0 0),(10 10,10 11,11 11,11 10,10 10),(5 5,5 7,7 7,7 5,5 5))',0)).STAsText() as ePoly;
 GO
 
--- These should extract only the polygons within the GeometryCollection
+PRINT '*********************************************';
+PRINT '2. These should extract only the polygons within the GeometryCollection.';
+GO
+
 -- (The second is wrapped as a GeometryCollection as a MultiPolygon cannot be constructed that includes a CurvePolygon
 --
 select e.gid, e.sid, e.geom.STAsText() as geomWKt
@@ -152,12 +156,11 @@ select e.gid, e.sid, e.geom.STAsText() as geomWKt
                   LINESTRING (100 200, 100 75), 
                   POINT (100 0))',0
              )
-           ),
-		 0) as e
+           ),0) as e;
 GO
 
 PRINT '*********************************************';
-PRINT 'Test the intersection between two polygons...';
+PRINT '3. Test the intersection between two polygons...';
 GO
 
 WITH data As (

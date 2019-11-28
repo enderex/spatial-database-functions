@@ -639,13 +639,12 @@ BEGIN
 
 END;
 GO
-Print '***********************************************************************************'
-Print 'Testing [STLine2CogoAsTable] ....';
+
+Print 'Testing [$(cogoowner)].[STLine2CogoAsTable] ....';
 GO
 
 SELECT *
-  FROM [$(cogoowner)].[STLine2CogoAsTable](geometry::STGeomFromText('MULTILINESTRING((0 0,1 1,2 2),(100 100,110 110,130 130))',0),
-                                    NULL,NULL,NULL) as t
+  FROM [$(cogoowner)].[STLine2CogoAsTable](geometry::STGeomFromText('MULTILINESTRING((0 0,1 1,2 2),(100 100,110 110,130 130))',0), NULL,NULL,NULL) as t
  ORDER BY t.segment_id;
 GO
 /*
@@ -656,22 +655,14 @@ segment_id    element_id    dms    bearing    distance    deltaZ
 4    2      45° 0'0.000"    45    28.2842712474619    NULL
 */
 
-Print '***********************************************************************************'
-Print 'Testing [STLine2Cogo] ....';
+Print 'Testing [$(cogoowner)].[STLine2Cogo] ....';
 GO
 
-SELECT [$(cogoowner)].[STLine2COGO](geometry::STGeomFromText('LINESTRING (382.875 -422.76, 381.038 -415.726, 531.63 -397.328, 530.44 -407.652, 543.796 -406.729, 542.673 -415.759, 603.73 -415.063, 603.693 -403.377, 614.665 -404.601, 612.239 -376.561, 617.793 -375.878)',28356),
-                            NULL,NULL,NULL) as t
+SELECT [$(cogoowner)].[STLine2COGO](geometry::STGeomFromText('LINESTRING (382.875 -422.76, 381.038 -415.726, 531.63 -397.328, 530.44 -407.652, 543.796 -406.729, 542.673 -415.759, 603.73 -415.063, 603.693 -403.377, 614.665 -404.601, 612.239 -376.561, 617.793 -375.878)',28356),NULL,NULL,NULL) as t
 GO
 
-select [$(cogoowner)].[STLine2Cogo] (
-          geometry::STGeomFromText('
-MULTILINESTRING (
-(10 10, 8.163 17.034, 158.755 35.432, 157.565 25.108, 170.921 26.031), 
-(100 100, 98.877 90.97, 159.934 91.666, 159.897 103.352), 
-(200 200, 210.972 198.776, 208.546 226.816, 214.1 227.499)
-)',0),null,null,null)
-
+select [$(cogoowner)].[STLine2Cogo] (geometry::STGeomFromText(' MULTILINESTRING ( (10 10, 8.163 17.034, 158.755 35.432, 157.565 25.108, 170.921 26.031), (100 100, 98.877 90.97, 159.934 91.666, 159.897 103.352), (200 200, 210.972 198.776, 208.546 226.816, 214.1 227.499))',0),null,null,null) as cogoObj;
+GO
 
 Print 'Testing [STCogo2Line] ....';
 GO

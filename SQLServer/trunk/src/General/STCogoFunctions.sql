@@ -352,7 +352,7 @@ Begin
                                     /* @p_m    */ NULL,  
                                     /* @p_srid */ ISNULL(@p_SRID,0));
   END;
-End
+End;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STFindCircleByPoint] ...';
@@ -414,7 +414,7 @@ Begin
                       /* @p_Y3   */ @p_point_3.STY, 
                       /* @p_SRID */ @p_point_1.STSrid 
                     );
-End
+End;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STFindCircleFromArc] ...';
@@ -511,7 +511,7 @@ Begin
                                     /* @p_m    */ NULL,  
                                     /* @p_srid */ @p_circular_arc.STSrid);
   END;
-End
+End;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STCirclePolygon] ...';
@@ -622,7 +622,7 @@ BEGIN
     SET @WKT = @WKT + '))';
     RETURN geometry::STGeomFromText(@WKT,@srid);
   END;
-End
+End;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STOptimalCircleSegments] ...';
@@ -670,7 +670,7 @@ Begin
     SET @v_dAngleRad              = 2.0 * aCos(@v_dCentreToChordMidPoint/@p_dRadius);
     Return CEILING( (2.0 * PI() ) / @v_dAngleRad );
   End;
-END
+END;
 GO
     
 PRINT 'Creating [$(cogoowner)].[STComputeChordLength] ...';
@@ -766,7 +766,7 @@ Begin
     SET @v_dArc      = @p_dRadius * @v_dAngleRad;
     Return @v_dArc;
   End;
-End
+End;
 Go
 
 -- ************************** STComputeTangentPoint ************************** 
@@ -878,7 +878,7 @@ Begin
                     @p_circular_arc.STSrid
            );
   END;
-END
+END;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STArcToChordSeparation] ...';
@@ -933,7 +933,7 @@ Begin
     SET @v_dArcChordSeparation    = @p_dRadius - @v_dCentreToChordMidPoint;
     Return @v_dArcChordSeparation;
   End;
-End
+End;
 Go
 
 PRINT 'Creating [$(cogoowner)].[STCrossProductLength] ...';
@@ -998,7 +998,7 @@ Begin
            - 
            (@dCentreStartY * @dCentreEndX);
   END;
-End
+End;
 Go
 
 PRINT 'Creating [$(cogoowner)].[STDotProduct] ...';
@@ -1063,7 +1063,7 @@ Begin
            + 
            (@dCentreStartY * @dCentreEndY);
   END;
-End
+End;
 Go
 
 PRINT 'Creating [$(cogoowner)].[STSubtendedAngle] ...';
@@ -1142,7 +1142,7 @@ Begin
                 else ATN2(@v_CrossProduct, @v_DotProduct)
             end;
   End;
-End
+End;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STSubtendedAngleByPoint] ...';
@@ -1219,11 +1219,8 @@ Begin
                 else ATN2(@v_CrossProduct, @v_DotProduct)
             end;
   End;
-End
+End;
 GO
-
-
--- ??????????????????????????????????????????????????????????????????????
 
 PRINT 'Creating [$(cogoowner)].[STisClockwiseAngle] ...';
 GO
@@ -1258,7 +1255,7 @@ AS
 Begin
   -- If SIGN >= 0 then clockwise, else anticlockwise
   RETURN case when ( SIGN(@p_angle) >= 0 ) then 1 else 0 end;
-END
+END;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STisClockwiseArc] ...';
@@ -1478,7 +1475,7 @@ BEGIN
                      );
     Return @v_point;
   END;
-END
+END;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STComputeLengthToMidPoint] ...';
@@ -1551,10 +1548,11 @@ Begin
              ) 
          );
   End;
-End
+End;
 GO
 
-/* ********************************* TESTING *************************/
+PRINT 'Testing STFindCircle...';
+GO
 
 select [$(cogoowner)].[STFindCircle](0,5, 5,0, 10,5, default).AsTextZM(),
        [$(cogoowner)].[STFindCircle](0,5, 5,0, 10,5, default).STSrid;
@@ -1571,7 +1569,10 @@ Select [$(cogoowner)].[STFindCircle](
                      a.linestring.STPointN(3).STX,a.linestring.STPointN(3).STY,
                      a.linestring.STSrid
        ).AsTextZM() as circlePoint
-  from data as a
+  from data as a;
+GO
+
+PRINT 'Testing STFindCircleByPoint...';
 GO
 
 SELECT [$(cogoowner)].[STFindCircleByPoint] (
@@ -1579,6 +1580,9 @@ SELECT [$(cogoowner)].[STFindCircleByPoint] (
 		  geometry::Point( 10, 0,0),
 		  geometry::Point(-10, 0,0)).AsTextZM();
 go
+
+PRINT 'Testing STFindCircleFromArc...';
+GO
 
 select [$(cogoowner)].[STFindCircleFromArc](geometry::STGeomFromText('CIRCULARSTRING(10 0, 15 5, 20 0)',0)).AsTextZM();
 GO
@@ -1594,26 +1598,35 @@ GO
 
 -- *****************************************************************************
 
-select [$(cogoowner)].[STCreateCircle](5,5,5,0,1)
+PRINT 'Testing STCreateCircle...';
 GO
 
-select [$(cogoowner)].[STOptimalCircleSegments](10,0.01)
+select [$(cogoowner)].[STCreateCircle](5,5,5,0,1);
 GO
 
-select [$(cogoowner)].[STCircle2Polygon](100,100,5.0,6,0,3)
+PRINT 'Testing STOptimalCircleSegments...';
 GO
 
-select [$(cogoowner)].[STCircle2Polygon](100,100,5.0,null,0,3)
+select [$(cogoowner)].[STOptimalCircleSegments](10,0.01);
 GO
 
-select [$(cogoowner)].[STCircle2Polygon](100,100,5.0,144,0,3)
+PRINT 'Testing STCircle2Polygon...';
+GO
+
+select [$(cogoowner)].[STCircle2Polygon](100,100,5.0,6,0,3);
+GO
+
+select [$(cogoowner)].[STCircle2Polygon](100,100,5.0,null,0,3);
+GO
+
+select [$(cogoowner)].[STCircle2Polygon](100,100,5.0,144,0,3);
 GO
 
 select [$(cogoowner)].[STCircle2Polygon](100,100,
                           a.intValue/6 + 5.0,
                           a.intValue,
                           0,3)
-  from [$(owner)].[Generate_Series](144,0,-12) a
+  from [$(owner)].[Generate_Series](144,0,-12) a;
 GO
 
 select b.Radius,
@@ -1625,15 +1638,8 @@ select b.Radius,
   from (select (a.intValue/6 + 5.0) as Radius,
                 a.intValue as segments 
           from [$(owner)].[Generate_Series](144,0,-12) a 
-        ) b
+        ) b;
 GO
-
-/* Arc Calculations 
-select f.dx, f.dy, 15-f.dx as x, 0 + f.dy as y, sqrt( power(dx,2) + power(dy,2)) as radius from (select 5 * cos(45) as dx, 5 * sin(45) as dy) as f
-union all
-select f.dx, f.dy, 15-f.dx as x, 0 + f.dy as y, sqrt( power(dx,2) + power(dy,2)) as radius from (select 5 * abs(cos(22.5)) as dx, 5 * abs(sin(22.5)) as dy) as f
-go
-*/
 
 -- -ve angle is clockwise; +ve anticlockwise
 With data as (
@@ -1678,11 +1684,14 @@ select geometry::Point(10, 0,0).ShortestLineTo(geometry::Point(11,9.5,0)).STBuff
 
 select round([$(cogoowner)].[STSubtendedAngle](10,10,10,0,f.ePoint.STX,f.ePoint.STY),2) as subtendedAngle,
        f.ePoint.STBuffer(0.5) as point
-  from (select [$(cogoowner)].[STPOINTFROMBEARINGANDDISTANCE](10,0,g.IntValue,10,3,0) as ePoint
+  from (select [$(cogoowner)].[STPointFroMBearingAndDistance](10,0,g.IntValue,10,3,0) as ePoint
           from [$(owner)].Generate_Series(10,360,10) as g
         ) as f;
+GO
 
--- FindPointBisector
+PRINT 'Testing STFindPointBisector...';
+GO
+
 With data as (
   select geometry::STGeomFromText('LINESTRING( 0  0, 10 10)',0) as line,
          geometry::STGeomFromText('LINESTRING(10 10, 20 0)',0) as next_line
@@ -1696,6 +1705,9 @@ select line from data as a
 union all
 select next_line from data as a;
 go
+
+PRINT 'Testing STComputeTangentPoint...';
+GO
 
 With data as (
   select geometry::STGeomFromText('CIRCULARSTRING(40 0, 35 5, 30 0)',0) as linestring
@@ -1711,7 +1723,7 @@ union all
 select a.linestring.STBuffer(1) from data as a;
 GO
 
-PRINT 'Testing STComputeLengthToMidPoint'
+PRINT 'Testing STComputeLengthToMidPoint...';
 GO
 
 -- Arc Mid Point Calcs
@@ -1738,7 +1750,10 @@ Select cString,
                [$(cogoowner)].[STComputeLengthToMidPoint](d.[cString]) as midArc, 
                d.[cString].STLength() as allArc
           from data as d
-        ) as f
+        ) as f;
+GO
+
+PRINT 'Testing STSubtendedAngle...';
 GO
 
 select 'From/To/Right',

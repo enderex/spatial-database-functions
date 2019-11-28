@@ -184,6 +184,9 @@ Begin
 End
 GO
 
+Print 'Testing [$(owner)].[STTileByNumGrids] ...';
+GO
+
 SELECT row_number() over (order by col, row) as tileId,
        col,row,geom.STBuffer(0.00005) as Tile
   FROM [$(owner)].[STTileByNumGrids](

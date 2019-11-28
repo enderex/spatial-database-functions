@@ -106,7 +106,6 @@ Begin
 End;
 GO
  
-PRINT '***********************************************';
 PRINT 'Testing [$(owner)].[STIsPseudoMultiCurve]....';
 GO
 

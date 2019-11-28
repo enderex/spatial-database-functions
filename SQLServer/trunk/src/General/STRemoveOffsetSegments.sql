@@ -103,11 +103,7 @@ Begin
            ) as f
        WHERE f.Dist2Boundary <= @v_tolerance
     )
-    SELECT @v_linestring = [$(owner)].[STMakeLineFromGeometryCollection] ( 
-                                    geometry::CollectionAggregate ( f.line ),
-                                    @p_round_xy,
-                                    @p_round_zm 
-                           )
+    SELECT @v_linestring = geometry::CollectionAggregate ( f.line )
       FROM (SELECT TOP (100) PERCENT
                    s.segment as line 
               FROM ids as i
@@ -116,8 +112,17 @@ Begin
                          ON (s.id between i.minId and i.maxId)
              ORDER BY s.id
           ) as f;
-   return @v_linestring;
-End
-go
+   SET @v_linestring = [$(owner)].[STMakeLineFromGeometryCollection] ( 
+                          @v_linestring,
+                          @p_round_xy,
+                          @p_round_zm 
+                       );
+   Return @v_linestring;
+End;
+GO
+
+Print 'Testing [$(owner)].[STRemoveOffsetSegments] ...';
+Print '... TOBEDONE.';
+GO
 
 

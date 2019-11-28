@@ -257,7 +257,7 @@ Begin
     Return @v_GeomArray;
   End;
 End;
-Go
+GO
 
 PRINT '******************************************************************';
 Print 'Creating [$(owner)].[STNumArray] ...';
@@ -426,9 +426,9 @@ As
 Begin
   Declare 
     @v_geom      geometry,
-     @v_selectXML xml,
+    @v_selectXML xml,
     @v_vcWKB     varchar(max),
-     @v_srid      int;
+    @v_srid      int;
 
   -- Call base function
   SET @v_selectXML = [$(owner)].[_STArray] (
@@ -444,8 +444,7 @@ Begin
   -- Extract Geometry and Srid from return XML
   Set @v_srid  = @v_selectXML.value('(/Geometry/@srid)[1]','int');
   Set @v_vcWKB = @v_selectXML.value('(/Geometry)[1]','varchar(max)');
-  Set @v_geom  = geometry::STGeomFromWKB(CAST(@v_vcWKB AS xml).value('xs:base64Binary(sql:variable("@v_vcWKB"))','varbinary(max)'),
-                                          @v_srid);
+  Set @v_geom  = geometry::STGeomFromWKB(CAST(@v_vcWKB AS xml).value('xs:base64Binary(sql:variable("@v_vcWKB"))','varbinary(max)'), @v_srid);
   Return @v_geom;
 End;
 go
@@ -571,6 +570,7 @@ Begin
   End;
   Return;
 End;
+GO
 
 PRINT '******************************************************************';
 PRINT 'Test STNumArray and STArray ...';
@@ -607,7 +607,6 @@ Set @v_vcWKB   = @v_geomXML.value('(/Geometry)[1]','varchar(max)');
 Set @v_srid    = @v_geomXML.value('(/Geometry/@srid)[1]','int');
 Set @v_geom    = geometry::STGeomFromWKB(CAST(@v_vcWKB AS xml).value('xs:base64Binary(sql:variable("@v_vcWKB"))', 'varbinary(max)'),0);
 select 'Select First Geometry ' as test, @v_geomXML, @v_vcWKB, @v_geom.AsTextZM(), @v_geom.STSrid;
-
 select 'Size' as test, $(owner).STNumArray(@array);
 GO
 

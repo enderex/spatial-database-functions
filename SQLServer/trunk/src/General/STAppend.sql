@@ -386,14 +386,15 @@ begin
     -- Return geometry
     Return geometry::STGeomFromText(@v_wkt,@v_linestring1.STSrid);
   End;
-End
-GO
-
-PRINT 'Testing....';
+End;
 GO
 
 PRINT '***********************************************';
-PRINT 'LineString Append LineString ....';
+PRINT 'Testing [$(owner)].[STAppend] ...';
+GO
+
+PRINT '***********************************************';
+PRINT '1. LineString Append LineString ....';
 GO
 
 with data as (
@@ -431,7 +432,7 @@ SELECT test,
 GO
 
 PRINT '***********************************************';
-PRINT 'CircularString Append CircularString ....';
+PRINT '2. CircularString Append CircularString ....';
 GO
 
 with data as (
@@ -469,7 +470,7 @@ SELECT test,
 GO
 
 PRINT '***********************************************';
-PRINT 'Linestring Append CircularString ....';
+PRINT '3. Linestring Append CircularString ....';
 GO
 SELECT test, 
        baseline.AsTextZM() as baseLine, 
@@ -512,7 +513,7 @@ select 'Disjoint',
 GO
 
 PRINT '***********************************************';
-PRINT 'MultiLineString Append LineString ....';
+PRINT '4. MultiLineString Append LineString ....';
 GO
 
 SELECT test, 
@@ -542,11 +543,13 @@ select 'Disjoint' as test,
 GO
 
 PRINT '***********************************************';
-PRINT 'MultiLineString Append CircularString Using STUnion ....';
+PRINT '5. MultiLineString Append CircularString Using STUnion ....';
 GO
+
 select geometry::STGeomFromText('MULTILINESTRING((-5 0 0 1,-2.5 -2.5 0 1.5,-0.5 -0.5 0 5.6), (0 0 0 5.6, 5 5 0 6.3,5 10 0 9.6))',0)
        .STUnion(
        geometry::STGeomFromText('CIRCULARSTRING(-0.5 -0.5 0 5.6,-0.2 -0.4 0 5.5, -0.1 -0.1 0 5.65)',0)
        ).AsTextZM();
+GO
 -- GEOMETRYCOLLECTION (LINESTRING (5 10, 5 5, 0 0), COMPOUNDCURVE ((-5 0, -2.5 -2.5, -0.5 -0.5), CIRCULARSTRING (-0.5 -0.5, -0.2 -0.4, -0.1 -0.1)))
 

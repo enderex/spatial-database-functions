@@ -124,7 +124,7 @@ select method, /* 4326's UOM is meters */ meters
         select 'Direct' as method,
                [$(cogoowner)].[STGeographicDistance] (point1,point2,'Direct') as meters
           from two_points
-        ) as f
+        ) as f;
 GO
 
 -- 4268 is US survey foot
@@ -152,7 +152,7 @@ select srid, method, uom_distance, srs.unit_of_measure,
        ) as f
        inner join
        sys.spatial_reference_systems as srs
-       on (srs.spatial_reference_id = f.srid)
+       on (srs.spatial_reference_id = f.srid);
 GO
 
 with two_points as (
@@ -168,7 +168,7 @@ select srid, method, uom_distance, srs.unit_of_measure,
        ) as f
        inner join
        sys.spatial_reference_systems as srs
-       on (srs.spatial_reference_id = f.srid)
+       on (srs.spatial_reference_id = f.srid);
 GO
 
 with two_points as (
@@ -185,6 +185,6 @@ select parallel, parallel_meters, meridian, meridian_meters,
        (select 'Distance Along Constant Latitude' as meridian,
                [$(cogoowner)].[STGeographicDistance] (point1,point2,'Latitude') as meridian_meters
           from two_points
-       ) as f
+       ) as f;
 GO
 

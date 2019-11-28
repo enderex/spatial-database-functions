@@ -21,8 +21,8 @@ IF EXISTS (SELECT *
             WHERE object_id = OBJECT_ID(N'[$(owner)].[STToGeometry]') 
               AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
 BEGIN
-DROP FUNCTION [$(owner)].[STToGeometry]
-Print 'Dropped STToGeometry...';
+  DROP FUNCTION [$(owner)].[STToGeometry]
+  Print 'Dropped STToGeometry...';
 END;
 GO
 
@@ -72,10 +72,8 @@ As
  *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 ******/
 Begin
-  Return geography::STGeomFromText(@p_geom.AsTextZM(),
-                                   ISNULL(@p_srid,@p_geom.STSrid)
-                                  );
-End
+  Return geography::STGeomFromText( @p_geom.AsTextZM(), ISNULL(@p_srid,@p_geom.STSrid) );
+End;
 GO
 
 Print 'Creating [$(owner)].[STToGeometry] ...';
@@ -124,10 +122,8 @@ As
  *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 ******/
 Begin
-  Return geometry::STGeomFromText(@p_geog.AsTextZM(),
-                                  ISNULL(@p_srid,@p_geog.STSrid)
-                                  );
-End
+  Return geometry::STGeomFromText( @p_geog.AsTextZM(), ISNULL(@p_srid,@p_geog.STSrid) );
+End;
 GO
 
 Print 'Testing [$(owner)].[STToGeometry] and [$(owner)].[STToGeography] ...';
@@ -138,7 +134,7 @@ SELECT [$(owner)].[STToGeography](
                geography::STGeomFromText('LINESTRING(147.234 -43.2345, 148.234 -43.2345)',4326),
                0),
            4326).STAsText() 
-       as geog
+       as geog;
 GO
 
 

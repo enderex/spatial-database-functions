@@ -71,12 +71,12 @@ BEGIN
               then REPLACE(@dhms,':000','')
               else @dhms
           end;
-END
+END;
 GO
 
-PRINT 'Textingt [$(owner)].[dhms] ...'
+PRINT 'Testing [$(owner)].[dhms] ...';
 GO
 
 SELECT [$(owner)].dhms((2.0 * 24.0 * 60.0 * 60.0) + 923.3) as dhms;
-
+GO
 

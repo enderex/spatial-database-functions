@@ -328,7 +328,8 @@ Begin
 END
 GO
 
-/* ***************************** TESTING *************************/
+Print 'Testing [$(owner)].[STReverse] ....'
+GO
 
 select id, action, geom 
   from (select 'Before' as action, id, geom.STAsText() as geom

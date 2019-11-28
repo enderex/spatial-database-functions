@@ -109,16 +109,16 @@ begin
       RETURN geometry::STPointFromText(@v_wkt,@p_geometry.STSrid);
     END;
 
-	-- LineString/MultiLineString
-	SET @v_wkt_remainder = @p_geometry.AsTextZM();
+    -- LineString/MultiLineString
+    SET @v_wkt_remainder = @p_geometry.AsTextZM();
     SET @v_wkt           = SUBSTRING(@v_wkt_remainder,1,CHARINDEX('(',@v_wkt_remainder));
     SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,  CHARINDEX('(',@v_wkt_remainder)+1,LEN(@v_wkt_remainder));
 
     WHILE ( LEN(@v_wkt_remainder) > 0 )
     BEGIN
        -- Is the start of v_wkt_remainder a coordinate?
-	   IF ( @v_wkt_remainder like '[-0-9]%' )
- 	   BEGIN
+       IF ( @v_wkt_remainder like '[-0-9]%' )
+        BEGIN
          -- We have a coord
          -- Now get position of end of coordinate string
          SET @v_pos = case when CHARINDEX(',',@v_wkt_remainder) = 0
@@ -129,14 +129,14 @@ begin
                        end;
          -- Create a geometry point from WKT coordinate string
          SET @v_point = geometry::STPointFromText(
-		                  'POINT('
+                          'POINT('
                           +
                           SUBSTRING(@v_wkt_remainder,1,@v_pos-1)
                           +
                           ')',
                           @p_geometry.STSrid);
          -- Add to WKT but set Z value
-		 SET @v_wkt   = @v_wkt
+         SET @v_wkt   = @v_wkt
                         +
                         [$(owner)].[STPointAsText] (
                                 /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
@@ -149,16 +149,16 @@ begin
                                 /* @p_round_z    */ @v_round_zm,
                                 /* @p_round_m    */ @v_round_zm
                         );
-		 -- Now remove the old coord from v_wkt_remainder
-		 SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,@v_pos,LEN(@v_wkt_remainder));
+         -- Now remove the old coord from v_wkt_remainder
+         SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,@v_pos,LEN(@v_wkt_remainder));
        END
-	   ELSE
-	   BEGIN
-	     -- Move to next character
-		 SET @v_wkt           = @v_wkt + SUBSTRING(@v_wkt_remainder,1,1);
-		 SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,2,LEN(@v_wkt_remainder));
-	   END;
-	END; -- Loop
+       ELSE
+       BEGIN
+         -- Move to next character
+         SET @v_wkt           = @v_wkt + SUBSTRING(@v_wkt_remainder,1,1);
+         SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,2,LEN(@v_wkt_remainder));
+       END;
+    END; -- Loop
     Return geometry::STGeomFromText(@v_wkt,@p_geometry.STSrid);
   END;
 END
@@ -179,7 +179,7 @@ SELECT CAST(d.pointzm.STGeometryType() as varchar(20)) as GeomType,
 GO
 
 Print '... LineStrings ...';
-go
+GO
 
 With Data as (
 select 'Simple LineString' as lType, geometry::STGeomFromText('LINESTRING (-2 -2, 25 -2)',0) as geom
@@ -187,12 +187,12 @@ union all
 select 'Simple MultiLineString' as lType, geometry::STGeomFromText('MULTILINESTRING((-2 -2,25 -2),(10 10,11 11))',0) as geom
 union all
 Select '2D CompoundCurve -> Must have non-NULL Z of same value' as lType,  
-	   geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING (3 6.3246, 0 7, -3 6.3246),(-3 6.3246, 0 0, 3 6.3246))',0) as geom
+       geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING (3 6.3246, 0 7, -3 6.3246),(-3 6.3246, 0 0, 3 6.3246))',0) as geom
 )
 select d.lType, 'Before' as status, d.geom.AsTextZM() as geometry from data as d
 union all
 select d.ltype, 'After'  as status, [$(owner)].[STSetZ] (d.geom,-999,3,1).AsTextZM() as geometry from data as d
-order by 1,2 desc
-go
+order by 1,2 desc;
+GO
 
 

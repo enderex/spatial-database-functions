@@ -32,7 +32,7 @@ As
  *  NAME
  *    STDirectVincenty -- Vincenty Direct Solution of Geodesics on the Ellipsoid
  *  SYNOPSIS
- *    Function [$(owner)].[STDirectVincenty] (
+ *    Function [$(cogoowner)].[STDirectVincenty] (
  *       @p_point      geography,
  *       @p_initialBearing float,
  *       @p_distance       float
@@ -199,6 +199,9 @@ Begin
 End;
 GO
 
-select [$(cogoowner)].[STDirectVincenty](geography::Point(-42.5,147.23,4326),90.0,100.0).STAsText();
+Print 'Testing [$(cogoowner)].[STDirectVincenty] ...';
+GO
+
+select [$(cogoowner)].[STDirectVincenty](geography::Point(-42.5,147.23,4326),90.0,100.0).STAsText() as dv;
 GO
 

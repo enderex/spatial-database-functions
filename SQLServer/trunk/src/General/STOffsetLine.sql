@@ -16,7 +16,7 @@ BEGIN
 END;
 GO
 
-PRINT 'Creating STOffsetLine'
+PRINT 'Creating [$(owner)].[STOffsetLine] ...';
 GO
 
 CREATE FUNCTION [$(owner)].[STOffsetLine]
@@ -129,19 +129,20 @@ BEGIN
       -- TOBEDONE: Fix collinear threshold value
       IF ( [$(owner)].[STIsCollinear] ( @v_geomN,0.00001 ) = 1 )
       BEGIN
-        SELECT @v_linestring = [$(owner)].[STMakeLineFromGeometryCollection] (
-                                  geometry::CollectionAggregate(
-                                    [$(owner)].[STOffsetSegment] ( 
-                                      v.geom,
-                                      @p_distance,
-                                      @v_round_xy,
-                                      @v_round_zm
-                                    )
-                                  ),
-                                  @v_round_xy,
-                                  @v_round_zm
+        SELECT @v_linestring = geometry::CollectionAggregate(
+                                 [$(owner)].[STOffsetSegment] ( 
+                                   v.geom,
+                                   @p_distance,
+                                   @v_round_xy,
+                                   @v_round_zm
+                                 )
                                )
           FROM [$(owner)].[STVectorize] ( @v_geomN ) as v;
+        SET @v_linestring = [$(owner)].[STMakeLineFromGeometryCollection] (
+                              @v_linestring,
+                              @v_round_xy,
+                              @v_round_zm
+                            );
         IF ( @v_result_geom is null )
           SET @v_result_Geom = @v_linestring
         ELSE
@@ -234,10 +235,10 @@ BEGIN
                 geometry::STGeomFromText('MULTIPOINT (' + STRING_AGG(REPLACE(geometry::Point(g.x,g.y,0).STAsText(),'POINT ',''),',' ) WITHIN GROUP (ORDER BY g.uid ASC) + ')',0)
               )
          FROM (SELECT d1.uid, d1.x, d1.y
-                 FROM $(owner).STVertices(@v_side_buffer) as d1
+                 FROM [$(owner)].[STVertices](@v_side_buffer) as d1
                EXCEPT
                SELECT d1.uid, d1.x, d1.y
-                 FROM $(owner).STVertices(/* Exterior ring */ @v_exterior_rings) as d1
+                 FROM [$(owner)].[STVertices](/* Exterior ring */ @v_exterior_rings) as d1
                 WHERE d1.point.STIntersects(@v_linestring_buffer) = 1
              ) g;
 
@@ -277,13 +278,10 @@ BEGIN
                             );
      Return @v_result_geom;
   END;
-END
+END;
 GO
 
-Print '****************************';
-Print 'Testing ...';
-GO
-
+Print 'Testing [$(owner)].[STOffsetLine] ...';
 Print '1. Testing Ordinary 2 Point Linestring ...';
 GO
 
@@ -314,13 +312,13 @@ Select f.pGeom.STAsText() as pGeom -- STBuffer(0.01) as pGeom
        ) as f;
 GO
 
-PRINT '3. Testing More complex Linestring...'
+PRINT '3. Testing More complex Linestring...';
 GO
 
 with data as (
 select geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5)',0) as linestring
 )
-Select f.pGeom -- .STAsText() as pGeom 
+Select f.pGeom.STAsText() as pGeom 
   from (select d.linestring as pGeom from data as d
         union all
         select [$(owner)].[STOffsetLine](d.linestring, 0.5,3,1) as pGeom from data as d
@@ -330,13 +328,13 @@ Select f.pGeom -- .STAsText() as pGeom
        ) as f;
 GO
 
-PRINT '4. Testing Nearly Closed Loop Linestring'
+PRINT '4. Testing Nearly Closed Loop Linestring';
 GO
 
 with data as (
 select geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5, 0 -2, 0 -1)',0) as linestring
 )
-Select f.pGeom.STBuffer(0.01) as pGeom 
+Select f.pGeom.STAsText() as pGeom 
   from (select d.linestring as pGeom from data as d
         union all
         select [$(owner)].[STOffsetLine](d.linestring, 0.5,2,1) as pGeom from data as d
@@ -376,6 +374,5 @@ SELECT [$(owner)].[STOffsetLine] (
          1
        ).STAsText() as oGeom;
 GO
-
 ******************* */
 

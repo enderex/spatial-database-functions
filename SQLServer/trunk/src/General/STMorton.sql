@@ -101,7 +101,7 @@ BEGIN
     End;
   End;
   Return @key;
-End
+End;
 GO
 
 PRINT 'Creating [$(owner)].[ST_MORTON] ...';
@@ -165,7 +165,7 @@ SELECT [$(owner)].[ST_MORTON]( f.gridCell.EnvelopeCenter() ) as MortonKey, f.gri
          FROM (SELECT 0 + g.IntValue as gcol from [$(owner)].[GENERATE_SERIES](0,33,1) as g) as a
                CROSS APPLY
               (SELECT 0 + g.IntValue as grow from [$(owner)].[GENERATE_SERIES](0,33,1) as g) as b
-       ) as f
+       ) as f;
 GO
 
 

@@ -394,7 +394,7 @@ begin
     RETURN ISNULL(@v_centroid,geometry::STGeomFromText('POINT EMPTY',@p_geometry.STSrid));
   END;
   RETURN geometry::STGeomFromText('POINT EMPTY',@p_geometry.STSrid);
-End
+End;
 GO
 
 PRINT 'Creating [$(owner)].[STCentroid_A] ...';
@@ -657,7 +657,7 @@ begin
       END;
     RETURN NULL;
   END;
-End
+End;
 GO
 
 PRINT 'Creating [$(owner)].[STCentroid] ...';
@@ -830,7 +830,7 @@ select 'M' as Label, $(owner).[STCentroid_A](geom,0,1,NULL,3,2).STAsText() as ge
 union all
 select 'U' as Label, $(owner).[STCentroid_A](geom,0,2,2050,3,2).STAsText() as geom from poly
 union all
-select 'S' as Label, geom.STCentroid().STAsText() as geom  from poly
+select 'S' as Label, geom.STCentroid().STAsText() as geom  from poly;
 GO
 
 With weightedPoly As (
@@ -844,7 +844,7 @@ SELECT 'M' as Label, $(owner).[STCentroid_A](geom,0,1,NULL,2,2).STAsText() as ge
 union all 
 SELECT 'U' as Label, $(owner).[STCentroid_A](geom,0,2,1200,2,2).STAsText() as geom from weightedPoly
 union all
-select 'S' as Label, geom.STCentroid().STAsText() as geom from weightedPoly
+select 'S' as Label, geom.STCentroid().STAsText() as geom from weightedPoly;
 GO
 
 -- Multiline options....
@@ -881,7 +881,7 @@ SELECT CONCAT(STR(t.intValue),'%') as label,
        [$(owner)].[STCentroid_L](a.geom,0,CAST(t.IntValue as float)/100.0,3,2).STAsText() as geom -- .STBuffer((t.IntValue/10)+5) as geom
   FROM line as a
        cross apply
-       [$(owner)].[generate_series](0,90,10) as t
+       [$(owner)].[generate_series](0,90,10) as t;
 GO
 
 -- Various multiline options
@@ -901,10 +901,8 @@ select case when t.IntValue = 0 then 'All'
        [$(owner)].[STCentroid_L](geom,t.IntValue,0.5,3,2).STAsText() as geom --.STBuffer(5+(t.IntValue*5)) as geom
   from mLine as a
        cross apply
-       [$(owner)].[generate_series](0,2,1) as t
-
-use Geokodning
-go
+       [$(owner)].[generate_series](0,2,1) as t;
+GO
 
 With mLine As (
   select CAST('GeometryCollection' as varchar(15)) as mode,
@@ -923,7 +921,7 @@ select case when t.IntValue = 0 then 'All'
        [$(owner)].[STCentroid_L](geom,t.IntValue,0.5,3,2).STBuffer(0.2) as geom
   from mLine as a
        cross apply
-       [$(owner)].[generate_series](0,2,1) as t
+       [$(owner)].[generate_series](0,2,1) as t;
 go
 
 -- *************************************
@@ -939,6 +937,7 @@ select [$(owner)].[STCentroid] (
           /*@p_round_xy             */ 3,
           /*@p_round_zm             */ 2)
             .STAsText() as geom;
+GO
 
 -- MultiPoint ....
 
@@ -957,7 +956,7 @@ select [$(owner)].[STCentroid] (
           /*@p_round_xy             */ 3,
           /*@p_round_zm             */ 2)
           .STAsText() as centroid
-  from mPoint
+  from mPoint;
 GO
 
 -- MultiLineString...
@@ -985,7 +984,7 @@ select case when t.IntValue = 0 then 'all'
             .STAsText() as geom /*.STBuffer(t.IntValue*2 + 1) as geom */
   from mline as a
        cross apply
-       [$(owner)].[GENERATE_SERIES](0,3,1) as t
+       [$(owner)].[GENERATE_SERIES](0,3,1) as t;
 GO
 
 -- Polygon .....
@@ -1013,6 +1012,6 @@ select case when t.IntValue = 0 then 'All'
             .STAsText() as geom /*.STBuffer(t.IntValue*2 + 1) as geom */
   from mPoly as a
        cross apply
-       [$(owner)].[GENERATE_SERIES](0,3,1) as t
+       [$(owner)].[GENERATE_SERIES](0,3,1) as t;
 GO
 

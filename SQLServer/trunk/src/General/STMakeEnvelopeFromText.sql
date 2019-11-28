@@ -103,7 +103,7 @@ Begin
                '))';
   RETURN geometry::STGeomFromText(@v_wkt,ISNULL(@p_srid,0));
  End;
-End
+End;
 GO
 
 PRINT 'Testing [$(owner)].[STMakeEnvelopeFromText] ...';

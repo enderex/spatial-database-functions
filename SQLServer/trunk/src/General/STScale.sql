@@ -228,8 +228,7 @@ Begin
 End
 Go
 
-Print '*********************************';
-Print 'Testing STScale .....';
+Print 'Testing [$(owner)].[STScale]....';
 GO
 
 SELECT a.stype, a.geom.AsTextZM() as geomWKT

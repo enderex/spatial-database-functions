@@ -111,7 +111,7 @@ Begin
               then @p_bearing - 360
               else @p_bearing
            end;
-End
+End;
 GO
 
 PRINT 'Creating [$(cogoowner)].[DMS2DD] ...';
@@ -169,7 +169,7 @@ Begin
        SET @dDD = ABS(@p_dDeg) + @p_dMin / 60.0 + @p_dSec / 3600.0;
        Return SIGN(@p_dDeg) * @dDD;
     End;
-End
+End;
 Go
 
 PRINT 'Creating [$(cogoowner)].[DMSS2DD] ...';
@@ -301,7 +301,7 @@ BEGIN
                              (@dDeg + @dMin / 60 + @dSec / 3600);
        RETURN @dReturnDecimal;
     End;
-END
+END;
 GO
 
 PRINT 'Creating [$(cogoowner)].[DD2DMS] ...';
@@ -384,7 +384,7 @@ BEGIN
     End;
     Return STR(@iSign * @iDeg,4,0) + @pDegreeSymbol + STR(@iMin,2,1) + @pMinuteSymbol + STR(@dSec,5,3) + @pSecondSymbol;
   End;
-END
+END;
 GO
 
 Print 'Creating [$(cogoowner)].[STRadians2Degrees] ...';
@@ -399,7 +399,7 @@ BEGIN
   IF ( @p_radians is null ) 
     RETURN NULL;
   RETURN @p_radians * (CAST(180.0 as float)/PI());
-END
+END;
 GO
 
 PRINT 'Creating [$(cogoowner)].[STDegrees]...';
@@ -414,7 +414,7 @@ BEGIN
   IF ( @p_radians is null ) 
     RETURN NULL;
   RETURN @p_radians * (CAST(180.0 as float)/PI());
-END
+END;
 go
 
 Print 'Testing [$(cogoowner)].[DMS2DD] ...';
@@ -424,7 +424,7 @@ select [$(cogoowner)].[DMS2DD](-44,10,50) as dd
 union all
 select [$(cogoowner)].[DMS2DD](-32,10,45) as dd
 union all
-select [$(cogoowner)].[DMS2DD](147,10,0)  as dd
+select [$(cogoowner)].[DMS2DD](147,10,0)  as dd;
 GO
 
 Print 'Testing [$(cogoowner)].[DMSS2DD] ...';
@@ -436,7 +436,7 @@ SELECT a.DD
   UNION SELECT 3 as id, [$(cogoowner)].[DMSS2DD]('147° 50'' 30.60"E') as DD
   UNION SELECT 4 as id, [$(cogoowner)].[DMSS2DD]('65° 10''  12.60"W') as DD
  ) a
-ORDER BY a.id
+ORDER BY a.id;
 GO
 
 Print 'Testing [$(cogoowner)].[DD2DMS] ...';
@@ -445,7 +445,7 @@ GO
 select [$(cogoowner)].[DD2DMS](
                         [$(cogoowner)].[DMS2DD](-44,10,50),
                         'd','s','"'
-       ) as dd_dms_dd
+       ) as dd_dms_dd;
 GO
 
 

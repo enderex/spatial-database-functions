@@ -7,8 +7,10 @@ PRINT 'Database Schema Variables are: Cogo: $(CogoOwner) Owner: $(Owner)';
 GO
 
 IF EXISTS (
-    SELECT * FROM sysobjects WHERE id = object_id(N'[$(Owner)].[STTileGeogByPoint]') 
-    AND xtype IN (N'P')
+    SELECT * 
+      FROM sysobjects 
+     WHERE id = object_id(N'[$(Owner)].[STTileGeogByPoint]') 
+       AND xtype IN (N'TF')
 )
 BEGIN
   DROP FUNCTION [$(Owner)].[STTileGeogByPoint];
@@ -70,7 +72,7 @@ AS
  *      geom geometry -- The polygon geometry covering the area of the Tile.
  *    )
  *  EXAMPLE
- *    select col,row, geom.STAsText() as tileGeom
+ *    select col,row, geom.STAsText() as tileGeog
  *      from [$(Owner)].[STTileGeogByPoint] ( 
  *                 geography::Point(55.634269978244,12.051864414446,4326),
  *                 2,2,
@@ -79,7 +81,7 @@ AS
  *            ) as t;
  *     GO
  *
- *    col row tileGeom
+ *    col row tileGeog
  *    0   0   POLYGON ((12.052084452911 55.634218419749, 12.052304491086 55.634166861254, 12.052365253079 55.634249843067, 12.052145214983 55.634301401561, 12.052084452911 55.634218419749))
  *    0   1   POLYGON ((12.052145214983 55.634301401561, 12.052365253624 55.634249843067, 12.052426015745 55.634332824878, 12.052205977184 55.634384383372, 12.052145214983 55.634301401561))
  *    1   0   POLYGON ((12.052304490797 55.63416686086, 12.052524528684 55.634115302364, 12.052585290597 55.634198284177, 12.05236525279 55.634249842672, 12.052304490797 55.63416686086))
@@ -162,7 +164,7 @@ Begin
     SET @v_col = @v_col + 1;
   END;
   RETURN;
-End
+End;
 GO
 
 PRINT 'Testing [$(Owner)].[STTileGeogByPoint] ...';

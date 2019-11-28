@@ -51,7 +51,7 @@ END;
 GO
 
 Print 'Creating Functions:';
-Print '1. STBearing ...'
+Print '1. [$(cogoowner)].[STBearing] ...';
 GO
 
 CREATE FUNCTION [$(cogoowner)].[STBearing] 
@@ -141,7 +141,7 @@ Begin
 End;
 GO
 
-Print '2. Creating STBearingBetweenPoints.';
+Print '2. Creating [$(cogoowner)].[STBearingBetweenPoints] ...';
 GO
 
 CREATE FUNCTION [$(cogoowner)].[STBearingBetweenPoints] 
@@ -194,7 +194,7 @@ Begin
 End;
 GO
 
-Print '3. STPointFromBearingDistance ....';
+Print '3. [$(cogoowner)].[STPointFromBearingAndDistance] ...';
 GO
 
 CREATE FUNCTION [$(cogoowner)].[STPointFromBearingAndDistance] 
@@ -315,10 +315,10 @@ Begin
     End;
     Return null;
   END;
-END
+END;
 GO
 
-Print '4. STPointFromCogo (wrapper) ...'
+Print '4. Creating [$(cogoowner)].[STPointFromCOGO] ...';
 GO
 
 CREATE FUNCTION [$(cogoowner)].[STPointFromCOGO] 
@@ -380,10 +380,10 @@ Print '*****************************';
 Print 'Testing ...';
 GO
 
-select [$(cogoowner)].[STBearing](0,0,45,45) as Bearing
+select [$(cogoowner)].[STBearing](0,0,45,45) as Bearing;
 GO
 
-select [$(cogoowner)].[STPointFromBearingAndDistance](0,0,45,100,3,0).STAsText()
+select [$(cogoowner)].[STPointFromBearingAndDistance](0,0,45,100,3,0).STAsText();
 GO
 
 select g.IntValue as bearing, 

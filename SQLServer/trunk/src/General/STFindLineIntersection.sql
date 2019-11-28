@@ -606,7 +606,7 @@ Print '------------------------------------------------------';
 Print 'Testing [$(cogoowner)].[STFindLineIntersection] ...';
 GO
 
-Print 'Crossed Lines ...';
+Print '1. Crossed Lines ...';
 GO
 
 SELECT f.intersections.AsTextZM() as intersection,
@@ -616,7 +616,7 @@ SELECT f.intersections.AsTextZM() as intersection,
   FROM (SELECT [$(cogoowner)].[STFindLineIntersection](0,0,10,10,0,10,10,0) as intersections ) as f;
 GO
 
-Print 'Extended Intersection ...';
+Print '2. Extended Intersection ...';
 GO
 
 SELECT f.intersections.AsTextZM() as intersection,
@@ -626,7 +626,7 @@ SELECT f.intersections.AsTextZM() as intersection,
   FROM (SELECT [$(cogoowner)].[STFindLineIntersection](0,0,10,10,0,10,4,6) as intersections ) as f;
 GO
 
-Print 'Parallel Lines (meet at single point)....';
+Print '3. Parallel Lines (meet at single point)....';
 GO
 
 SELECT f.intersections.AsTextZM() as intersection,
@@ -636,7 +636,7 @@ SELECT f.intersections.AsTextZM() as intersection,
   FROM (SELECT [$(cogoowner)].[STFindLineIntersection] (0,0,10,0, 0,20,10,0) as intersections ) as f;
 GO
 
-Print 'Parallel Lines that do not meet at single point....';
+Print '4. Parallel Lines that do not meet at single point....';
 GO
 
 SELECT f.intersections.AsTextZM() as intersection,

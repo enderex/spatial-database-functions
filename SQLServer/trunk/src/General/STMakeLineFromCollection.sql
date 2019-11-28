@@ -16,6 +16,7 @@ BEGIN
   DROP FUNCTION [$(owner)].[STMakeLineFromGeometryCollection];
   PRINT 'Dropped [$(owner)].[STMakeLineFromGeometryCollection] ...';
 END;
+GO
 
 IF EXISTS (
     SELECT * 
@@ -27,6 +28,7 @@ BEGIN
   DROP FUNCTION [$(owner)].[STMakeLineWktFromGeometryCollection];
   PRINT 'Dropped [$(owner)].[STMakeLineWktFromGeometryCollection] ...';
 END;
+GO
 
 IF EXISTS (
     SELECT * 
@@ -38,6 +40,7 @@ BEGIN
   DROP FUNCTION [$(owner)].[STMakeLineWktFromGeographyCollection];
   PRINT 'Dropped [$(owner)].[STMakeLineWktFromGeographyCollection] ...';
 END;
+GO
 
 /* *************************** FUNCTIONS ************************************* */
 
@@ -133,7 +136,7 @@ BEGIN
     SET @v_return_geom = geometry::STGeomFromText(@v_wkt + ')',@p_geometry_collection.STSrid);
     Return @v_return_geom;
   END;
-END
+END;
 GO
 
 PRINT 'Creating [$(owner)].[STMakeLineWktFromGeometryCollection] ...';
@@ -207,7 +210,7 @@ BEGIN
     SET @v_wkt = @v_wkt + ')';
     Return @v_wkt; 
   END;
-END
+END;
 GO
 
 PRINT '**************************************************************';
@@ -292,11 +295,10 @@ BEGIN
     SET @v_wkt = @v_wkt + ')';
     Return @v_wkt; 
   END;
-END
+END;
 GO
 
-PRINT '********************************************';
-Print 'Testing STMakeLineFromGeometryCollection ...';
+Print 'Testing [$(owner)].[STMakeLineFromGeometryCollection] ...';
 GO
 
 select [$(owner)].[STMakeLineFromGeometryCollection](geometry::STGeomFromText('GEOMETRYCOLLECTION (POINT (148.13461 -35.29305), POINT (148.13443 -35.29315))',4283),3,2).AsTextZM() as linestring;

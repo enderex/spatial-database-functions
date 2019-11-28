@@ -118,7 +118,7 @@ BEGIN
     SET @v_relations = @v_relations + case when @p_geometry1.STIntersects (@p_geometry2) = 1 then ',INTERSECTS' else '' end;
     Return case when CHARINDEX(',',@v_relations)=1 then SUBSTRING(@v_relations,2,LEN(@v_relations)) else @v_relations end;
   END;
-END
+END;
 GO
 
 Print 'Testing [$(owner)].[STDetermine] ...';

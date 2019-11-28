@@ -118,10 +118,10 @@ BEGIN
                 else @v_rgeom 
             end;
   END;
-END
+END;
 GO
 
-PRINT 'Testing STConvertToLineString ...'
+PRINT 'Testing STConvertToLineString ...';
 GO
 
 With gc As (
@@ -137,6 +137,6 @@ With gc As (
 )
 SELECT [$(owner)].[STConvertToLineString](geom) as geom,
        [$(owner)].[STConvertToLineString](geom).STAsText() as geomWKT
-  from gc as a
-go
+  from gc as a;
+GO
 

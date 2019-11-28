@@ -260,92 +260,54 @@ Begin
     SET @v_geometry = geometry::STGeomFromText(@v_wkt,@p_geometry.STSrid);
     RETURN @v_geometry;
   End
-End
+End;
 Go
 
 PRINT 'Testing [$(owner)].[STInsertN] ...';
 GO
 
 -- Null p_geometry Parameter returns p_point
-select 1 as testid, 
-       [$(owner)].[STInsertN](NULL,
-                          geometry::Point(9,9,0) /* 2D */,
-                          1,3,null).AsTextZM() as geom
+select 1 as testid, [$(owner)].[STInsertN](NULL, geometry::Point(9,9,0) /* 2D */, 1,3,null).AsTextZM() as geom;
 GO
 
 -- Null p_geometry Parameter returns p_point
-select 2 as testid, 
-       [$(owner)].[STInsertN](NULL,
-                          geometry::STPointFromText('POINT(9 9 0)',0) /* 3D */,
-                          1,3,2).AsTextZM() as geom
+select 2 as testid, [$(owner)].[STInsertN](NULL, geometry::STPointFromText('POINT(9 9 0)',0) /* 3D */, 1,3,2).AsTextZM() as geom;
 GO
 
 -- No point to add so return geometry
-select 3 as testid, 
-       [$(owner)].[STInsertN](geometry::STGeomFromText('LINESTRING(0 0, 10 0)',0),
-                      NULL,
-                      1,3,2).AsTextZM() as geom
+select 3 as testid, [$(owner)].[STInsertN](geometry::STGeomFromText('LINESTRING(0 0, 10 0)',0), NULL, 1,3,2).AsTextZM() as geom;
 GO
 
 -- Geometry Collections not supported, so is returned.
-select 4 as testid, 
-       [$(owner)].[STInsertN](geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(2 3 4),LINESTRING(2 3 4,3 4 5))',0),
-                          geometry::Point(9,9,0),
-                          1,3,2).AsTextZM() as geom
+select 4 as testid, [$(owner)].[STInsertN](geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(2 3 4),LINESTRING(2 3 4,3 4 5))',0), geometry::Point(9,9,0), 1,3,2).AsTextZM() as geom;
 GO
 
 -- p_point must be point, so geometry is returned.
-select 5 as testid, 
-       [$(owner)].[STInsertN](geometry::STGeomFromText('LINESTRING(0 0, 10 0)',0),
-                          geometry::STGeomFromText('POLYGON((1 1, 1 6, 11 6, 11 1, 1 1))',0),
-                          1,3,2).AsTextZM() as geom
+select 5 as testid, [$(owner)].[STInsertN](geometry::STGeomFromText('LINESTRING(0 0, 10 0)',0), geometry::STGeomFromText('POLYGON((1 1, 1 6, 11 6, 11 1, 1 1))',0), 1,3,2).AsTextZM() as geom;
 GO
 
 -- Insert from begining to end
-select 6 as testid, 
-       a.IntValue as insert_position,
-       [$(owner)].[STInsertN](geometry::STGeomFromText('LINESTRING(0 0, 10 0)',0),
-                          geometry::Point(9,9,0),
-                          a.IntValue,
-                          0,
-                          2).AsTextZM() as geom
-  from [$(owner)].[GENERATE_SERIES](-1,4,1) a
+select 6 as testid, a.IntValue as insert_position,
+       [$(owner)].[STInsertN](geometry::STGeomFromText('LINESTRING(0 0, 10 0)',0), geometry::Point(9,9,0), a.IntValue, 0, 2).AsTextZM() as geom
+  from [$(owner)].[GENERATE_SERIES](-1,4,1) a;
 GO
 
-select 7 as testid, 
-       [$(owner)].[STInsertN](geometry::STGeomFromText('MULTILINESTRING((0 0,1 1,1 2),(2 3,3 2,5 4))',0),
-                              geometry::Point(0.5,0.5,0),
-                              2,
-                              3,2).AsTextZM() as geom;
+select 7 as testid, [$(owner)].[STInsertN](geometry::STGeomFromText('MULTILINESTRING((0 0,1 1,1 2),(2 3,3 2,5 4))',0), geometry::Point(0.5,0.5,0), 2, 3,2).AsTextZM() as geom;
 GO
 
 -- Add point to start of multipoint
-select 8 as testid, 
-       [$(owner)].[STInsertN](geometry::STGeomFromText('MULTIPOINT(1 2 3)',0), /* 3D */
-                          geometry::Point(9.4,9.7,0), /* 2D */
-                          1,
-                          3,
-                          2).AsTextZM() as geom
+select 8 as testid, [$(owner)].[STInsertN](geometry::STGeomFromText('MULTIPOINT(1 2 3)',0), /* 3D */ geometry::Point(9.4,9.7,0), /* 2D */ 1, 3, 2).AsTextZM() as geom;
 GO
 
 -- Add point to end of multipoint
-select 9 as testid, 
-       [$(owner)].[STInsertN](geometry::STGeomFromText('MULTIPOINT(1 2 3)',0),
-                          geometry::Point(9.4,9.7,0),
-                          -1,
-                          3,
-                          2).AsTextZM() as geom
+select 9 as testid, [$(owner)].[STInsertN](geometry::STGeomFromText('MULTIPOINT(1 2 3)',0), geometry::Point(9.4,9.7,0), -1, 3, 2).AsTextZM() as geom;
 GO
 
 -- Add XYZM point to an XYZ point
-select 10 as testid, 
-       t.intValue as Position,
-       [$(owner)].[STInsertN](geometry::STGeomFromText('POINT(0 0 0)',  0),
-                         geometry::STGeomFromText('POINT(3 3 2 2)',0),
-                         t.IntValue,
-                         1,2).AsTextZM() as geom
+select 10 as testid, t.intValue as Position,
+       [$(owner)].[STInsertN](geometry::STGeomFromText('POINT(0 0 0)',  0), geometry::STGeomFromText('POINT(3 3 2 2)',0), t.IntValue, 1,2).AsTextZM() as geom
   from $(owner).Generate_Series(-1,1,1) as t
- where t.IntValue <> 0
+ where t.IntValue <> 0;
 GO
 
 With geoms As (
@@ -357,14 +319,9 @@ union all select 3 as id, geometry::STGeomFromText('MULTIPOINT(1 2 3 4)',3857) a
                  2 as p_insert_point, 0 as p_precision
 )
 select 11 as testid, 
-       [$(owner)].[STInsertN](a.p_point,
-                          geometry::Point(1111111.234,-222222222.567,3857),
-                          a.p_insert_point,
-                          a.p_precision,
-                          2).AsTextZM() as geom
- from geoms a
+       [$(owner)].[STInsertN](a.p_point, geometry::Point(1111111.234,-222222222.567,3857), a.p_insert_point, a.p_precision, 2).AsTextZM() as geom
+ from geoms a;
 GO
-
 
 -- Insert Point with NULL Z ordinates
 select 12 as testid, 
@@ -373,7 +330,7 @@ select 12 as testid,
                          geometry::STGeomFromText('POINT (80.5823 901.3054 NULL 30)',0),
                          a.IntValue,
                          1,2).AsTextZM() as geom
-  from [$(owner)].[generate_series](-1,4,1) a
+  from [$(owner)].[generate_series](-1,4,1) a;
 GO
 
 

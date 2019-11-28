@@ -24,7 +24,7 @@ GO
 CREATE FUNCTION [$(cogoowner)].[STEllipsoidParameters] (
   @p_srid integer
 )
-returns varchar(100)
+RETURNS varchar(100)
 As
 /****f* COGO/STEllipsoidParameters (2008)
  *  NAME
@@ -80,6 +80,9 @@ Begin
          ) as c;
   Return @a_f;
 End;
+GO
+
+Print 'Testing [$(cogoowner)].[STEllipsoidParameters] ...';
 GO
 
 select spatial_reference_id, 

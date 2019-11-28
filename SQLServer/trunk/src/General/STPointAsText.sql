@@ -142,7 +142,7 @@ Begin
                   end;
     RETURN @v_wkt;
   END;
-END
+END;
 GO
 
 PRINT 'Creating [$(owner)].[STPointGeomAsText] ...';
@@ -222,7 +222,7 @@ Begin
               ISNULL(@p_round_m, 2)
            );
   End;
-END
+END;
 GO
 
 /* ******************** TESTS ******************* */

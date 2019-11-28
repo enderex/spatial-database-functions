@@ -104,13 +104,13 @@ GO
 PRINT 'Testing [$(owner)].[STMulti] ...';
 GO
 
-select [$(owner)].[STMulti](geometry::STGeomFromText('POINT(1 1 1 1)',0)) as wkt
+select [$(owner)].[STMulti](geometry::STGeomFromText('POINT(1 1 1 1)',0)) as wkt;
 GO
-select [$(owner)].[STMulti](geometry::STGeomFromText('MULTIPOINT((1 1 1 1),(2 2 2 2),(3 3 3 3))',0)) as WKT
+select [$(owner)].[STMulti](geometry::STGeomFromText('MULTIPOINT((1 1 1 1),(2 2 2 2),(3 3 3 3))',0)) as WKT;
 GO
-Select [$(owner)].[STMulti](geometry::STGeomFromText('LINESTRING(1 1, 2 2, 3 3, 4 4)',0)) as wkt
+Select [$(owner)].[STMulti](geometry::STGeomFromText('LINESTRING(1 1, 2 2, 3 3, 4 4)',0)) as wkt;
 GO
-select [$(owner)].[STMulti](geometry::STGeomFromText('MULTILINESTRING((1 1,2 2,3 3),(4 4,5 5,6 6))',0)) as WKT
+select [$(owner)].[STMulti](geometry::STGeomFromText('MULTILINESTRING((1 1,2 2,3 3),(4 4,5 5,6 6))',0)) as WKT;
 GO
 select [$(owner)].[STMulti](geometry::STGeomFromText('CIRCULARSTRING(9.962 -0.872,10.1 0,9.962 0.872)',0)) as wkt;
 GO
@@ -119,7 +119,7 @@ GO
 select [$(owner)].[STMulti](geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(2 3 4),LINESTRING(2 3 4,3 4 5),POLYGON((326000.0 5455000.0,327000.0 5455000.0,326500.0 5456000.0,326000.0 5455000.0)))',0)) as WKT;
 GO
 select [$(owner)].[STMulti](geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING(9.962 -0.872,10.1 0,9.962 0.872),(9.962 0.872,0 0,9.962 -0.872))',0)) as wkt;
-go
+GO
 
 SELECT f.mGeom.AsTextZM() as mGeom, f.mGeom.STNumGeometries() as numGeometries
   FROM (SELECT [$(owner)].[STMulti](geometry::STPointFromText('POINT(0 0)',0)) as mGeom
@@ -130,5 +130,6 @@ SELECT f.mGeom.AsTextZM() as mGeom, f.mGeom.STNumGeometries() as numGeometries
          UNION ALL
         SELECT [$(owner)].[STMulti](geometry::STGeomFromText('CIRCULARSTRING(9.962 -0.872,10.1 0,9.962 0.872)',0)) as mgeom
 	 ) as f;
+GO
 
 
