@@ -121,8 +121,3 @@ Begin
 End;
 GO
 
-Print 'Testing [$(owner)].[STRemoveOffsetSegments] ...';
-Print '... TOBEDONE.';
-GO
-
-

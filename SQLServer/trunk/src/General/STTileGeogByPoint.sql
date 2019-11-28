@@ -23,13 +23,14 @@ GO
 
 CREATE FUNCTION [$(Owner)].[STTileGeogByPoint]
 (
-  @p_point  geography,
+  @p_point    geography,
+  @p_origin   varchar(2),
   @p_numTileX integer,
   @p_numTileY integer,
-  @p_TileX      float,
-  @p_TileY      float,
-  @p_rAngle     float,
-  @p_AsPoint    bit
+  @p_TileX    float,
+  @p_TileY    float,
+  @p_rAngle   float,
+  @p_AsPoint  bit
 )
 returns @table table
 (
@@ -43,12 +44,14 @@ AS
  *    STTileGeogByPoint -- Creates grid of tiles in geographic space.
  *  SYNOPSIS
  *    Function STTileGeogByPoint (
+ *      @p_point    geography,
+ *      @p_origin   varchar(2),
  *      @p_numTileX integer,
  *      @p_numTileY integer,
- *      @p_TileX      float,
- *      @p_TileY      float,
- *      @p_rAngle     float,
- *      @p_AsPoint      bit
+ *      @p_TileX    float,
+ *      @p_TileX    float,
+ *      @p_rAngle   float,
+ *      @p_AsPoint  bit
  *    )
  *    Returns @table table
  *    (
@@ -58,10 +61,11 @@ AS
  *    )
  *  INPUTS
  *    @p_point  (geography) -- Starting Point for grid (Upper Left)
+ *    @p_origin   (varchar) -- Position of point wrt grid: LL,UL,LR,UR
  *    @p_numTileX (integer) -- Number of tiles in X (longitude) direction
  *    @p_numTileY (integer) -- Number of tiles in Y (latitude) direction
- *    @p_TileX      (float) -- Size of a Tile's X dimension in real world units.
- *    @p_TileY      (float) -- Size of a Tile's Y dimension in real world units.
+ *    @v_TileX      (float) -- Size of a Tile's X dimension in real world units along parallel of Latitude (ie X distance)
+ *    @v_TileY      (float) -- Size of a Tile's Y dimension in real world units along meridian of Longitude (ie Y distance)
  *    @p_rAngle     (float) -- Optional rotation angle from North.
  *    @p_AsPoint      (bit) -- Return Tile as point or polygon
  *  RESULT
@@ -75,6 +79,7 @@ AS
  *    select col,row, geom.STAsText() as tileGeog
  *      from [$(Owner)].[STTileGeogByPoint] ( 
  *                 geography::Point(55.634269978244,12.051864414446,4326),
+ *                 'LL',
  *                 2,2,
  *                 10.0, 15.0,
  *                 22.5
@@ -97,6 +102,7 @@ AS
  ******/
 Begin
   DECLARE
+    @v_origin  varchar(2),
     @v_srid    Int,
     @v_loCol   int,
     @v_hiCol   int,
@@ -104,7 +110,9 @@ Begin
     @v_hiRow   int,
     @v_col     int,
     @v_row     int,
-    @v_rAngle   float,
+    @v_rAngle  float,
+    @v_TileMetersAlongLong float,
+    @v_TileMetersAlongLat  float,
     @v_wkt     nvarchar(max),
     @v_point1  geography,
     @v_point2  geography,
@@ -116,7 +124,12 @@ Begin
     Return;
   If ( @p_point.STGeometryType() <> 'Point' )
     Return;
+  SET @v_origin = SUBSTRING(UPPER(COALESCE(@p_origin,'LL')),1,2);
+  IF ( @v_origin not in ('LL','LR','UL','UR')) 
+    return;
   SET @v_rAngle = COALESCE(@p_rAngle,0.0);
+  SET @v_TileMetersAlongLat  = @p_TileX;
+  SET @v_TileMetersAlongLong = @p_TileY;
   SET @v_srid   = @p_point.STSrid;
   SET @v_loCol  = 0;
   SET @v_hiCol  = @p_numTileX - 1;
@@ -126,15 +139,37 @@ Begin
   WHILE ( @v_col <= @v_hiCol )
   BEGIN
     SET @v_row = @v_loRow;
-    SET @v_point1 = [$(CogoOwner)].[STDirectVincenty](@p_point,@v_rAngle+90.0,@p_TileY*@v_col);
+	-- Generate polygon points in CCW order
+	-- 1st point in tile exterior ring
+    SET @v_point1 = case @v_origin 
+                    when 'LL' then [$(cogoowner)].[STDirectVincenty](@p_point,@v_rAngle+90.0, @v_TileMetersAlongLat*@v_col)
+                    when 'UL' then [$(cogoowner)].[STDirectVincenty](@p_point,@v_rAngle+90.0, @v_TileMetersAlongLat*@v_col)
+                    when 'LR' then [$(cogoowner)].[STDirectVincenty](@p_point,@v_rAngle+270.0,@v_TileMetersAlongLat*@v_col)
+                    when 'UR' then [$(cogoowner)].[STDirectVincenty](@p_point,@v_rAngle+270.0,@v_TileMetersAlongLat*@v_col)
+                    end;
     WHILE ( @v_row <= @v_hiRow )
     BEGIN
-      -- Generate Polygon Points in CCW order
-      SET @v_point2 = [$(CogoOwner)].[STDirectVincenty](@v_point1,@v_rAngle+90.0,@p_TileY);
-      -- Second point in exterior ring
-      SET @v_point3 = [$(CogoOwner)].[STDirectVincenty](@v_point2,@v_rAngle,@p_TileX);
-      -- Second point in exterior ring
-      SET @v_point4 = [$(CogoOwner)].[STDirectVincenty](@v_point1,@v_rAngle,@p_TileX);
+      -- 2nd Point in tile exterior ring
+      SET @v_point2 = case @v_origin 
+                      when 'LL' then [$(cogoowner)].[STDirectVincenty](@v_point1,@v_rAngle+ 90.0,@v_TileMetersAlongLat)
+                      when 'UL' then [$(cogoowner)].[STDirectVincenty](@v_point1,@v_rAngle+180.0,@v_TileMetersAlongLong)
+                      when 'LR' then [$(cogoowner)].[STDirectVincenty](@v_point1,@v_rAngle,      @v_TileMetersAlongLong)
+                      when 'UR' then [$(cogoowner)].[STDirectVincenty](@v_point1,@v_rAngle+270.0,@v_TileMetersAlongLat)
+                      end;
+      -- 3rd point in tile exterior ring
+      SET @v_point3 = case @v_origin 
+                      when 'LL' then [$(cogoowner)].[STDirectVincenty](@v_point2,@v_rAngle,      @v_TileMetersAlongLong)
+                      when 'UL' then [$(cogoowner)].[STDirectVincenty](@v_point2,@v_rAngle+90.0, @v_TileMetersAlongLat)
+                      when 'LR' then [$(cogoowner)].[STDirectVincenty](@v_point2,@v_rAngle+270.0,@v_TileMetersAlongLat)
+                      when 'UR' then [$(cogoowner)].[STDirectVincenty](@v_point2,@v_rAngle+180.0,@v_TileMetersAlongLong)
+                      end;
+      -- 4th point in exterior ring
+      SET @v_point4 = case @v_origin 
+                      when 'LL' then [$(cogoowner)].[STDirectVincenty](@v_point1,@v_rAngle,      @v_TileMetersAlongLong)
+                      when 'UL' then [$(cogoowner)].[STDirectVincenty](@v_point1,@v_rAngle+90.0, @v_TileMetersAlongLat)
+                      when 'LR' then [$(cogoowner)].[STDirectVincenty](@v_point1,@v_rAngle+270.0,@v_TileMetersAlongLat)
+                      when 'UR' then [$(cogoowner)].[STDirectVincenty](@v_point1,@v_rAngle+180.0,@v_TileMetersAlongLong)
+                      end;
 	  IF ( @p_AsPoint=0 )
         SET @v_wkt = 'POLYGON((' + 
               CONVERT(varchar(30),CAST(@v_point1.Long as DECIMAL(24,12))) + ' ' + 
@@ -158,7 +193,7 @@ Begin
          @v_tile 
       );
       -- Move to next First/Fifth point in exterior ring (CCW)
-      SET @v_point1 = @v_point4;
+      SET @v_point1 = case when @v_origin in ('LL','UR') then @v_point4 else @v_point2 end;
       SET @v_row    = @v_row + 1;
     END;
     SET @v_col = @v_col + 1;
@@ -166,57 +201,3 @@ Begin
   RETURN;
 End;
 GO
-
-PRINT 'Testing [$(Owner)].[STTileGeogByPoint] ...';
-GO
-
--- Top-left position of grid: 55.634269978244582 12.051864414446955
--- Rotation: 45.0 degrees
--- Number of grid rows: 4
--- Number of grid columns: 4
--- Grid cell width: 10 meters
--- Grid cell height: 10 meters
-
-select col,row,geom.STBuffer(0.5) as geog
-  from [$(Owner)].[STTileGeogByPoint] ( 
-         geography::Point(55.634269978244582,12.051864414446955,4326),
-         /*@p_numTileX*/ 2,
-         /*@p_numTileY*/ 4,
-         /*@p_TileX   */ 10,
-         /*@p_TileY   */ 10,
-         /*@p_rAngle  */ 45.0,
-         /*@p_AsPoint*/   1
-        ) as t
-union all
-select col,row,geom as geog
-  from [$(Owner)].[STTileGeogByPoint] ( 
-         geography::Point(55.634269978244582,12.051864414446955,4326),
-         /*@p_numTileX*/ 2,
-         /*@p_numTileY*/ 4,
-         /*@p_TileX   */ 10,
-         /*@p_TileY   */ 10,
-         /*@p_rAngle  */ 45.0,
-         /*@p_AsPoint*/   0
-        ) as t;
-GO
-
--- Top-left position of grid: 55.634269978244582 12.051864414446955
--- Rotation: 5.2 degrees
--- Number of grid rows: 14
--- Number of grid columns: 28
--- Grid cell width: 10 meters
--- Grid cell height: 10 meters
-
-select col,row,geom
-  from [$(Owner)].[STTileGeogByPoint] ( 
-         geography::Point(55.634269978244582,12.051864414446955,4326),
-         /*@p_numTileX*/ 14,
-         /*@p_numTileY*/ 28,
-         /*@p_TileX   */ 10,
-         /*@p_TileY   */ 10,
-         /*@p_rAngle  */ 5.2,
-         /*@p_AsPoint*/   0
-        ) as t;
-GO
-
-
