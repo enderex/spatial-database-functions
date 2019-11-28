@@ -58,6 +58,7 @@ GO
 :r src/general/STDirectVincenty.sql 
 :r src/general/STInverseVincenty.sql 
 :r src/general/STAzimuth.sql 
+:r src/general/STFindDeflectionAngle.sql
 :r src/general/STFindAngleBetween.sql 
 
 :r src/general/STExtract.sql  
@@ -68,6 +69,9 @@ GO
 :r src/general/STLineMerge.sql
 :r src/general/STBoundingDiagonal.sql 
 :r src/general/STCheckRadii.sql 
+
+:r src/general/STNumCircularStrings.sql
+:r src/general/STCircularStringN.sql
 
 -- :r src/general/STSegment.sql 
 :r src/general/STSegmentLine.sql 
@@ -127,9 +131,9 @@ GO
 :r src/general/STTiler.sql  
 
 :r Function_Count.sql 
-
+ 
 PRINT 'Loading of General functions and Procedures complete.';
 GO
-
+ 
 QUIT
 

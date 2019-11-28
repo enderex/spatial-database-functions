@@ -84,9 +84,9 @@ ECHO Drop Any Existing Functions ....
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% -m-1 -E -i drop_all.sql -o log/__drop_all.log 
 
 ECHO Install General Functions ....
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i LoadGeneral.sql -o log/__LoadGeneral.log
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -E -e -j -i LoadGeneral.sql -o log/__LoadGeneral.log
 ECHO Install LRS Functions ....
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -E -i LoadLRS.sql     -o log/__LoadLRS.log
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -E -e -j -i LoadLRS.sql     -o log/__LoadLRS.log
 
 ECHO ================================================
 ECHO Finished installing Functions.
