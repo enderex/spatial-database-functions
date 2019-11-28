@@ -15,6 +15,7 @@ GO
 select col,row,geom.STBuffer(0.5) as geog
   from [$(Owner)].[STTileGeogByPoint] ( 
          geography::Point(55.634269978244582,12.051864414446955,4326),
+         'LL',
          /*@p_numTileX*/ 2,
          /*@p_numTileY*/ 4,
          /*@p_TileX   */ 10,
@@ -26,6 +27,7 @@ union all
 select col,row,geom as geog
   from [$(Owner)].[STTileGeogByPoint] ( 
          geography::Point(55.634269978244582,12.051864414446955,4326),
+         'LL',
          /*@p_numTileX*/ 2,
          /*@p_numTileY*/ 4,
          /*@p_TileX   */ 10,
@@ -45,6 +47,7 @@ GO
 select col,row,geom
   from [$(Owner)].[STTileGeogByPoint] ( 
          geography::Point(55.634269978244582,12.051864414446955,4326),
+         'LL',
          /*@p_numTileX*/ 14,
          /*@p_numTileY*/ 28,
          /*@p_TileX   */ 10,
@@ -54,4 +57,17 @@ select col,row,geom
         ) as t;
 GO
 
-
+select 0 as col, 0 as row, geography::Point(55.634269978244582,12.051864414446955,4326).STAsText() as geom
+union all
+select col,row,geom.STAsText()
+  from [$(Owner)].[STTileGeogByPoint] ( 
+         geography::Point(55.634269978244582,12.051864414446955,4326),
+         'UL',
+         /*@p_numTileX*/ 2,
+         /*@p_numTileY*/ 2,
+         /*@p_TileX   */ 10,
+         /*@p_TileY   */ 10,
+         /*@p_rAngle  */ 0.0,
+         /*@p_AsPoint*/   0
+        ) as t;
+GO
