@@ -103,18 +103,26 @@ IF %cogoowner%_ NEQ %owner%_ (
 
 ECHO Drop Any Existing Functions ....
 sqlcmd -b -S %server_instance%,%portno% -U %username% -P %password% -d %dbname% -v usedbname=%dbname% -m-1 -i drop_all.sql -o log/__drop_all.log 
-
 ECHO Install General Functions ....
 sqlcmd -b -S %server_instance%,%portno% -U %username% -P %password% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -i LoadGeneral.sql -o log/LoadGeneral.log 
 ECHO Install LRS Functions ....
 sqlcmd -b -S %server_instance%,%portno% -U %username% -P %password% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -i LoadLRS.sql     -o log/LoadLRS.log 
 
+ECHO Check Count of All Functions Procedure in Database ...
+sqlcmd -b -S %server_instance%,%portno% -U %username% -P %password% -d %dbname% -v usedbname=%dbname% -m-1 -i Function_Count.sql 
+
 ECHO ================================================
 ECHO Finished installing Functions.
 ECHO ================================================
 
-ECHO Check Count of All Functions Procedure in Database ...
-sqlcmd -b -S %server_instance%,%portno% -U %username% -P %password% -d %dbname% -v usedbname=%dbname% -m-1 -i Function_Count.sql 
+ECHO Testing General Functions ....
+sqlcmd -b -S %server_instance%,%portno% -U %username% -P %password% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -i RunTestsGeneral.sql -o log/RunTestsLRS.log 
+ECHO Testing LRS Functions ....
+sqlcmd -b -S %server_instance%,%portno% -U %username% -P %password% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -i RunTestsLRS.sql     -o log/RunTestsLRS.log 
+
+ECHO ================================================
+ECHO Finished Running Tests.
+ECHO ================================================
 
 forfiles /m "%~nx0" /c "cmd /c echo 0x07"
 timeout /t 1 /nobreak>nul

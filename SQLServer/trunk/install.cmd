@@ -88,12 +88,21 @@ sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsow
 ECHO Install LRS Functions ....
 sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -E -e -j -i LoadLRS.sql     -o log/__LoadLRS.log
 
+ECHO Check Count of All Functions Procedure in Database ...
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% -m-1 -E -i Function_Count.sql 
+
 ECHO ================================================
 ECHO Finished installing Functions.
 ECHO ================================================
 
-ECHO Check Count of All Functions Procedure in Database ...
-sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% -m-1 -E -i Function_Count.sql 
+ECHO Run General Tests ....
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -E -e -j -i RunTestsGeneral.sql -o log/__RunTestsGeneral.log
+ECHO Run LRS Tests ....
+sqlcmd -b -S %server_instance% -d %dbname% -v usedbname=%dbname% lrsowner=%lrsowner% cogoowner=%cogoowner% owner=%owner% -m-1 -E -e -j -i RunTestsLRS.sql     -o log/__RunTestsLRS.log
+
+ECHO ================================================
+ECHO Finished Running Tests.
+ECHO ================================================
 
 forfiles /m "%~nx0" /c "cmd /c echo 0x07"
 timeout /t 1 /nobreak>nul

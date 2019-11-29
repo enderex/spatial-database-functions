@@ -7541,12 +7541,14 @@
 </pre>
 <p class="item_name">SYNOPSIS</p>
 <pre>    Function STTileGeogByPoint (
+      @p_point    geography,
+      @p_origin   varchar(2),
       @p_numTileX integer,
       @p_numTileY integer,
-      @p_TileX      float,
-      @p_TileY      float,
-      @p_rAngle     float,
-      @p_AsPoint      bit
+      @p_TileX    float,
+      @p_TileX    float,
+      @p_rAngle   float,
+      @p_AsPoint  bit
     )
     Returns @table table
     (
@@ -7557,10 +7559,11 @@
 </pre>
 <p class="item_name">INPUTS</p>
 <pre>    @p_point  (geography) -- Starting Point for grid (Upper Left)
+    @p_origin   (varchar) -- Position of point wrt grid: LL,UL,LR,UR
     @p_numTileX (integer) -- Number of tiles in X (longitude) direction
     @p_numTileY (integer) -- Number of tiles in Y (latitude) direction
-    @p_TileX      (float) -- Size of a Tile's X dimension in real world units.
-    @p_TileY      (float) -- Size of a Tile's Y dimension in real world units.
+    @v_TileX      (float) -- Size of a Tile's X dimension in real world units along parallel of Latitude (ie X distance)
+    @v_TileY      (float) -- Size of a Tile's Y dimension in real world units along meridian of Longitude (ie Y distance)
     @p_rAngle     (float) -- Optional rotation angle from North.
     @p_AsPoint      (bit) -- Return Tile as point or polygon
 </pre>
@@ -7576,6 +7579,7 @@
 <pre>    select col,row, geom.STAsText() as tileGeog
       from [$(Owner)].[STTileGeogByPoint] ( 
                  geography::Point(55.634269978244,12.051864414446,4326),
+                 'LL',
                  2,2,
                  10.0, 15.0,
                  22.5
@@ -8382,7 +8386,7 @@
 <pre>    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 </pre>
 <div id="footer">
-<p>Generated from ./documentation/ on Thu Nov 28 2019 13:48:25
+<p>Generated from ./documentation/ on Fri Nov 29 2019 11:08:40
 </p>
 </div> <!-- footer -->
 </body>
