@@ -186,17 +186,6 @@ BEGIN
 END;
 GO
 
-IF EXISTS (SELECT * 
-             FROM sysobjects 
-            WHERE id = object_id(N'[$(cogoowner)].[STFindPointBisector]') 
-              AND xtype IN (N'FN', N'IF', N'TF')
-)
-BEGIN
-  DROP FUNCTION [$(cogoowner)].[STFindPointBisector];
-  PRINT 'Dropped [$(cogoowner)].[STFindPointBisector] ...';
-END;
-GO
-
 PRINT 'Creating [$(cogoowner)].[STCreateCircle] ...';
 GO
 
@@ -779,9 +768,9 @@ CREATE FUNCTION [$(cogoowner)].[STComputeTangentPoint]
 )
 Returns geometry /* point */
 AS
-/****f* COGO/STComputeTangentPoint (2012)
+/****m* COGO/STComputeTangentPoint (2012)
  *  NAME
- *    STComputeTangentPoint -- Computes point that would define a tangential line at the start or end of a circular arc
+ *    STComputeTangentPoint -- Computes point that would define a tandential line at the start or end of a circular arc
  *  SYNOPSIS
  *    Function STComputeTangentPoint ( 
  *               @p_circular_arc geometry,
@@ -789,19 +778,11 @@ AS
  *               @p_round_xy     int = 3
  *             )
  *     Returns geometry
- *  EXAMPLE
- *    SELECT [cogo].[STComputeTangentPoint](
- *                     geometry::STGeomFromText('CIRCULARSTRING(10 0, 15 5, 20 0)',0),
- *                     'START',
- *                     2)
- *                 .STAsText() as tangentPoint;
- *    
- *    tangentPoint
- *    POINT (10 5)
+ *    SELECT [$(cogoowner)].[STComputeTangentPoint](100, 0.003);
  *  DESCRIPTION
  *    There is a need to be able to compute an angle between a linestring and a circularstring. 
  *    To do this, one needs to compute a tangential line at the start or end of a circularstring.
- *    This function computes point that would define a tangential line at the start or end of a circular arc.
+ *    This function computes point that would define a tandential line at the start or end of a circular arc.
  *  NOTES 
  *    Assumes planar projection eg UTM.
  *    Only supports SQL Server Spatial 2012 onwards as 2008 does not support CircularString
@@ -811,7 +792,7 @@ AS
  *  INPUTS
  *    @p_circular_arc (geometry) - CircularString.
  *    @p_position     (varchar5) - Requests tangent point for 'START' or 'END' of circular arc.
- *    @p_round_xy          (int) - Decimal degrees of precision for XY ordinates.
+ *    @p_round_xy     (int)      - Decimal degrees of precision for XY ordinates.
  *  RESULT
  *    point           (geometry) - A tangent point that combined with the start or end of the circularstring creates a tangential line.
  *  AUTHOR
@@ -819,17 +800,18 @@ AS
  *  HISTORY
  *   Simon Greener - Feb 2015 - Converted to TSQL for SQL Server
  *  COPYRIGHT
- *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
+ *    (c) 2012-2017 by TheSpatialDBAdvisor/Simon Greener
 ******/
 Begin
   Declare
-    @v_round_xy int = ISNULL(@p_round_xy,3),
-    @v_start    bit,
-    @v_angle    float,
-    @v_bearing  float,
-    @v_distance float,
-    @v_centre   geometry,
-    @v_vertex   geometry;
+    @v_round_xy       int = ISNULL(@p_round_xy,3),
+    @v_start          bit,
+    @v_bearing        float,
+	@v_shortest_point geometry,
+	@v_circular_point geometry,
+    @v_tangent_point1 geometry,
+    @v_tangent_point2 geometry,
+    @v_centre         geometry;
   BEGIN
     IF (@p_circular_arc is null) 
       Return NULL;
@@ -851,32 +833,45 @@ Begin
       and @v_centre.Z   = -1 )
      Return null;
 
-    -- get angle from endCoord to midCoord via centre
-    SET @v_angle = 45.0 * CASE WHEN @v_start=1 THEN 1 ELSE -1 END;
+	SET @v_circular_point = CASE WHEN @v_start=1 
+                                 THEN @p_circular_arc.STPointN(1) 
+	                             ELSE @p_circular_arc.STPointN(3)
+                             END;
 
-    -- Turn this into a bearing
+    -- Get bearing from start/end to centre
     SET @v_bearing = [$(cogoowner)].[STBearing] (
+                        @v_circular_point.STX,
+                        @v_circular_point.STY,
                         @v_centre.STX,
-                        @v_centre.STY,
-                        CASE WHEN @v_start=1 THEN @p_circular_arc.STPointN(1).STX ELSE @p_circular_arc.STPointN(3).STX END,
-                        CASE WHEN @v_start=1 THEN @p_circular_arc.STPointN(1).STY ELSE @p_circular_arc.STPointN(3).STY END
+                        @v_centre.STY
                      );
 
-    SET @v_bearing  = @v_bearing + @v_angle;
-
-    -- calculate distance 45 degree isosoles triangle
-    SET @v_distance = SQRT(2.0*POWER(@v_centre.Z,2.0)); 
-
-    -- Offset point is @v_bearing / @v_distance from centre
-    -- set v_prev_vertex to this point
-    Return [$(cogoowner)].[STPointFromBearingAndDistance](
-                    @v_centre.STX,
-                    @v_centre.STY,
-                    @v_bearing,
-                    @v_distance,
-                    ISNULL(@v_round_xy,3),
-                    @p_circular_arc.STSrid
-           );
+	-- Compute tangent new point
+	-- Two options: compute and chose between
+	-- 
+	SET @v_tangent_point1 = [$(cogoowner)].[STPointFromBearingAndDistance](
+                              @v_circular_point.STX,
+                              @v_circular_point.STY,
+                              [$(cogoowner)].[STNormalizeBearing](@v_bearing - 90.0),
+                              @v_centre.Z,
+                              ISNULL(@v_round_xy,3),
+                              @p_circular_arc.STSrid
+                           );
+	SET @v_tangent_point2 = [$(cogoowner)].[STPointFromBearingAndDistance](
+                              @v_circular_point.STX,
+                              @v_circular_point.STY,
+                              [$(cogoowner)].[STNormalizeBearing](@v_bearing + 90.0),
+                              @v_centre.Z,
+                              ISNULL(@v_round_xy,3),
+                              @p_circular_arc.STSrid
+                           );
+    -- Which one is the right one?
+	SET @v_shortest_point = case when @v_tangent_point1.ShortestLineTo(@p_circular_arc).STLength()
+	                                < @v_tangent_point2.ShortestLineTo(@p_circular_arc).STLength()
+					             then @v_tangent_point1
+						         else @v_tangent_point2
+					        end;
+    RETURN @v_shortest_point;
   END;
 END;
 GO
@@ -1301,180 +1296,6 @@ Begin
               then 1 
               else -1 
           end;
-END;
-GO
-
-PRINT 'Creating [$(cogoowner)].[STFindPointBisector] ...';
-GO
-
-CREATE FUNCTION [$(cogoowner)].[STFindPointBisector]
-(
-  @p_line      geometry /* LineString/CircularString */,
-  @p_next_line geometry /* LineString/CircularString */,
-  @p_offset    Float = 0.0,
-  @p_round_xy  int   = 3,
-  @p_round_z   int   = 2,
-  @p_round_m   int   = 1
-)
-Returns geometry 
-AS
-/****f* COGO/STFindPointBisector (2012)
- *  NAME
- *   FindPointBisector - Computes offset point on the bisector between two linestrings.
- *  SYNOPSIS
- *    Function STFindPointBisector
- *               @p_line      geometry 
- *               @p_next_line geometry,
- *               @p_offset    Float = 0.0,
- *               @p_round_xy  int   = 3,
- *               @p_round_z   int   = 2,
- *               @p_round_m   int   = 1
- *             )
- *      Return Geometry (Point)
- *  DESCRIPTION
- *    Supplied with a second linestring (@p_next_line) whose first point is the same as 
- *    the last point of @p_line, this function computes the bisector between the two linestrings 
- *    and then creates a new vertex at a distance of @p_offset from the shared intersection point. 
- *    If an @p_offset value of 0.0 is supplied, the intersection point is returned. 
- *    If the @p_offset value is <> 0, the function computes a new position for the point at a 
- *    distance of @p_offset on the left (-ve) or right (+ve) side of the linestrings.
- *    The returned vertex has its ordinate values rounded using the relevant decimal place values.
- *  NOTES
- *    Only supports CircularStrings from SQL Server Spatial 2012 onwards, otherwise supports LineStrings from 2008 onwards.
- *  INPUTS
- *    @p_line      (geometry) - A vector that touches the next vector at one end point.
- *    @p_next_line (geometry) - A vector that touches the previous vector at one end point.
- *    @p_offset       (float) - The perpendicular distance to offset the point generated using p_ratio.
- *                              A negative value instructs the function to offet the point to the left (start-end),
- *                              and a positive value to the right. 
- *    @p_round_xy       (int) - Number of decimal digits of precision for an X or Y ordinate.
- *    @p_round_z        (int) - Number of decimal digits of precision for an Z ordinate.
- *    @p_round_m        (int) - Number of decimal digits of precision for an M ordinate.
- *  RESULT
- *    point        (geometry) - New point on bisection point or along bisector line with optional perpendicular offset.
- *  AUTHOR
- *    Simon Greener
- *  HISTORY
- *    Simon Greener - January 2013 - Original coding.
- *  COPYRIGHT
- *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
-******/
-BEGIN
-  DECLARE
-    @v_dimensions   varchar(4),
-    @v_round_xy     int,
-    @v_round_z      float,
-    @v_round_m      float,
-    @v_angle        Float,
-    @v_bearing      Float,
-    @v_offset       Float,
-    @v_base_bearing float,
-    @v_point        geometry,
-    @v_prev_point   geometry,
-    @v_mid_point    geometry,
-    @v_next_point   geometry;
-  BEGIN
-    IF ( @p_line is null or @p_next_line is null ) 
-      Return NULL;
-
-    IF (      @p_line.STGeometryType() NOT IN ('LineString','CircularString') 
-      OR @p_next_line.STGeometryType() NOT IN ('LineString','CircularString') 
-       )
-      Return NULL;
-
-    -- Because we support circularStrings, we support only single segments ....
-    IF ( @p_line.STNumPoints() > 3 
-      OR @p_next_line.STNumPoints() > 3 )
-      Return null;
-
-    SET @v_round_xy   = ISNULL(@p_round_xy,3);
-    SET @v_round_z    = ISNULL(@v_round_z ,2);
-    SET @v_round_m    = ISNULL(@v_round_m ,1);
-    SET @v_offset     = ISNULL(@p_offset,  0);
-    -- Set flag for STPointFromText
-    SET @v_dimensions = 'XY' 
-                       + case when @p_line.HasZ=1 then 'Z' else '' end +
-                       + 'M';
-
-    -- Get intersection(mid) point
-    SET @v_mid_point = 
-           case when @p_line.STStartPoint().STEquals(@p_next_line.STEndPoint())=1
-                  or @p_line.STStartPoint().STEquals(@p_next_line.STStartPoint())=1
-                then @p_line.STStartPoint()
-                when @p_line.STEndPoint().STEquals(@p_next_line.STStartPoint())=1
-                  or @p_line.STEndPoint().STEquals(@p_next_line.STEndPoint())=1
-                then @p_line.STEndPoint()
-                else null
-             end;
-
-    IF ( @v_mid_point is null )
-      Return @v_mid_point;
-
-    -- Get previous and next points of 3 point angle.
-    IF ( @p_line.STGeometryType()='CircularString' ) 
-    BEGIN
-      SET @v_prev_point = [$(cogoowner)].[STComputeTangentPoint](@p_line,     'END',  @v_round_xy);
-      SET @v_next_point = [$(cogoowner)].[STComputeTangentPoint](@p_next_line,'START',@v_round_xy);
-    END
-    ELSE
-    BEGIN
-      SET @v_prev_point = @p_line.STStartPoint(); 
-      SET @v_next_point = @p_next_line.STEndPoint();
-    END;
-
-    SET @v_angle        = [$(cogoowner)].[STDegrees] ( 
-                            [$(cogoowner)].[STSubtendedAngleByPoint](
-                               @v_prev_point,
-                               @v_mid_point,
-                               @v_next_point
-                            ) 
-                          );
-
-    SET @v_base_bearing = [$(cogoowner)].[STBearingBetweenPoints] ( 
-                             @v_mid_point,
-                             @v_prev_point
-                          );
-
-    SET @v_bearing      = [$(cogoowner)].[STNormalizeBearing] (
-                             @v_base_bearing
-                             +
-                             case when @v_angle < 0 and @v_offset < 0 /*left */ then (            ABS( @v_angle / 2.0 ) )
-                                  when @v_angle < 0 and @v_offset > 0 /*right*/ then ( -1 * (180.0 + ( @v_angle / 2.0 ) ) ) 
-                                  when @v_angle > 0 and @v_offset < 0 /*left */ then (       180.0 - ( @v_angle / 2.0 ) )
-                                  when @v_angle > 0 and @v_offset > 0 /*right*/ then (         0.0 - ( @v_angle / 2.0 ) )
-                                  when @v_offset = 0                  /*None */ then 0.0
-                                  else 0.0
-                              end
-                          );
-
-    SET @v_point        = [$(cogoowner)].[STPointFromCOGO] (
-                              @v_mid_point,
-                              @v_Bearing,
-                              ABS(@v_offset),
-                              @v_round_xy
-                          );
-
-    -- Set any Z or M measures (@v_dimensions determines ordinates written)
-    SET @v_point = geometry::STPointFromText(
-                        'POINT(' 
-                        + 
-                        [$(owner)].[STPointAsText] (
-                          /* @p_dimensions */ @v_dimensions,
-                          /* @p_X          */ @v_point.STX,
-                          /* @p_Y          */ @v_point.STY,
-                          /* @p_Z          */ @p_line.STEndPoint().Z,
-                          /* @p_M          */ @p_line.STEndPoint().M,
-                          /* @p_round_x    */ @v_round_xy,
-                          /* @p_round_y    */ @v_round_xy,
-                          /* @p_round_z    */ @v_round_z,
-                          /* @p_round_m    */ @v_round_m
-                        )
-                        + 
-                        ')',
-                        @p_line.STSrid
-                     );
-    Return @v_point;
-  END;
 END;
 GO
 

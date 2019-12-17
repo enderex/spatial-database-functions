@@ -330,7 +330,7 @@ CREATE FUNCTION [$(owner)].[STMakeCircularLine]
 )
 Returns geometry
 AS
-/****f* CREATE/STMakeCircularLine (2008)
+/****m* EDITOR/STMakeCircularLine (2008)
  *  NAME
  *    STMakeCircularLine -- Creates a three point Circular linestring.
  *  SYNOPSIS
@@ -402,15 +402,6 @@ Begin
      or ISNULL(@p_start_point.STSrid,0) <> ISNULL(@p_end_point.STSrid,0) )
       return null;
 
-    -- Check collinearity
-    SET @v_angle3points = [$(cogoowner)].[STSubtendedAngle] (
-                             @p_start_point.STX, @p_start_point.STY, 
-                             @p_mid_point.STX,   @p_mid_point.STY, 
-                             @p_end_point.STX,   @p_end_point.STY 
-                          );
-    IF (ABS(@v_angle3points) = PI() or @v_angle3points = 0.0 )
-      return null;
-
     SET @v_dimensions = 'XY' 
                        + case when   @p_start_point.HasZ=1 
                                    and @p_mid_point.HasZ=1
@@ -429,7 +420,16 @@ Begin
     SET @v_round_xy   = ISNULL(@p_round_xy,8);
     SET @v_round_z    = ISNULL(@p_round_z, 8);
     SET @v_round_m    = ISNULL(@p_round_m, 8);
-    SET @v_wkt = 'CIRCULARSTRING (' 
+
+    -- Check collinearity
+    SET @v_angle3points = [$(cogoowner)].[STSubtendedAngle] (
+                             @p_start_point.STX, @p_start_point.STY, 
+                             @p_mid_point.STX,   @p_mid_point.STY, 
+                             @p_end_point.STX,   @p_end_point.STY 
+                          );
+    IF (ABS(@v_angle3points) = PI() or @v_angle3points = 0.0 )
+	BEGIN
+      SET @v_wkt = 'LINESTRING(' 
                  +
                  [$(owner)].[STPointAsText] (
                           @v_dimensions,
@@ -472,7 +472,57 @@ Begin
                  )
                  +
                  ')';
-    Return geometry::STGeomFromText( @v_wkt, @p_end_point.STSrid );
+	END
+	ELSE
+	BEGIN
+	  SET @v_wkt = 'CIRCULARSTRING (' 
+                 +
+                 [$(owner)].[STPointAsText] (
+                          @v_dimensions,
+                          @p_start_point.STX,
+                          @p_start_point.STY,
+                          @p_start_point.Z,
+                          @p_start_point.M,
+                          @v_round_xy,
+                          @v_round_xy,
+                          @v_round_z,
+                          @v_round_m
+                 )
+                 +
+                 ', '
+                 +
+                 [$(owner)].[STPointAsText] (
+                          @v_dimensions,
+                          @p_mid_point.STX,
+                          @p_mid_point.STY,
+                          @p_mid_point.Z,
+                          @p_mid_point.M,
+                          @v_round_xy,
+                          @v_round_xy,
+                          @v_round_z,
+                          @v_round_m
+                 )
+                 +
+                 ', '
+                 +
+                 [$(owner)].[STPointAsText] (
+                          @v_dimensions,
+                          @p_end_point.STX,
+                          @p_end_point.STY,
+                          @p_end_point.Z,
+                          @p_end_point.M,
+                          @v_round_xy,
+                          @v_round_xy,
+                          @v_round_z,
+                          @v_round_m
+                 )
+                 +
+                 ')';
+    END;
+    Return geometry::STGeomFromText(
+                       @v_wkt,
+                       @p_end_point.STSrid
+                     );
   End;
 END;
 GO
