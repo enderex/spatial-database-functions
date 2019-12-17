@@ -22,9 +22,9 @@ GO
 
 CREATE FUNCTION [$(lrsowner)].[STReverseMeasure] 
 (
-  @p_geometry geometry,
-  @p_round_xy int = 3,
-  @p_round_zm int = 2
+  @p_linestring geometry,
+  @p_round_xy   int = 3,
+  @p_round_zm   int = 2
 )
 Returns GEOMETRY
 As
@@ -33,7 +33,7 @@ As
  *    STReverseMeasure -- Function that reverses measures assigned to the points of a linestring.
  *  SYNOPSIS
  *    Function STReverseMeasure (
- *       @p_geometry geometry,
+ *       @p_linestring geometry,
  *       @p_round_xy int = 3,
  *       @p_round_zm int = 2
  *     )
@@ -55,7 +55,7 @@ As
  *    Reverses measures assigned to a linestring.
  *    Supports CircularString and CompoundCurve geometry objects and subelements from 2012 onewards.
  *  INPUTS
- *    @p_geometry (geometry) - Supplied Linestring geometry.
+ *    @p_linestring (geometry) - Supplied Linestring geometry.
  *    @p_round_xy      (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm      (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -104,34 +104,34 @@ Begin
     @v_ey               float,
     @v_ez               float,
     @v_em               float,
-    @v_length           float,
-    @v_startLength      float,
-    @v_measureRange     float,
-    @v_SegmentGeom      geometry;
+    @v_segment_geom     geometry;
   Begin
-    If ( @p_geometry is null ) 
-      Return @p_geometry;
+    If ( @p_linestring is null ) 
+      Return @p_linestring;
 
     -- Only makes sense to snap a point to a linestring
-    If ( @p_geometry.STDimension() <> 1 ) 
-      Return @p_geometry;
+    If ( @p_linestring.STDimension() <> 1 ) 
+      Return @p_linestring;
 
     /* Nothing to do if not measured */
-    IF ( @p_geometry.HasM=0 )
-      Return @p_geometry;
+    IF ( @p_linestring.HasM=0 )
+      Return @p_linestring;
 
     -- Only process linear geometries.
-    SET @v_geometry_type = @p_geometry.STGeometryType();
+    SET @v_geometry_type = @p_linestring.STGeometryType();
     IF ( @v_geometry_type NOT IN ('LineString','CircularString','CompoundCurve','MultiLineString') )
-      Return @p_geometry;
+      Return @p_linestring;
 
+	SET @v_multi_tag     = case when @v_geometry_type in ('CompoundCurve','MultiLineString') 
+                                then @v_geometry_type 
+                                else NULL
+                            end;
     SET @v_round_xy      = ISNULL(@p_round_xy,3);
     SET @v_round_zm      = ISNULL(@p_round_zm,2);
-    SET @v_dimensions    = 'XY' + case when @p_geometry.HasZ=1 then 'Z' else '' end + 'M';
-    SET @v_geom_length   = @p_geometry.STLength();
-
-    SET @v_start_measure = ISNULL(@p_geometry.STEndPoint().M,0.0);
-    SET @v_end_measure   = @p_geometry.STStartPoint().M;
+    SET @v_dimensions    = 'XY' + case when @p_linestring.HasZ=1 then 'Z' else '' end + 'M';
+    SET @v_geom_length   = @p_linestring.STLength();
+    SET @v_start_measure = ISNULL(@p_linestring.STEndPoint().M,0.0);
+    SET @v_end_measure   = @p_linestring.STStartPoint().M;
     -- Do we add or subtract measures when assigning from start to finish?
     SET @v_mSign         = SIGN(@v_end_measure-@v_start_measure);
 
@@ -139,39 +139,41 @@ Begin
     DECLARE cSegments 
      CURSOR FAST_FORWARD 
         FOR
-     SELECT max(v.id) over (partition by v.multi_tag) as max_id,
-            v.id,            v.multi_tag,
-            v.element_id,    v.element_tag,
-            v.subelement_id, v.subelement_tag,
-            v.segment_id, 
+     SELECT v.id,
+	        v.max_id,
+            v.element_id,    
+			v.geometry_type as element_tag,
             v.sx, v.sy, v.sz, v.sm,
             v.mx, v.my, v.mz, v.mm,
             v.ex, v.ey, v.ez, v.em,
-            v.length,
-            v.startLength,
-            v.measureRange,
-            v.geom
-       FROM [$(owner)].[STSegmentLine](@p_geometry) as v
-      ORDER by v.element_id, 
-               v.subelement_id, 
-               v.segment_id
+            v.segment
+        FROM [$(owner)].[STSegmentize] (
+               /* @p_linestring   */ @p_linestring,
+               /* @p_filter       */ 'ALL',
+               /* @p_point        */ NULL,
+               /* @p_filter_value */ NULL,
+               /* @p_start_value  */ NULL,
+               /* @p_end_value    */ NULL,
+               /* @p_round_xy     */ @p_round_xy,
+               /* @p_round_z      */ @v_round_zm,
+               /* @p_round_m      */ @v_round_zm
+             ) as v
+       ORDER by v.element_id, 
+                v.subelement_id,
+				v.segment_id;
 
    OPEN cSegments;
 
    FETCH NEXT 
     FROM cSegments 
-    INTO @v_max_id,
-         @v_id,            @v_multi_tag,
-         @v_element_id,    @v_element_tag, 
-         @v_subelement_id, @v_subelement_tag, 
-         @v_segment_id, 
+    INTO @v_id,
+         @v_max_id,
+         @v_element_id,
+		 @v_element_tag, 
          @v_sx, @v_sy, @v_sz, @v_sm, 
          @v_mx, @v_my, @v_mz, @v_mm,
          @v_ex, @v_ey, @v_ez, @v_em,
-         @v_length,
-         @v_startLength,
-         @v_measureRange,
-         @v_SegmentGeom;
+         @v_segment_geom;
 
    SET @v_prev_element_tag = UPPER(@v_element_tag);
    SET @v_prev_element_id  = @v_element_id;
@@ -225,12 +227,12 @@ Begin
      END
      ELSE
      BEGIN
-       IF ( @v_segment_id > 1 ) 
+       IF ( @v_wkt like '%[0-9 ]' )
          SET @v_wkt = @v_wkt + ',';
      END;
 
      -- Is this a circularArc?
-     IF ( @v_SegmentGeom.STGeometryType() = 'CircularString' and @v_mx is not null) 
+     IF ( @v_segment_geom.STGeometryType() = 'CircularString' and @v_mx is not null) 
      BEGIN
        -- compute and write mid vertex of curve
        SET @v_mm  = @v_last_m + @v_mSign*(@v_mm-@v_sm); 
@@ -279,25 +281,20 @@ Begin
 
      FETCH NEXT 
       FROM cSegments 
-      INTO @v_max_id,
-           @v_id,            @v_multi_tag,
+      INTO @v_id,
+           @v_max_id,
            @v_element_id,    @v_element_tag, 
-           @v_subelement_id, @v_subelement_tag, 
-           @v_segment_id, 
            @v_sx, @v_sy, @v_sz, @v_sm, 
            @v_mx, @v_my, @v_mz, @v_mm,
            @v_ex, @v_ey, @v_ez, @v_em,
-           @v_length,
-           @v_startLength,
-           @v_measureRange,
-           @v_SegmentGeom;
+           @v_segment_geom;
    END;
    CLOSE cSegments
    DEALLOCATE cSegments
    SET @v_wkt = @v_wkt + ')';
    IF ( @v_multi_tag is not null ) 
      SET @v_wkt = @v_wkt + ')';
-   Return geometry::STGeomFromText(@v_wkt,@p_geometry.STSrid);
+   Return geometry::STGeomFromText(@v_wkt,@p_linestring.STSrid);
   End;
 END;
 GO

@@ -61,7 +61,7 @@ As
  *  DESCRIPTION
  *    Function returns 1 (true) if measure falls within the underlying linestring's measure range 
  *    or the 0 (false) string if the supplied measure does not fall within the measure range.
- *    Support All Linestring geometry types
+ *    Support All Linestring geometry types (including CircularString and CompoundCurve
  *  INPUTS
  *    @p_linestring (geometry) - Measured linestring.
  *    @p_measure       (float) - Actual Measure value.
@@ -79,15 +79,15 @@ As
  *      from [dbo].[Generate_Series] (-1,30,4) as t;
  *    GO
  *    
- *    IntValue	isMeasureWithinLinestring
- *    -1	No
- *    3	Yes
- *    7	Yes
- *    11	Yes
- *    15	Yes
- *    19	Yes
- *    23	Yes
- *    27	No
+ *    IntValue isMeasureWithinLinestring
+ *    -1       No
+ *     3       Yes
+ *     7       Yes
+ *    11       Yes
+ *    15       Yes
+ *    19       Yes
+ *    23       Yes
+ *    27       No
  *  AUTHOR
  *    Simon Greener
  *  HISTORY
@@ -96,20 +96,36 @@ As
  *  COPYRIGHT
  *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 ******/
-Begin 
+Begin
+  Declare
+    @v_lowest_m  float,
+    @v_highest_m float;
+
   IF ( @p_linestring is null )
     Return 0;
+
   IF ( @p_linestring.STDimension() <> 1 )
     Return 0;
-  Return Case When @p_linestring.STPointN(1).HasM = 1 
-               and @p_measure BETWEEN @p_linestring.STPointN(1).M 
-                                  AND @p_linestring.STPointN(@p_linestring.STNumPoints()).M
+
+  IF ( @p_linestring.STPointN(1).HasM = 0 )
+    Return 0;
+
+  SET @v_lowest_m = case when @p_linestring.STPointN(1).M <= @p_linestring.STPointN(@p_linestring.STNumPoints()).M 
+                         then @p_linestring.STPointN(1).M
+                         else @p_linestring.STPointN(@p_linestring.STNumPoints()).M 
+                     end;
+
+  SET @v_highest_m = case when @p_linestring.STPointN(1).M <= @p_linestring.STPointN(@p_linestring.STNumPoints()).M 
+                          then @p_linestring.STPointN(@p_linestring.STNumPoints()).M 
+                          else @p_linestring.STPointN(1).M
+                      end;
+
+  Return Case When @p_measure BETWEEN @v_lowest_m AND @v_highest_m
               Then 1
               Else 0
           End;
-END
+END;
 GO
-
 Create Function [$(lrsowner)].[STValidLrsPoint]
 (
   @p_point geometry
@@ -170,7 +186,7 @@ Create Function [$(lrsowner)].[STValidLrsGeometry]
 )
 Returns bit 
 As
-/****f* LRS/STValidLrsGeometry (2012)
+/****m* LRS/STValidLrsGeometry (2012)
  *  NAME
  *    STValidLrsGeometry -- Checks if supplied @p_linestring is a valid measured linestring. 
  *  SYNOPSIS
@@ -187,30 +203,18 @@ As
  *    @p_linestring (geometry) - Measured Linestring.
  *  RESULT
  *    1/0                (bit) - 1 (true) if measured linestring, 0 (false) otherwise.
- *  EXAMPLE
- *    select [lrs].[STValidLrsGeometry](geometry::STGeomFromText('LINESTRING(0 0,50 50,100 100)',0)) as is_measured
- *    GO
- *  
- *    is_measured
- *    0
- *  
- *    select [lrs].[STValidLrsGeometry](geometry::STGeomFromText('LINESTRING(0 0 NULL 1,50 50 NULL 14.1,100 100 NULL 141.1)',0)) as is_measured
- *    GO
- *  
- *    is_measured
- *    1
  *  AUTHOR
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - January  2017 - Original coding.
  *    Simon Greener - December 2017 - Port to SQL Server
  *  COPYRIGHT
- *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
+ *    (c) 2008-2017 by TheSpatialDBAdvisor/Simon Greener
 ******/
 Begin
   IF ( @p_linestring is null ) 
     RETURN 0;
-  IF ( @p_linestring.STGeometryType() NOT IN ('MultiLineString','LineString') )
+  IF ( @p_linestring.STGeometryType() NOT IN ('LineString','MultiLineString','CircularString','CompoundCurve') )
     RETURN 0;
   Return CASE WHEN /* Geometry is Measured  */ @p_linestring.HasM = 1
                AND /* Start Measure Defined */ @p_linestring.STPointN(1).M                         IS NOT NULL
@@ -222,5 +226,6 @@ Begin
          END;
 End;
 GO
+
 
 

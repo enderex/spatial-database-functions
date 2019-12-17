@@ -35,7 +35,7 @@ GO
 
 CREATE FUNCTION [$(lrsowner)].[STScaleMeasure] 
 (
-  @p_geometry      geometry,
+  @p_linestring    geometry,
   @p_start_measure Float,
   @p_end_measure   Float,
   @p_shift_measure Float = 0.0,
@@ -49,7 +49,7 @@ As
  *    STScaleMeasure -- Rescales geometry measures and optionally offsets them, stretching the geometry.
  *  SYNOPSIS
  *    Function [$(lrsowner)].[STScaleMeasure] (
- *       @p_geometry      geometry,
+ *       @p_linestring      geometry,
  *       @p_start_measure Float,
  *       @p_end_measure   Float,
  *       @p_shift_measure Float = 0.0,
@@ -82,7 +82,7 @@ As
  *    is not 0 (zero), the supplied value is added to each modified measure value
  *    performing a translation/shift of those values.
  *  INPUTS
- *    @p_geometry   (geometry) - Supplied Linestring geometry.
+ *    @p_linestring   (geometry) - Supplied Linestring geometry.
  *    @p_start_measure (float) - Measure defining start point for geometry.
  *    @p_end_measure   (float) - Measure defining end point for geometry.
  *    @p_shift_measure (float) - Shift (scale) value applied to all measure. 
@@ -100,7 +100,7 @@ As
 ******/
 Begin
   Declare
-    @v_GeometryType      varchar(100) = '',
+    @v_geometry_type     varchar(100) = '',
     @v_wkt               varchar(max) = '',
     @v_dimensions        varchar(4),
     @v_round_xy          int,
@@ -122,9 +122,6 @@ Begin
     @v_prev_element_id   int,
     @v_element_tag       varchar(100),
     @v_prev_element_tag  varchar(100),
-    @v_subelement_id     int,
-    @v_subelement_tag    varchar(100),
-    @v_segment_id        int, 
     @v_sx                float,  /* Start Point */
     @v_sy                float,
     @v_sz                float,
@@ -137,69 +134,75 @@ Begin
     @v_ey                float,
     @v_ez                float,
     @v_em                float,
-    @v_length            float,
-    @v_startLength       float,
-    @v_measureRange      float,
     @v_segment_geom      geometry;
   Begin
-    IF (@p_geometry is null)
-      Return @p_geometry;
+    IF (@p_linestring is null)
+      Return @p_linestring;
 
     If ( @p_start_measure is null OR @p_end_measure is null ) 
-      Return @p_geometry;
+      Return @p_linestring;
 
     -- Only support measured linestrings
-    SET @v_GeometryType = @p_geometry.STGeometryType();
-    IF ( @v_GeometryType NOT IN ('LineString','CircularString','CompoundCurve','MultiLineString') )
-      Return @p_geometry;
+    SET @v_geometry_type = @p_linestring.STGeometryType();
+    IF ( @v_geometry_type NOT IN ('LineString','CircularString','CompoundCurve','MultiLineString') )
+      Return @p_linestring;
 
-    IF ( @p_geometry.HasM = 0 ) -- Not measured
-      Return @p_geometry;
+    IF ( @p_linestring.HasM = 0 ) -- Not measured
+      Return @p_linestring;
+
+    SET @v_dimensions        = 'XY' + case when @p_linestring.HasZ=1 then 'Z' else '' end + 'M';
+
+    SET @v_round_xy          = ISNULL(@p_round_xy,3);
+    SET @v_round_zm          = ISNULL(@p_round_zm,2);
+
+    SET @v_new_measure_range = @p_end_measure - @p_start_measure;
+    SET @v_old_measure_range = @p_linestring.STEndPoint().M     /* Last measure */
+                             - @p_linestring.STStartPoint().M;  /* First measure */
+
+	SET @v_multi_tag     = case when @v_geometry_type in ('CompoundCurve','MultiLineString') 
+                                then @v_geometry_type 
+                                else NULL
+                            end;
 
     -- Walk over all the segments of the linear geometry
     DECLARE cSegments 
      CURSOR FAST_FORWARD 
         FOR
-     SELECT max(v.id) over (partition by v.multi_tag) as max_id,
-            v.id,            v.multi_tag,
-            v.element_id,    v.element_tag,
-            v.subelement_id, v.subelement_tag,
-            v.segment_id, 
+     SELECT v.id,
+	        v.max_id,
+            v.element_id,    
+			v.geometry_type,
             v.sx, v.sy, v.sz, v.sm,
             v.mx, v.my, v.mz, v.mm,
             v.ex, v.ey, v.ez, v.em,
-            v.length,
-            v.startLength,
-            v.measureRange,
-            v.geom
-       FROM [$(owner)].[STSegmentLine] ( @p_geometry ) as v
-      ORDER BY v.id;
+            v.segment
+        FROM [$(owner)].[STSegmentize] (
+               /* @p_linestring   */ @p_linestring,
+               /* @p_filter       */ 'ALL',
+               /* @p_point        */ NULL,
+               /* @p_filter_value */ NULL,
+               /* @p_start_value  */ NULL,
+               /* @p_end_value    */ NULL,
+               /* @p_round_xy     */ @p_round_xy,
+               /* @p_round_z      */ @v_round_zm,
+               /* @p_round_m      */ @v_round_zm
+             ) as v
+       ORDER by v.element_id, 
+                v.subelement_id,
+				v.segment_id;
 
     OPEN cSegments;
 
     FETCH NEXT 
      FROM cSegments 
-     INTO @v_max_id,
-          @v_id,            @v_multi_tag,
-          @v_element_id,    @v_element_tag, 
-          @v_subelement_id, @v_subelement_tag, 
-          @v_segment_id, 
+     INTO @v_id,
+          @v_max_id,
+          @v_element_id,
+		  @v_element_tag, 
           @v_sx, @v_sy, @v_sz, @v_sm, 
           @v_mx, @v_my, @v_mz, @v_mm,
           @v_ex, @v_ey, @v_ez, @v_em,
-          @v_length,
-          @v_startLength,
-          @v_measureRange,
           @v_segment_geom;
-
-   SET @v_dimensions        = 'XY' + case when @p_geometry.HasZ=1 then 'Z' else '' end + 'M';
-
-   SET @v_round_xy          = ISNULL(@p_round_xy,3);
-   SET @v_round_zm          = ISNULL(@p_round_zm,2);
-
-   SET @v_new_measure_range = @p_end_measure - @p_start_measure;
-   SET @v_old_measure_range = @p_geometry.STEndPoint().M     /* Last measure */
-                            - @p_geometry.STStartPoint().M;  /* First measure */
 
    SET @v_prev_element_tag  = UPPER(@v_element_tag);
    SET @v_prev_element_id   = @v_element_id;
@@ -254,7 +257,7 @@ Begin
      END
      ELSE
      BEGIN
-       IF ( @v_segment_id > 1 ) 
+       IF ( @v_wkt like '%[0-9 ]' )
          SET @v_wkt = @v_wkt + ',';
      END;
 
@@ -311,17 +314,13 @@ Begin
 
      FETCH NEXT 
       FROM cSegments 
-      INTO @v_max_id,
-           @v_id,            @v_multi_tag,
-           @v_element_id,    @v_element_tag, 
-           @v_subelement_id, @v_subelement_tag, 
-           @v_segment_id, 
+      INTO @v_id,
+           @v_max_id,
+           @v_element_id, 
+		   @v_element_tag, 
            @v_sx, @v_sy, @v_sz, @v_sm, 
            @v_mx, @v_my, @v_mz, @v_mm,
            @v_ex, @v_ey, @v_ez, @v_em,
-           @v_length,
-           @v_startLength,
-           @v_measureRange,
            @v_segment_geom;
    END; /* while */
    CLOSE cSegments
@@ -329,7 +328,7 @@ Begin
    SET @v_wkt = @v_wkt + ')';
    IF ( @v_multi_tag is not null ) 
      SET @v_wkt = @v_wkt + ')';
-   Return geometry::STGeomFromText(@v_wkt,@p_geometry.STSrid);
+   Return geometry::STGeomFromText(@v_wkt,@p_linestring.STSrid);
   End;
 END
 GO
@@ -363,7 +362,7 @@ As
  *     Returns geometry 
  *  USAGE
  *    WITH data AS (
- *      SELECT [lrs].[STAddMeasure] (
+ *      SELECT [$(lrsowner)].[STAddMeasure] (
  *               geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING (3 6.3246 1.1, 0 7 1.1, -3 6.3246 1.1),(-3 6.3246 1.1, 0 0 1.4, 3 6.3246 1.55))',0),
  *               0,null,1,1) as aGeom
  *    )
@@ -372,11 +371,11 @@ As
  *      FROM data as f
  *    UNION ALL
  *    SELECT 'Updated (1)' as LineType,
- *           [lrs].[STUpdateMeasure] ( f.ageom, 1.0, 21.2, 3, 2).AsTextZM() as sGeom 
+ *           [$(lrsowner)].[STUpdateMeasure] ( f.ageom, 1.0, 21.2, 3, 2).AsTextZM() as sGeom 
  *      FROM data as f
  *    UNION ALL
  *    SELECT 'Updated (2)' as LineType,
- *           [lrs].[STUpdateMeasure] ( f.ageom, 100.0, 125.1, 3, 2).AsTextZM() as sGeom 
+ *           [$(lrsowner)].[STUpdateMeasure] ( f.ageom, 100.0, 125.1, 3, 2).AsTextZM() as sGeom 
  *      FROM data as f;
  *    GO
  *
@@ -409,7 +408,7 @@ As
 ******/
 BEGIN
     RETURN [$(lrsowner)].[STScaleMeasure] (
-               /* @p_geometry      geometry */ @p_linestring,
+               /* @p_linestring    geometry */ @p_linestring,
                /* @p_start_measure Float    */ @p_start_measure,
                /* @p_end_measure   Float    */ @p_end_measure,
                /* @p_shift_measure Float    */ null,

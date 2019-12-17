@@ -99,13 +99,8 @@ begin
       Return @p_linestring;
 
     SET @v_GeometryType = @p_linestring.STGeometryType();
-    IF ( @v_GeometryType NOT IN ('LineString',
-                             'MultiLineString' ) )
+    IF ( @v_GeometryType NOT IN ('LineString','CircularString','CompoundCurve','MultiLineString' ) )
       Return @p_linestring;
-
-    -- Only support increasing measured linestrings (at moment)...
-    IF ( [$(lrsowner)].[STIsMeasureDecreasing](@p_linestring) = 'TRUE' )
-      RETURN NULL;
 
     SET @v_round_xy      = ISNULL(@p_round_xy,3);
     SET @v_round_zm      = ISNULL(@p_round_zm,2);
@@ -138,21 +133,26 @@ begin
     DECLARE cFilteredSegments 
      CURSOR FAST_FORWARD 
         FOR
-     SELECT v.id, 
-            min(v.id) over (partition by v.multi_tag) as first_id,
-            max(v.id) over (partition by v.multi_tag) as last_id,
-            v.length,
-            v.startLength,
-            v.measureRange,
-            v.geom
-       FROM [$(lrsowner)].[STFilterLineSegmentByMeasure] (
-                @p_linestring,
-                @v_start_measure,
-                @v_end_measure,
-                @v_round_xy,
-                @v_round_zm
-            ) as v
-      ORDER BY v.id;
+      SELECT v.id,
+             v.min_id as first_id,
+		     v.max_id as last_id,
+             /* Derived values */           
+             ROUND(v.segment_length,@v_round_xy+1) as length,
+             ROUND(v.start_length,  @v_round_xy+1) as startLength,
+			 ROUND(v.measure_range, @v_round_zm+1) as measureRange,
+             v.segment      as geom
+        FROM [$(owner)].[STSegmentize] (
+               /* @p_geometry     */ @p_linestring,
+               /* @p_filter       */ 'MEASURE_RANGE',
+               /* @p_point        */ NULL,
+               /* @p_filter_value */ NULL,
+               /* @p_start_value  */ @v_start_measure,
+               /* @p_end_value    */ @v_end_measure,
+               /* @p_round_xy     */ @p_round_xy,
+               /* @p_round_z      */ @v_round_zm,
+               /* @p_round_m      */ @v_round_zm
+             ) as v
+       ORDER BY v.id;
 
    OPEN cFilteredSegments;
 
@@ -186,12 +186,8 @@ begin
      --
      IF ( @v_id = @v_first_id ) /* first segment test */
      BEGIN
-       -- Processing depends on whether linestring or circular arc segment
-       --
-       IF ( @v_segment_geom.STGeometryType() = 'LineString' ) 
-       BEGIN
-          SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitLineSegmentByMeasure] (
+       SET @v_new_segment_geom = 
+                 [$(lrsowner)].[STSplitSegmentByMeasure] (
                     /* @p_linestring     */ @v_segment_geom,
                     /* @p_start_measure  */ @v_start_measure,
                     /* @p_end_measure    */ @v_end_measure,
@@ -199,19 +195,7 @@ begin
                     /* @p_round_xy       */ @v_round_xy,
                     /* @p_round_zm       */ @v_round_zm
                  );
-       END
-       ELSE -- IF ( @v_segment_geom.STGeometryType() = 'LineString' ) ... ELSE 
-       BEGIN
-          SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitCircularStringByMeasure] (
-                    /* @p_linestring     */ @v_segment_geom,
-                    /* @p_start_measure  */ @v_start_measure,
-                    /* @p_end_measure    */ @v_end_measure,
-                    /* @p_offset         */ @v_offset,
-                    /* @p_round_xy       */ @v_round_xy,
-                    /* @p_round_zm       */ @v_round_zm
-                 );
-       END; -- End of CircularString Processing of Start Point
+
        IF ( @v_new_segment_geom is not null 
         AND @v_new_segment_geom.STGeometryType() in ('Point','LineString','CircularString') ) 
        BEGIN
@@ -259,10 +243,8 @@ begin
      IF ( @v_id = @v_last_id ) 
      BEGIN
        -- Must round ordinates to ensure start/end coordinate points match 
-       IF ( @v_segment_geom.STGeometryType() = 'LineString' ) 
-       BEGIN
-          SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitLineSegmentByMeasure] (
+       SET @v_new_segment_geom = 
+                 [$(lrsowner)].[STSplitSegmentByMeasure] (
                     /* @p_linestring    */ @v_segment_geom,
                     /* @p_start_measure */ @v_segment_geom.STStartPoint().M,
                     /* @p_end_measure   */ @v_end_measure,
@@ -270,19 +252,6 @@ begin
                     /* @p_round_xy      */ @v_round_xy,
                     /* @p_round_zm      */ @v_round_zm
                  );
-       END
-       ELSE -- IF ( @v_segment_geom.STGeometryType() = 'LineString' ) ... ELSE 
-       BEGIN
-          SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitCircularStringByMeasure] (
-                    /* @p_linestring    */ @v_segment_geom,
-                    /* @p_start_measure */ @v_segment_geom.STStartPoint().M,
-                    /* @p_end_measure   */ @v_end_measure,
-                    /* @p_offset        */ @v_offset,
-                    /* @p_round_xy      */ @v_round_xy,
-                    /* @p_round_zm      */ @v_round_zm
-                 );
-       END; -- End of CircularString Processing of Start Point
        IF ( @v_new_segment_geom.STGeometryType() in ('LineString','CircularString') ) 
        BEGIN
          -- Add segment to return geom
@@ -317,7 +286,7 @@ begin
    -- Implement shortcut for parallel if single CircularString or LineString
    Return case when @v_offset = 0.0 
                then @v_return_geom 
-               else case when ( ( @v_return_geom.STGeometryType() = 'CircularString' and @v_return_geom.STNumCurves() = 1 )
+               else case when ( ( @v_return_geom.STGeometryType() = 'CircularString' and [$(owner)].[STNumCircularStrings](@v_return_geom) = 1)
                              OR ( @v_return_geom.STGeometryType() = 'LineString'     and @v_return_geom.STNumPoints() = 2 ) )
                          then [$(owner)].[STOffsetSegment] (
                                 /* @p_linestring */ @v_return_geom,
@@ -337,6 +306,3 @@ begin
   END;
 End;
 GO
-
-
-

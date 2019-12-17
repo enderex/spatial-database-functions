@@ -153,17 +153,8 @@ begin
 
     -- Function only processes linear geometries
     SET @v_GeometryType = @p_linestring.STGeometryType();
-    IF ( @v_GeometryType 
-         NOT IN (
-           'MultiLineString',
-           'CompoundCurve',
-           'LineString',
-           'CircularString'
-         ) 
-    )
-    BEGIN
+    IF ( @v_GeometryType NOT IN ('MultiLineString','CompoundCurve','LineString','CircularString')      )
       Return @p_linestring;
-    END;
 
     SET @v_round_xy     = ISNULL(@p_round_xy,3);
     SET @v_round_zm     = ISNULL(@p_round_zm,2);
@@ -207,20 +198,25 @@ begin
     DECLARE cFilteredSegments 
      CURSOR FAST_FORWARD 
         FOR
-     SELECT v.id, 
-            min(v.id) over (partition by v.multi_tag) as first_id,
-            max(v.id) over (partition by v.multi_tag) as last_id,
-            v.length,
-            v.startLength,
-            v.geom
-       FROM [$(lrsowner)].[STFilterLineSegmentByLength] ( 
-                @p_linestring,
-                @v_start_length,
-                @v_end_length,
-                @v_round_xy,
-                @v_round_zm
-            ) as v
-      ORDER BY v.id;
+      SELECT v.id,
+             v.min_id as first_id,
+		     v.max_id as last_id,
+             /* Derived values */           
+             ROUND(v.segment_length,@v_round_xy+1) as length,
+             ROUND(v.start_length,@v_round_xy+1) as startLength,
+             v.segment      as geom
+        FROM [$(owner)].[STSegmentize] (
+               /* @p_geometry     */ @p_linestring,
+               /* @p_filter       */ 'LENGTH_RANGE',
+               /* @p_point        */ NULL,
+               /* @p_filter_value */ NULL,
+               /* @p_start_value  */ @v_start_length,
+               /* @p_end_value    */ @v_end_length,
+               /* @p_round_xy     */ @p_round_xy,
+               /* @p_round_z      */ @v_round_zm,
+               /* @p_round_m      */ @v_round_zm
+             ) as v
+       ORDER BY v.id;
 
    OPEN cFilteredSegments;
 
@@ -255,6 +251,16 @@ begin
      BEGIN
        -- Processing depends on whether linestring or circular arc segment
        --
+       SET @v_new_segment_geom = 
+                 [$(lrsowner)].[STSplitSegmentByLength] (
+                    /* @p_linestring     */ @v_segment_geom,
+                    /* @p_start_distance */ @v_start_length - @v_LengthFromStart,
+                    /* @p_end_distance   */ @v_end_length   - @v_LengthFromStart,
+                    /* @p_offset         */ @v_offset,
+                    /* @p_round_xy       */ @v_round_xy,
+                    /* @p_round_zm       */ @v_round_zm
+                 );
+/*
        IF ( @v_segment_geom.STGeometryType() = 'LineString' ) 
        BEGIN
           SET @v_new_segment_geom = 
@@ -279,7 +285,7 @@ begin
                     /* @p_round_zm       */ @v_round_zm
                  );
        END; -- End of CircularString Processing of Start Point
-
+*/
        IF ( @v_new_segment_geom is not null 
         AND @v_new_segment_geom.STGeometryType() in ('Point','LineString','CircularString') ) 
        BEGIN
@@ -329,6 +335,16 @@ begin
       AND ROUND(@v_end_distance,@v_round_xy) <> 0.0 )
      BEGIN
        -- Must round ordinates to ensure start/end coordinate points match 
+       SET @v_new_segment_geom = 
+                 [$(lrsowner)].[STSplitSegmentByLength] (
+                    /* @p_linestring     */ @v_segment_geom,
+                    /* @p_start_distance */ 0.0,
+                    /* @p_end_distance   */ @v_end_distance,
+                    /* @p_offset         */ @v_offset,
+                    /* @p_round_xy       */ @v_round_xy,
+                    /* @p_round_zm       */ @v_round_zm
+                 );
+/*
        IF ( @v_segment_geom.STGeometryType() = 'LineString' ) 
        BEGIN
           SET @v_new_segment_geom = 
@@ -353,7 +369,7 @@ begin
                     /* @p_round_zm       */ @v_round_zm
                  );
        END; -- End of CircularString Processing of Start Point
-
+*/
        IF ( @v_new_segment_geom.STGeometryType() in ('Point','LineString','CircularString') ) 
        BEGIN
          -- Add segment to return geom

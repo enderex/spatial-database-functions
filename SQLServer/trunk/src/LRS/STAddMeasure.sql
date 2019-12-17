@@ -87,7 +87,7 @@ Begin
     @v_mid_arc_length   float,
     @v_end_measure      float,
     @v_last_m           float,
-    /* STSegmentLine Variables*/
+    /* STSegmentize Variables*/
     @v_id               int,
     @v_max_id           int,
     @v_multi_tag        varchar(100),
@@ -95,9 +95,6 @@ Begin
     @v_prev_element_id  int,
     @v_element_tag      varchar(100),
     @v_prev_element_tag varchar(100),
-    @v_subelement_id    int,
-    @v_subelement_tag   varchar(100),
-    @v_segment_id       int, 
     @v_sx               float,  /* Start Point */
     @v_sy               float,
     @v_sz               float,
@@ -111,8 +108,6 @@ Begin
     @v_ez               float,
     @v_em               float,
     @v_length           float,
-    @v_startLength      float,
-    @v_measureRange     float,
     @v_segment_geom     geometry,
 
     @v_geom_length      float = 0,
@@ -145,43 +140,50 @@ Begin
     SET @v_round_xy      = ISNULL(@p_round_xy,3);
     SET @v_round_zm      = ISNULL(@p_round_zm,2);
     SET @v_dimensions    = 'XY' + case when @p_linestring.HasZ=1 then 'Z' else '' end + 'M';
-
+	SET @v_multi_tag     = case when @v_geometry_type in ('CompoundCurve','MultiLineString') 
+                                then @v_geometry_type 
+                                else NULL
+                            end;
     -- Walk over all the segments of the linear geometry
     DECLARE cSegments 
      CURSOR FAST_FORWARD 
         FOR
-     SELECT max(v.id) over (partition by v.multi_tag) as max_id,
-            v.id,            v.multi_tag,
-            v.element_id,    v.element_tag,
-            v.subelement_id, v.subelement_tag,
-            v.segment_id, 
+     SELECT v.id,
+	        v.max_id,
+            v.element_id,    
+			v.geometry_type as element_tag,
             v.sx, v.sy, v.sz, v.sm,
             v.mx, v.my, v.mz, v.mm,
             v.ex, v.ey, v.ez, v.em,
-            v.length,
-            v.startLength,
-            v.measureRange,
-            v.geom
-       FROM [$(owner)].[STSegmentLine](@p_linestring) as v
-      ORDER by v.element_id, 
-               v.subelement_id, 
-               v.segment_id
+            v.segment_length,
+            v.segment
+        FROM [$(owner)].[STSegmentize] (
+               /* @p_geometry     */ @p_linestring,
+               /* @p_filter       */ 'ALL',
+               /* @p_point        */ NULL,
+               /* @p_filter_value */ NULL,
+               /* @p_start_value  */ NULL,
+               /* @p_end_value    */ NULL,
+               /* @p_round_xy     */ @p_round_xy,
+               /* @p_round_z      */ @v_round_zm,
+               /* @p_round_m      */ @v_round_zm
+             ) as v
+       ORDER by v.element_id, 
+                v.subelement_id,
+				v.segment_id;
 
    OPEN cSegments;
 
    FETCH NEXT 
     FROM cSegments 
-    INTO @v_max_id,
-         @v_id,            @v_multi_tag,
-         @v_element_id,    @v_element_tag, 
-         @v_subelement_id, @v_subelement_tag, 
-         @v_segment_id, 
+    INTO @v_id,
+         @v_max_id,
+         @v_element_id,
+		 @v_element_tag, 
          @v_sx, @v_sy, @v_sz, @v_sm, 
          @v_mx, @v_my, @v_mz, @v_mm,
          @v_ex, @v_ey, @v_ez, @v_em,
          @v_length,
-         @v_startLength,
-         @v_measureRange,
          @v_segment_geom;
 
    SET @v_prev_element_tag = UPPER(@v_element_tag);
@@ -236,7 +238,7 @@ Begin
      END
      ELSE
      BEGIN
-       IF ( @v_segment_id > 1 ) 
+       IF ( @v_wkt like '%[0-9 ]' )
          SET @v_wkt = @v_wkt + ',';
      END;
 
@@ -291,17 +293,13 @@ Begin
 
      FETCH NEXT 
       FROM cSegments 
-      INTO @v_max_id,
-           @v_id,            @v_multi_tag,
+      INTO @v_id,
+           @v_max_id,
            @v_element_id,    @v_element_tag, 
-           @v_subelement_id, @v_subelement_tag, 
-           @v_segment_id, 
            @v_sx, @v_sy, @v_sz, @v_sm, 
            @v_mx, @v_my, @v_mz, @v_mm,
            @v_ex, @v_ey, @v_ez, @v_em,
            @v_length,
-           @v_startLength,
-           @v_measureRange,
            @v_segment_geom;
    END;
    CLOSE cSegments

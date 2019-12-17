@@ -306,7 +306,7 @@ begin
             BEGIN
               /* COmpute point and return */
               SET @v_result_point = [$(lrsowner)].[STProjectPoint] (
-                                            /* @p_linestring      */ @v_part_geom,
+                                            /* @p_linestring    */ @v_part_geom,
                                             /* @p_start_measure */ @p_point,
                                             /* @p_round_xy      */ @v_round_xy,
                                             /* @p_round_zm      */ @v_round_zm
@@ -328,9 +328,9 @@ begin
         BEGIN
           SET @v_result_point = [$(lrsowner)].[STProjectPoint] ( 
                                   /* @p_linestring */ @v_part_geom,
-                                  /* @p_point          */ @p_point, 
-                                  /* @p_round_xy       */ @v_round_xy,
-                                  /* @p_round_zm       */ @v_round_zm 
+                                  /* @p_point      */ @p_point, 
+                                  /* @p_round_xy   */ @v_round_xy,
+                                  /* @p_round_zm   */ @v_round_zm 
                                 );
         END;
         SET @v_geomn  = @v_geomn + 1;
@@ -502,7 +502,7 @@ BEGIN
             /* @p_start_measure */ @p_point,
             /* @p_round_xy      */ @p_round_xy,
             /* @p_round_zm      */ @p_round_zm
-         );
+         ).M;
 END
 GO
 

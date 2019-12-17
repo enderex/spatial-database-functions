@@ -90,9 +90,9 @@ AS
  *           [$(lrsowner)].[STFindPointByLength](a.linestring,g.IntValue,offset.IntValue,3,2).AsTextZM() as fPoint
  *      from data as a
  *           cross apply
- *           [dbo].[generate_series](0,a.lineString.STLength(),a.linestring.STLength() / 4.0 ) as g
+ *           [$(owner)].[generate_series](0,a.lineString.STLength(),a.linestring.STLength() / 4.0 ) as g
  *           cross apply
- *           [dbo].[generate_series](-1,1,1) as offset
+ *           [$(owner)].[generate_series](-1,1,1) as offset
  *    order by line_type, is_measured, length
  *    GO
  *    
@@ -170,42 +170,44 @@ AS
 ******/
 BEGIN
   DECLARE
-    @v_gtype                varchar(30),
+    @v_geometry_type        varchar(30),
     @v_dimensions           varchar(4),
-    @v_round_xy             int,
-    @v_round_zm             int,
-
-    @v_reversed_length      int,
-    @v_length_point         geometry,
-    @v_line_geom            geometry,
+    @v_round_xy             integer,
+    @v_round_zm             integer,
 
     @v_bearing_from_start   Float,
     @v_length_from_start    Float,
-      @v_length_ratio         float,
+	@v_length               Float,
+    @v_length_ratio         float,
     @v_offset_bearing       Float,
-    @v_offset_distance      Float,
+    @v_offset               Float,
+    @v_length_point         geometry,
 
     /* segment Variables */
-    @v_id                   int,
-    @v_element_id           int,
-    @v_prev_element_id      int,
-    @v_subelement_id        int,
-    @v_segment_id           int, 
-    @v_sx                   float,  /* Start Point */
-    @v_sy                   float,
-    @v_sz                   float,
-    @v_sm                   float,
-    @v_mx                   float,  /* Mid Point */
-    @v_my                   float,
-    @v_mz                   float,
-    @v_mm                   float,
-    @v_ex                   float,  /* End Point */
-    @v_ey                   float,
-    @v_ez                   float,
-    @v_em                   float,
-    @v_segmentLength        float,
-    @v_startLength   float,
-    @v_measureRange         float;
+    @v_id              integer,
+    @v_max_id          integer,
+    @v_element_id      integer,
+    @v_prev_element_id integer,
+    @v_subelement_id   integer,
+    @v_segment_id      integer, 
+	@v_sZ              float,
+	@v_sM              float,
+	@v_eM              float,
+	@v_z_range         float,
+	@v_m_range         float,
+    @v_segment_length  float,
+    @v_segment_start_length float,
+    @v_segment_end_length   float,
+    @v_prev_segment    geometry,
+    @v_segment         geometry,
+    @v_next_segment    geometry,
+
+	@v_deflection_angle float,
+	@v_circumference    float,
+	@v_radius           float,
+	@v_angle            float,
+	@v_bearing          float,
+	@v_centre_point     geometry;
   BEGIN
     If ( @p_linestring is null )
       Return @p_linestring;
@@ -213,21 +215,22 @@ BEGIN
     If ( @p_length is null )
       Return @p_linestring;
 
-    SET @v_gtype = @p_linestring.STGeometryType();
+    SET @v_geometry_type = @p_linestring.STGeometryType();
 
-    IF ( @v_gtype NOT IN ('LineString','MultiLineString','CircularString','CompoundCurve') )
+    IF ( @v_geometry_type NOT IN ('LineString','MultiLineString','CircularString','CompoundCurve') )
       Return @p_linestring;
 
     SET @v_round_xy = ISNULL(@p_round_xy,3);
     SET @v_round_zm = ISNULL(@p_round_zm,2);
-    SET @v_offset_distance   = ISNULL(@p_offset,0.0)
+    SET @v_offset   = ISNULL(@p_offset,0.0);
+	SET @v_length   = ROUND(ISNULL(@p_length,0.0),@v_round_xy+1);
 
     -- Shortcircuit:
     -- If same point as start/end and no offset
     -- 
-    IF ( @v_offset_distance = 0.0 and ( @p_length = 0.0 or @p_length = @p_linestring.STLength() ) )
+    IF ( @v_offset = 0.0 and ( @v_length = 0.0 or @v_length = ROUND(@p_linestring.STLength(),@v_round_xy+1) ) )
     BEGIN
-      Return case when @p_length = 0.0
+      Return case when @v_length = 0.0
                   then @p_linestring.STPointN(1)
                   else @p_linestring.STPointN(@p_linestring.STNumPoints())
               end;
@@ -241,151 +244,240 @@ BEGIN
     -- Filter to find specific segment containing length position
     --
     SELECT TOP 1
-           @v_id            = v.id, 
-           @v_element_id    = v.element_id, 
-           @v_subelement_id = v.subelement_id, 
-           @v_segment_id    = v.segment_id, 
-           @v_sx            = v.sx, 
-           @v_sy            = v.sy, 
-           @v_sz            = v.sz, 
-           @v_sm            = v.sm,
-           @v_ex            = v.ex, 
-           @v_ey            = v.ey, 
-           @v_ez            = v.ez, 
-           @v_em            = v.em,
-           @v_mx            = v.mx, 
-           @v_my            = v.my, 
-           @v_mz            = v.mz, 
-           @v_mm            = v.mm,
-           @v_segmentLength = v.Length,
-           @v_startLength   = v.StartLength,
-           @v_measureRange  = v.measureRange,
-           @v_line_geom     = v.geom
-      FROM [$(lrsowner)].[STFilterLineSegmentByLength](
-                  @p_linestring,
-                  @p_length,
-                  @p_length,
-                  @v_round_xy,
-                  @v_round_zm
-           ) as v;
+	       @v_id                   = v.id,
+		   @v_max_id               = v.max_id,
+           @v_geometry_type        = v.geometry_type,
+           @v_sZ                   = ROUND(v.sz,@v_round_xy+1),
+		   @v_sM                   = ROUND(v.sm,@v_round_xy+1),
+		   @v_z_range              = v.z_range,
+		   @v_m_range              = v.measure_range,
+           /* Derived values */           
+           @v_segment_length       = ROUND(v.segment_length,@v_round_xy+1),
+           @v_segment_start_length = ROUND(v.start_length,@v_round_xy+1),
+		   @v_segment_end_length   = ROUND(v.cumulative_length,@v_round_xy+1),
+           @v_prev_segment         = v.prev_segment,
+           @v_segment              = v.segment,
+           @v_next_segment         = v.next_segment
+      FROM [$(owner)].[STSegmentize] (
+             /* @p_geometry     */ @p_linestring,
+             /* @p_filter       */ 'LENGTH',
+             /* @p_point        */ NULL,
+             /* @p_filter_value */ @p_length,
+             /* @p_start_value  */ NULL,
+             /* @p_end_value    */ NULL,
+             /* @p_round_xy     */ @v_round_xy,
+             /* @p_round_z      */ @v_round_zm,
+             /* @p_round_m      */ @v_round_zm
+            ) as v;
 
-    IF  @@ROWCOUNT = 0
-    BEGIN
+    IF @@ROWCOUNT = 0
       RETURN NULL;
-    END
 
     -- We have a single row (first filtered segment) and it always contains required length point
-    --
 
-    -- If returned @v_line_geom is CircularString (3 point)
-    -- Use STFindArcPointBYLength function
-    --
-    IF ( @v_line_geom.STGeometryType() = 'CircularString' )
+    -- Short Circuit: Handle situation where point is at start of first segment
+    IF ( @v_length = @v_segment_start_length )
     BEGIN
-      -- Set length relative to start of returned linestring
-      IF ( @p_length > @v_startLength )
-        SET @v_length_from_start = @p_length - @v_startLength
+	  IF ( @v_prev_segment is not null )
+	    SET @v_length_point = [$(cogoowner)].[STFindPointBisector](
+		                        @v_prev_segment,
+								@v_segment,
+								@v_offset,
+								@v_round_xy,@v_round_zm,@v_round_zm
+                               )
       ELSE
-        SET @v_length_from_start = @p_length;
-      SET @v_length_point = [$(lrsowner)].[STFindArcPointByLength] (
-                               /* @p_circular_arc */ @v_line_geom,
-                               /* @p_length */       @v_length_from_start,
-                               /* @p_offset */       @p_offset,
-                               /* @p_round_xy */     @v_round_xy,
-                               /* @p_round_zm */     @v_round_zm
-                            );
+	    SET @v_length_point = [$(owner)].[STOffsetPoint](
+	                             @v_segment,
+                                 0.0,
+                                 @v_offset
+                              );
       RETURN @v_length_point;
     END;
 
-    -- Compute common bearing ...
-    SET @v_bearing_from_start = [$(cogoowner)].[STBearing] (
-                                           @v_sx,
-                                           @v_sy,
-                                           @v_ex,
-                                           @v_ey
-                                );
-
-    -- Short circuit calculations if @p_length = start or end lengths
-    --
-    IF ( @p_length = @v_startLength 
-      or @p_length = @v_startLength + @v_segmentLength )
+    -- Short Circuit: Is point at end of last segment?
+    IF ( @v_length = @v_segment_end_length )
     BEGIN
-      SET @v_length_point = geometry::STPointFromText(
-                               'POINT('
-                                +
-                                [$(owner)].[STPointAsText] (
-                                         /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
-                                         /* @p_X          */ case when @p_length = @v_startLength then @v_sx else @v_ex end,
-                                         /* @p_Y          */ case when @p_length = @v_startLength then @v_sy else @v_ey end,
-                                         /* @p_Z          */ case when @p_length = @v_startLength then @v_sz else @v_ez end,
-                                         /* @p_M          */ case when @p_length = @v_startLength then @v_sm else @v_em end,
-                                         /* @p_round_x    */ @v_round_xy,
-                                         /* @p_round_y    */ @v_round_xy,
-                                         /* @p_round_z    */ @v_round_zm,
-                                         /* @p_round_m    */ @v_round_zm
-                                 )
-                                 +
-                                 ')',
-                                 @p_linestring.STSrid);
-      -- To be done: offset bearing is mid angle when start/end between two segments.
-      -- see COGO function: STOffsetBetween(first_segment,second_segment);
-    END
-    ELSE
-    BEGIN
-      --Compute point within segment by bearing/distance and length from start point.
-      SET @v_length_from_start = @p_length - @v_startLength;
-      SET @v_length_point      = [$(cogoowner)].[STPointFromBearingAndDistance] (
-                                       @v_sx,
-                                       @v_sy,
-                                       @v_bearing_from_start,
-                                       @v_length_from_start,
-                                       @V_round_xy,
-                                       @p_linestring.STSrid 
-                                 );
-
+	  IF ( @v_next_segment is not null )
+	    SET @v_length_point = [$(cogoowner)].[STFindPointBisector](
+		                        @v_segment,
+								@v_next_segment,
+								@v_offset,
+								@v_round_xy,@v_round_zm,@v_round_zm
+                               )
+      ELSE
+	    SET @v_length_point = [$(owner)].[STOffsetPoint](
+	                             @v_segment,
+                                 1.0,
+                                 @v_offset
+                              );
+      RETURN @v_length_point;
     END;
 
-    -- Offset the point if required
-    IF (    @v_offset_distance is not null 
-        and @v_offset_distance <> 0.0 ) 
-    BEGIN
-      -- Compute offset bearing
-      SET @v_offset_bearing = case when (@v_offset_distance < 0) 
-                                   then (@v_bearing_from_start-90.0) 
-                                   else (@v_bearing_from_start+90.0) 
-                               end;
+	-- Required point is within current segment.
+	-- 
+	IF ( @v_segment.STGeometryType() = 'LineString' )
+	BEGIN
+      SET @v_bearing_from_start = [$(cogoowner)].[STBearingBetweenPoints] (
+                                     @v_segment.STStartPoint(),
+                                     @v_segment.STEndPoint()
+                                  );
 
-      -- Normalise
-      SET @v_offset_bearing = [$(cogoowner)].[STNormalizeBearing](@v_offset_bearing);
-
-      -- compute offset point from length point
-      SET @v_length_point = [$(cogoowner)].[STPointFromCOGO] ( 
-                               @v_length_point,
-                               @v_offset_bearing,
-                               abs(@v_offset_distance),
-                               @v_round_xy
+      -- Compute point along line by length
+      SET @v_length_ratio   = (@v_length - @v_segment_start_length) / @v_segment_length;
+      SET @v_length_point   = geometry::STPointFromText(
+                              'POINT(' 
+                              + 
+                              [$(owner)].[STPointAsText] (
+                                /* @p_dimensions */ @v_dimensions,
+                                /* @p_X          */ @v_segment.STStartPoint().STX +
+                                                   (@v_segment.STEndPoint().STX-@v_segment.STStartPoint().STX)
+                                                    * @v_length_ratio,
+                                /* @p_Y          */ @v_segment.STStartPoint().STY +
+                                                   (@v_segment.STEndPoint().STY-@v_segment.STStartPoint().STY)
+                                                    * @v_length_ratio,
+                                /* @p_Z          */ @v_sZ + (@v_z_range * @v_length_ratio),
+                                /* @p_M          */ @v_sM + (@v_m_range * @v_length_ratio),
+                                /* @p_round_x    */ @v_round_xy,
+                                /* @p_round_y    */ @v_round_xy,
+                                /* @p_round_z    */ @v_round_zm,
+                                /* @p_round_m    */ @v_round_zm
+                              )
+                              + 
+                              ')',
+                              @p_linestring.STSrid
                             );
+
+      -- Offset the point if required
+      IF (    @v_offset is not null 
+          and @v_offset <> 0.0 ) 
+      BEGIN
+        -- Compute offset bearing
+        SET @v_offset_bearing = case when (@v_offset < 0) 
+                                     then (@v_bearing_from_start-90.0) 
+                                     else (@v_bearing_from_start+90.0) 
+                                 end;
+
+        -- Normalise
+        SET @v_offset_bearing = [$(cogoowner)].[STNormalizeBearing](@v_offset_bearing);
+
+        -- compute offset point from length point
+        SET @v_length_point = [$(cogoowner)].[STPointFromCOGO] ( 
+                                 @v_length_point,
+                                 @v_offset_bearing,
+                                 ABS(@v_offset),
+                                 @v_round_xy
+                              );
+
+        SET @v_length_point   = geometry::STPointFromText(
+                                'POINT(' 
+                                + 
+                                [$(owner)].[STPointAsText] (
+                                  /* @p_dimensions */ @v_dimensions,
+                                  /* @p_X          */ @v_length_point.STStartPoint().STX,
+                                  /* @p_Y          */ @v_length_point.STStartPoint().STY,
+                                  /* @p_Z          */ @v_sZ + (@v_z_range * @v_length_ratio),
+                                  /* @p_M          */ @v_sM + (@v_m_range * @v_length_ratio),
+                                  /* @p_round_x    */ @v_round_xy,
+                                  /* @p_round_y    */ @v_round_xy,
+                                  /* @p_round_z    */ @v_round_zm,
+                                  /* @p_round_m    */ @v_round_zm
+                                )
+                                + 
+                                ')',
+                                @p_linestring.STSrid
+                              );
+      END;
+	  RETURN @v_length_point;
     END;
-    -- Compute Measure and add to Measure position.
-    SET @v_length_ratio   = (@p_length - @v_startLength) / @p_linestring.STLength();
-    SET @v_length_point   = geometry::STPointFromText(
-                            'POINT(' 
-                            + 
-                            [$(owner)].[STPointAsText] (
-                              /* @p_dimensions */ @v_dimensions,
-                              /* @p_X          */ @v_length_point.STX,
-                              /* @p_Y          */ @v_length_point.STY,
-                              /* @p_Z          */ @v_sZ + ((@v_eZ-@v_sZ)*@v_length_ratio),
-                              /* @p_M          */ @v_sM + ((@v_eM-@v_sM)*@v_length_ratio),
-                              /* @p_round_x    */ @v_round_xy,
-                              /* @p_round_y    */ @v_round_xy,
-                              /* @p_round_z    */ @v_round_zm,
-                              /* @p_round_m    */ @v_round_zm
-                            )
-                            + 
-                            ')',
-                            @p_linestring.STSrid
-                          );
+
+  -- ***************************************************
+  -- We now have a CircularString
+  -- Compute centre of circle defining CircularString
+  --
+  SET @v_centre_point = [$(cogoowner)].[STFindCircleFromArc] (@v_segment);
+
+  -- Defines circle?
+  IF (  @v_centre_point.STX = -1 
+    and @v_centre_point.STY = -1 
+    and @v_centre_point.Z   = -1 )
+    Return null;
+
+  -- Retrieve radius and remove from centre point
+  SET @v_radius = @v_centre_point.Z;
+  SET @v_centre_point = geometry::Point(@v_centre_point.STX,@v_centre_point.STY,@v_segment.STSrid);
+
+  IF ( @v_segment_length = 0.0 )
+  BEGIN
+      SET @v_deflection_angle = [$(cogoowner)].[STFindDeflectionAngle] (
+	                              /*@p_from_line*/ @v_segment,
+                                  /*@p_to_line  */ NULL
+                               );
+      SET @v_bearing = [$(cogoowner)].[STBearingBetweenPoints](@v_centre_point,@v_segment.STStartPoint());
+
+      -- Compute point taking side into consideration.
+      -- 
+	  SET @v_offset = @v_radius + 
+                     (@v_offset *
+                      case when @v_deflection_angle < 0 
+	                       then  1 /*R*/ 
+						   else -1 /*L*/ 
+                       end);
+
+	  SET @v_length_point = [$(cogoowner)].[STPointFromCOGO](@v_centre_point,@v_bearing,@v_offset,@v_round_xy);
+      RETURN @v_length_point;
+	END;
+
+    -- Compute circumference of circle
+    SET @v_circumference = 2.0 * PI() * @v_radius;
+
+    -- Compute the angle subtended by the arc at the centre of the circle
+    SET @v_angle         = @v_segment_length / @v_circumference * 360.0;
+
+    -- Compute length ratio to apply to @v_angle to locate point
+    SET @v_length_ratio  = (@v_length - @v_segment_start_length) / @v_segment_length;
+
+    -- Apply ratio to angle
+    SET @v_angle         = @v_angle * @v_length_ratio;
+
+    -- Compute bearing from centre to first point of circular arc
+    SET @v_bearing       = [$(cogoowner)].[STBearingBetweenPoints](
+                             @v_centre_point,
+                             @v_segment.STStartPoint()
+                           );
+
+    -- Adjust bearing depending on whether CircularString is rotating anticlockwise (-1) or clockwise(1) 
+    SET @v_bearing       = @v_bearing + ( @v_angle * [$(cogoowner)].[STisClockwiseArc] (@v_segment));
+
+    -- Normalise bearing
+    SET @v_bearing       = [$(cogoowner)].[STNormalizeBearing](@v_bearing);
+
+    -- Compute point
+    SET @v_length_point  = [$(cogoowner)].[STPointFromCOGO](
+                             @v_centre_point,
+                             @v_Bearing,
+                             @v_radius - @v_offset,
+                             @p_round_xy
+                           );
+
+   -- TOBEDONE: If new point between STPointN(1) and STPointN(2) and M need to be computed differently than assuming all 
+   SET @v_length_point = geometry::STPointFromText(
+                         'POINT(' 
+                         + 
+                         [$(owner)].[STPointAsText] (
+                            /* @p_dimensions */ @v_dimensions,
+                            /* @p_X          */ @v_length_point.STX,
+                            /* @p_Y          */ @v_length_point.STY,
+                            /* @p_Z          */ @v_sZ + (@v_z_range * @v_length_ratio),
+                            /* @p_M          */ @v_sM + (@v_m_range * @v_length_ratio),
+                            /* @p_round_x    */ @v_round_xy,
+                            /* @p_round_y    */ @v_round_xy,
+                            /* @p_round_z    */ @v_round_zm,
+                            /* @p_round_m    */ @v_round_zm
+                         )
+                         + 
+                         ')',
+                         @v_segment.STSrid
+                       );
     Return @v_length_point;
   END;  
 END;
@@ -449,10 +541,10 @@ AS
  *              2
  *           ).AsTextZM() as fPoint
  *      from (select 0.01 * CAST(t.IntValue as numeric) as ratio
- *              from [dbo].[Generate_Series](1,100,10) as t
- *          	) as f
- *          	cross apply 
- *            [dbo].[generate_series](-1,1,1) as o
+ *              from [$(owner)].[Generate_Series](1,100,10) as t
+ *              ) as f
+ *              cross apply 
+ *            [$(owner)].[generate_series](-1,1,1) as o
  *      order by f.ratio
  *    GO
  *
@@ -499,7 +591,7 @@ AS
  *              2
  *           ).AsTextZM() as fPoint
  *      from (select 0.01 * CAST(t.IntValue as numeric) as ratio
- *              from [dbo].[Generate_Series](1,100,10) as t
+ *              from [$(owner)].[Generate_Series](1,100,10) as t
  *           ) as f
  *           cross apply 
  *           [$(owner)].[generate_series](-1,1,1) as o
@@ -546,8 +638,8 @@ AS
 ******/
 BEGIN
   DECLARE
-    @v_gtype  nvarchar(max),
-    @v_length float;
+    @v_geometry_type nvarchar(max),
+    @v_length        float;
   BEGIN
     If ( @p_linestring is null )
       Return @p_linestring;
@@ -558,22 +650,23 @@ BEGIN
     If ( @p_ratio not between 0.0 and 1.0 ) 
       Return @p_linestring;
 
-    SET @v_gtype = @p_linestring.STGeometryType();
+    SET @v_geometry_type = @p_linestring.STGeometryType();
 
-    IF ( @v_gtype NOT IN ('LineString','MultiLineString','CircularString','CompoundCurve') )
+    IF ( @v_geometry_type NOT IN ('LineString','MultiLineString','CircularString','CompoundCurve') )
       Return @p_linestring;
 
     -- Compute length using ratio
     SET @v_length = @p_linestring.STLength() * @p_ratio;
 
     -- Now call STFindPointByLength
-    Return [$(lrsowner)].[STFindPointByLength](@p_linestring,
-                                               @v_length,
-                                               @p_offset,
-                                               @p_round_xy,
-                                               @p_round_zm);
+    Return [$(lrsowner)].[STFindPointByLength](
+                    @p_linestring,
+                    @v_length,
+                    @p_offset,
+                    @p_round_xy,
+                    @p_round_zm
+                 );
   END; 
 END;
 GO
-
 
