@@ -19,7 +19,7 @@ BEGIN
     @v_bearing          float,
     @v_distance         float,
     @v_ratio            float,
-	@v_delta_x          float,
+    @v_delta_x          float,
     @v_dir              Integer,
     @v_delta            geometry,
     @v_point            geometry,
