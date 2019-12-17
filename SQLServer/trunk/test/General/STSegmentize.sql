@@ -36,3 +36,56 @@ GO
 select v.* FROM [$(owner)].[STSegmentize] ( geometry::STGeomFromText('COMPOUNDCURVE ((4 4, 3 3, 2 2, 0 0),CIRCULARSTRING (0 0, 1 2.1082, 3 6.3246, 0 7, -3 6.3246, -1 2.1082, 0 0))',0) ) as v;
 GO
 
+SELECT v.*
+FROM [$(owner)].[STSegmentize](geometry::STGeomFromText(
+'GEOMETRYCOLLECTION(LINESTRING(0 0,20 0,20 20,0 20,0 0), 
+                    POLYGON((100 10, 200 10,200 20,100 20,100 10)),
+					CIRCULARSTRING(10 0, 15 5, 15 -5, 10 -10,15 -15),
+                    POLYGON((100 0, 200 0,200 20,100 20,100 0),(110 5,190 5,190 15,110 15,110 5)),
+                    CURVEPOLYGON( 
+                         COMPOUNDCURVE(
+						      (0 -23.43778, 0 23.43778), 
+						      CIRCULARSTRING(0 23.43778, -45 30.43778, -90 23.43778), 
+							  (-90 23.43778, -90 -23.43778), 
+							  CIRCULARSTRING(-90 -23.43778, -45 -13.43778, 0 -23.43778) 
+                          )
+                    ), 
+                    COMPOUNDCURVE(
+					          CIRCULARSTRING(-80 -23.778, -35 13.78, -10 -23.78), 
+						      (-10 -23.78, -11 -23.438) ) )'
+,0)) as v;
+
+use DEVDB
+go
+
+    SELECT v.id,
+           v.min_id,
+           v.max_id,
+           v.geometry_type,
+		   v.hierarchy,
+           ROUND(v.sz,4) as sZ,
+           ROUND(v.sm,4) as sm,
+           11.0 as measure,
+           ROUND(v.em,4) as em,
+           ROUND(v.measure_range,3)     as m_range,
+           ROUND(v.segment_length,4)    as segment_length,
+           ROUND(v.start_length,4)      as length_to_start,
+           ROUND(v.cumulative_length,4) as cumulative_length,
+           v.cumulative_measure,
+           v.prev_segment,
+           v.segment,
+           v.next_segment
+      FROM [$(owner)].[STSegmentize] (
+             /* @p_geometry     */ 
+			 geometry::STGeomFromText('COMPOUNDCURVE ((2173369.79254475 259887.575230554 NULL 2600,2173381.122467 259911.320734575    NULL 2626.3106), CIRCULARSTRING (2173381.122467 259911.320734575   NULL 2626.3106,2173433.84355779 259955.557426129 NULL 2683.1,2173501.82006501 259944.806018785 NULL 2768.24))', 2274),
+             -- [dbo].[STReverse](geometry::STGeomFromText('COMPOUNDCURVE ((2173369.79254475 259887.575230554 NULL 2600,2173381.122467 259911.320734575    NULL 2626.3106), CIRCULARSTRING (2173381.122467 259911.320734575   NULL 2626.3106,2173433.84355779 259955.557426129 NULL 2683.1,2173501.82006501 259944.806018785 NULL 2768.24))', 2274),3,3),
+             -- [lrs].[STAddMeasure](geometry::STGeomFromText('MULTILINESTRING((0 0,1 1),(2 2,3 3),(4 4,5 5))',0),null,null,3,2),
+             /* @p_filter       */ 'ALL', --'ALL', -- 'MEASURE_RANGE', -- 'LENGTH_RANGE', -- 'MEASURE',
+             /* @p_point        */ NULL,
+             /* @p_filter_value */ NULL,
+             /* @p_start_value  */ 2704.1, -- 1.1,
+             /* @p_end_value    */ 2604.1, -- 2.2
+             4,3,3
+           ) as v;
+
+

@@ -67,7 +67,7 @@ select 'SM 5.6 = EPM 1st Segment/EM 16.61 (2nd Line, 2nd Seg)',   5.6,16.61,[$(l
 union all
 select 'SM 5.6 = EPM 1st Seg/EM 15.61 (1st Pnt, 2nd Seg) => point only',5.6,15.61,[$(lrsowner)].[STFindSegmentByMeasureRange](linestring,5.6,15.61,0.0,3,2) as fsegment from data as a
 union all
-select 'SM/EM falls in gap between two segments',                 5.6,15.60,[$(lrsowner)].[STFindSegmentByMeasureRange](linestring,5.61,15.60,0.0,3,2) as fsegment from data as a
+select 'SM/EM falls in gap between two segments (return NULL)',         5.6,15.60,[$(lrsowner)].[STFindSegmentByMeasureRange](linestring,5.61,15.60,0.0,3,2) as fsegment from data as a
 ) as f;
 GO
 

@@ -97,3 +97,13 @@ select [$(lrsowner)].[STFindOffset] (
          3,2);
 GO
 
+select [$(owner)].[STRound]( 
+          [$(lrsowner)].[STProjectPoint](geometry::STGeomFromText('CIRCULARSTRING (3 6.3246, 0 7, -3 6.3246)',0),
+          geometry::Point(1,7.5,0),3,2),3,3,2,2).AsTextZM()
+
+select [$(owner)].[STRound]( 
+          [$(lrsowner)].[STProjectPoint] (
+		         geometry::STGeomFromText('CircularString (2172207.12090003490447998 256989.8612000048160553 NULL 11200, 2172337.52737651020288467 257437.9648682993138209 NULL 0, 2172663.83167292177677155 257771.62375517189502716 NULL 12142.83130000000528526)',0),
+                 geometry::Point(2472207,257137.11,0),
+				 3,2),3,3,2,2).AsTextZM()
+

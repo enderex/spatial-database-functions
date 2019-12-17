@@ -146,6 +146,9 @@ GO
 With data as (
   select geometry::STGeomFromText('LINESTRING( 0  0, 10 10)',0) as line,
          geometry::STGeomFromText('LINESTRING(10 10, 20 0)',0) as next_line
+  union all
+  select geometry::STGeomFromText('LINESTRING(0 20, 30 0)',0) as line,
+         geometry::STGeomFromText('CIRCULARSTRING(30 0, 35 5, 40 0)',0) as next_line         
 )
 select [$(cogoowner)].[STFindPointBisector] ( a.line, a.next_line, g.Intvalue,3,2,1 ).STBuffer(2)
   from data as a
@@ -156,23 +159,6 @@ select line from data as a
 union all
 select next_line from data as a;
 go
-
-PRINT 'Testing STComputeTangentPoint...';
-GO
-
-With data as (
-  select geometry::STGeomFromText('CIRCULARSTRING(40 0, 35 5, 30 0)',0) as linestring
-  union all
-  select geometry::STGeomFromText('CIRCULARSTRING(10 0, 15 5, 20 0)',0) as linestring
-  union all
-  select geometry::STGeomFromText('CIRCULARSTRING(25 30, 30 12, 25 10)',0) as linestring
-)
-select [$(cogoowner)].[STComputeTangentPoint] (a.linestring,'START',3).STBuffer(1) as tPoint from data as a
-union all
-select [$(cogoowner)].[STComputeTangentPoint] (a.linestring,'END',3).STBuffer(1) as tPoint from data as a
-union all
-select a.linestring.STBuffer(1) from data as a;
-GO
 
 PRINT 'Testing STComputeLengthToMidPoint...';
 GO

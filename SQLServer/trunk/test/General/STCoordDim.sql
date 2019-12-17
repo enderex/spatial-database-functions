@@ -7,8 +7,15 @@ GO
 
 With Geoms As (
             select 1 as id, geometry::STGeomFromText('POINT(4 5)',0) as geom
-  union all select 2 as id, geometry::STGeomFromText('MULTIPOINT((1 1 1))',0) as geom
-  union all select 3 as id, geometry::STGeomFromText('MULTIPOINT((1 1 1),(2 2 2),(3 3 3))',0) as geom
+  union all select 1.1 as id, geometry::STGeomFromText('POINT(4 5 1.1)',0) as geom
+  union all select 1.2 as id, geometry::STGeomFromText('POINT(4 5 1.1 4.0)',0) as geom 
+  union all select 1.3 as id, geometry::STGeomFromText('POINT(4 5 NULL 4.0)',0) as geom 
+  union all select 2.1 as id, geometry::STGeomFromText('CIRCULARSTRING(-90 -23.43778, -45 -23.43778, 0 -23.43778)',0) as geom 
+  union all select 2.2 as id, geometry::STGeomFromText('CIRCULARSTRING(-90 -23.43778 1, -45 -23.43778 1, 0 -23.43778 1)',0) as geom 
+  union all select 2.3 as id, geometry::STGeomFromText('CIRCULARSTRING(-90 -23.43778 1 1, -45 -23.43778 1 2, 0 -23.43778 1 3)',0) as geom 
+  union all select 2.4 as id, geometry::STGeomFromText('CIRCULARSTRING(-90 -23.43778 NULL 1, -45 -23.43778 NULL 2, 0 -23.43778 NULL 3)',0) as geom 
+  union all select 3   as id, geometry::STGeomFromText('MULTIPOINT((1 1 1))',0) as geom
+  union all select 3.3 as id, geometry::STGeomFromText('MULTIPOINT((1 1 1),(2 2 2),(3 3 3))',0) as geom
   union all select 4 as id, geometry::STGeomFromText('LINESTRING(0 0, 10 0)',0) as geom
   union all select 5 as id, geometry::STGeomFromText('MULTILINESTRING((2 3, 3 4), (1 1, 2 2))',0) as geom
   union all select 5.1 as id, geometry::STGeomFromText('MULTILINESTRING((1 1 2 3,2 2 3 4),(3 3 4 5,4 4 5 6))',0) as geom
@@ -27,4 +34,3 @@ With Geoms As (
 select a.geom.AsTextZM() as geom, [$(owner)].[STCoordDim](a.geom) as cDim
  from Geoms as a;
 GO
-

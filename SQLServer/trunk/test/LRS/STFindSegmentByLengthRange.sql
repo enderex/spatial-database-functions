@@ -10,11 +10,11 @@ with mLine as (
 )
 select 'ORGNL' as tSource, e.mLineString from mLine as e
 union all
-SELECT 'SGMNT', [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0, 0.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e;
--- union all
--- SELECT 'RIGHT', [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0, 1.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
--- union all
--- SELECT 'LEFT',  [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0,-1.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
+SELECT 'SGMNT', [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0, 0.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
+union all
+SELECT 'RIGHT', [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0, 1.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
+union all
+SELECT 'LEFT',  [$(lrsowner)].[STFindSegmentByLengthRange](e.mLinestring, 29.0, 49.0,-1.0, 3, 2).STBuffer(0.3) as Lengths2SegmentNoOffset FROM mLine as e
 GO
 
 with data as (
@@ -70,12 +70,30 @@ select 'SL/EL falls in gap between two segments',                  [$(lrsowner)]
 GO
 
 with data as (
-  select geometry::STGeomFromText('LINESTRING(-4 -4 0  1, 0  0 0  5.6, 10  0 0 15.61, 10 10 0 25.4)',0) as linestring
-  union all
-  select geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING (3 6.3246, 0 7, -3 6.3246),(-3 6.3246, 0 0, 3 6.3246))',0) as linestring
-  union all
-  select geometry::STGeomFromText('MULTILINESTRING ((-4 -4 NULL 0, 0 0 NULL 5.657), (10 0 NULL 5.657, 10 10 NULL 15.657), (11 11 NULL 15.657, 12 12 NULL 17.071))',0) as linestring
+select geometry::STGeomFromText('LINESTRING(-4 -4 0  1, 0  0 0  5.6, 10  0 0 15.61, 10 10 0 25.4)',0) as linestring
 )
+select 0.0            as start_length,
+       g.intValue+1.0 as end_length,
+       [$(lrsowner)].[STFindSegmentByLengthRange](a.linestring,0.0,g.IntValue+1,0.0,3,2).AsTextZM() as fsegment
+  from data as a
+       cross apply
+       generate_series(0,
+                       round(a.lineString.STLength(),0),
+                       round(a.lineString.STLength()/4.0,0)
+                      ) as g;
+GO
+
+-- Mix including CompoundCurve
+
+with data as (
+  --select geometry::STGeomFromText('LINESTRING(-4 -4 0  1, 0  0 0  5.6, 10  0 0 15.61, 10 10 0 25.4)',0) as linestring
+  --union all
+  select geometry::STGeomFromText('COMPOUNDCURVE(CIRCULARSTRING (3 6.3246, 0 7, -3 6.3246),(-3 6.3246, 0 0, 3 6.3246))',0) as linestring
+  --union all
+  --select geometry::STGeomFromText('MULTILINESTRING ((-4 -4 NULL 0, 0 0 NULL 5.657), (10 0 NULL 5.657, 10 10 NULL 15.657), (11 11 NULL 15.657, 12 12 NULL 17.071))',0) as linestring
+)
+--select [$(lrsowner)].[STFindSegmentByLengthRange] (a.linestring,5.0,7.0,0.0,3,2).STBuffer(0.2) as fsegment from data as a;
+--select b.* from data as a cross apply dbo.STSegmentize( a.linestring,'LENGTH_RANGE',null,null, 5.0,7.0, 3,2,2) as b; 
 select 'Original'              as geom_type,
        0.0                     as start_length, 
        a.lineString.STLength() as end_length, 
@@ -91,28 +109,15 @@ select a.linestring.STGeometryType()       as geom_type,
            CAST(g.IntValue+1 as numeric),
            0.0,
            3,2
-       ) as fsegment
+       ).STBuffer(0.2) as fsegment
   from data as a
        cross apply
-       generate_series(0,
-                       round(a.lineString.STLength(),0),
-                       round(a.lineString.STLength(),0)/8.0 ) as g
+       [dbo].[generate_series](0,
+                               round(a.lineString.STLength(),0),
+                               round(a.lineString.STLength(),0)/8.0 ) as g
  order by geom_type, start_length;
 GO
 
-with data as (
-select geometry::STGeomFromText('LINESTRING(-4 -4 0  1, 0  0 0  5.6, 10  0 0 15.61, 10 10 0 25.4)',0) as linestring
-)
-select 0.0            as start_length,
-       g.intValue+1.0 as end_length,
-       [$(lrsowner)].[STFindSegmentByLengthRange](a.linestring,0.0,g.IntValue+1,0.0,3,2).AsTextZM() as fsegment
-  from data as a
-       cross apply
-       generate_series(0,
-                       round(a.lineString.STLength(),0),
-                       round(a.lineString.STLength()/4.0,0)
-                      ) as g;
-GO
 
 /*
 with data as (

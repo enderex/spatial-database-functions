@@ -25,3 +25,21 @@ select a.linestring.STPointN(a.linestring.STNumPoints()).M as measure,
   from data as a;
 GO
 
+
+with data as (
+  select 1.0 as offset,
+         [$(lrsowner)].[STAddMeasure](geometry::STGeomFromText('CIRCULARSTRING(30 0, 35 5, 40 0)',0),Null,null,3,2) as circular_arc
+)
+select a.circular_arc from data as a
+union all
+select [$(lrsowner)].[STFindArcPointByMeasure](a.circular_arc, g.Intvalue, a.offset, 2, 1).STBuffer(0.1)
+  from data as a
+       cross apply
+       [$(owner)].[Generate_Series](0,[$(lrsowner)].[STMeasureRange](a.circular_arc),1) as g
+union all
+select [$(lrsowner)].[STFindArcPointByMeasure](a.circular_arc, g.Intvalue, -1 * a.offset, 2, 1).STBuffer(0.1)
+  from data as a
+       cross apply
+       [$(owner)].[Generate_Series](0,[$(lrsowner)].[STMeasureRange](a.circular_arc),1) as g
+
+
