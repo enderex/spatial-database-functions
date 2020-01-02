@@ -1,10 +1,7 @@
-use DEVDB
-go
-
-DROP TABLE [dbo].[geometry_columns];
+DROP TABLE [$(owner)].[geometry_columns];
 GO
 
-CREATE TABLE [dbo].[geometry_columns] (
+CREATE TABLE [$(owner)].[geometry_columns] (
    F_TABLE_SCHEMA    VARCHAR(30) NOT NULL,
    F_TABLE_NAME      VARCHAR(30) NOT NULL,
    F_GEOMETRY_COLUMN VARCHAR(30) NOT NULL,
@@ -16,7 +13,7 @@ CREATE TABLE [dbo].[geometry_columns] (
 );
 GO
 
-INSERT INTO [dbo].[geometry_columns] ( F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN)
+INSERT INTO [$(owner)].[geometry_columns] ( F_TABLE_SCHEMA, F_TABLE_NAME, F_GEOMETRY_COLUMN)
 SELECT s.name as f_table_schema,
        t.name as f_table_name,
        c.name as f_Column_Name
@@ -26,12 +23,12 @@ FROM sys.schemas            as s
 WHERE system_type_id = 240;
 GO
 
-select * from [dbo].[geometry_columns] ;
+select * from [$(owner)].[geometry_columns] ;
 
-DROP PROCEDURE [dbo].[AddGeometryColumn];
+DROP PROCEDURE [$(owner)].[AddGeometryColumn];
 GO
 
-CREATE PROCEDURE [dbo].[AddGeometryColumn] (
+CREATE PROCEDURE [$(owner)].[AddGeometryColumn] (
   @p_schema_name nvarchar(128),
   @p_table_name  nvarchar(128),
   @p_column_name nvarchar(128)
@@ -47,7 +44,7 @@ BEGIN
 
   SET @v_sql = 
 N'SELECT TOP 1 ' + 
-       ' @coord_dimsOUT = [dbo].[STCoordDim](a.' + @p_column_name + ') as coordinate_dimension,' +
+       ' @coord_dimsOUT = [$(owner)].[STCoordDim](a.' + @p_column_name + ') as coordinate_dimension,' +
        ' @geom_typeOUT = UPPER(a.' + @p_column_name + N'.STGeometryType() ) as geometry_type, ' +
        ' @geom_sridOUT = a.' + @p_column_name + N'.STSrid as geometry_srid ' +
 ' FROM [' + @p_schema_name + N'].[' + @p_table_name + '] as a';
@@ -61,7 +58,7 @@ N'SELECT TOP 1 ' +
                      @geom_typeOUT  = @v_geometry_type OUTPUT,
                      @geom_sridOUT  = @v_srid OUTPUT;
 
-  UPDATE [dbo].[geometry_columns] 
+  UPDATE [$(owner)].[geometry_columns] 
      SET TYPE            = @v_geometry_type,
          coord_dimension = @v_coordinate_dimension,
          srid            = @v_srid
@@ -72,13 +69,15 @@ N'SELECT TOP 1 ' +
 END;
 GO
 
-EXEC [dbo].[AddGeometryColumn] N'dbo',N'GridLL',N'geom';
+EXEC [$(owner)].[AddGeometryColumn] N'dbo',N'GridLL',N'geom';
+GO
 
-select * from [dbo].[geometry_columns];
+select * from [$(owner)].[geometry_columns];
 SELECT TOP 1
-       [dbo].[STCoordDim](a.geom) as coordinate_dimension,
+       [$(owner)].[STCoordDim](a.geom) as coordinate_dimension,
        UPPER(a.geom.STGeometryType() ) as geometry_type,
        a.geom.STSrid as geometry_srid
-  from [dbo].[GridLL] as a;
+  from [$(owner)].[GridLL] as a;
+GO
 
 

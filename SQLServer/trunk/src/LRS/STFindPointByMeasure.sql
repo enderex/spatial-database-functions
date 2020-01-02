@@ -23,11 +23,12 @@ GO
 
 CREATE FUNCTION [$(lrsowner)].[STFindPointByMeasure] 
 (
-  @p_linestring geometry,
-  @p_measure    Float,
-  @p_offset     Float = 0.0,
-  @p_round_xy   int   = 3,
-  @p_round_zm   int   = 2
+  @p_linestring   geometry,
+  @p_measure      Float,
+  @p_offset       Float = 0.0,
+  @p_radius_check bit   = 1,
+  @p_round_xy     int   = 3,
+  @p_round_zm     int   = 2
 )
 Returns geometry 
 AS
@@ -36,23 +37,25 @@ AS
  *    STFindPointByMeasure -- Returns (possibly offset) point geometry at supplied measure along linestring.
  *  SYNOPSIS 
  *    Function [$(lrsowner)].[STFindPointByMeasure] (
- *               @p_linestring geometry,
- *               @p_measure    Float,
- *               @p_offset     Float = 0.0,
- *               @p_round_xy   int   = 3,
- *               @p_round_zm   int   = 2
+ *               @p_linestring   geometry,
+ *               @p_measure      Float,
+ *               @p_offset       Float = 0.0,
+ *               @p_radius_check bit = 1,
+ *               @p_round_xy     int   = 3,
+ *               @p_round_zm     int   = 2
  *             )
  *     Returns geometry 
  *  DESCRIPTION
  *    Given a measure, this function returns a geometry point at that measure.
- *    If a non-zero/null value is suppied for @p_offset, the found point is offset (perpendicular to line)
- *    to the left (if @p_offset < 0) or to the right (if @p_offset > 0).
+ *    If a non-zero/null value is suppied for @p_offset, the found point is offset (perpendicular to LineString/circularString) to the left (if @p_offset < 0) or to the right (if @p_offset > 0).
+ *    If the offset is greater than the radius of the CircularString, and @p_radius_check is 1, no point is returned, if 2 the centre of the arc is returned, otherwise a point is returned.
  *  NOTES
  *    Supports LineStrings with CircularString elements.
  *  INPUTS
  *    @p_linestring (geometry) - Linestring geometry with measures.
  *    @p_measure       (float) - Measure defining position of point to be located.
  *    @p_offset        (float) - Offset (distance) value left (negative) or right (positive) in p_units.
+ *    @p_radius_check    (int) - If measure point and offset is on same side as centre of circular string and offset > radius: no point is returned if (1), centre point returned if 2, otherwise computed point is returned.
  *    @p_round_xy        (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm        (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -61,47 +64,41 @@ AS
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - December 2017 - Original Coding.
+ *    Simon Greener - December 2019 - Added @p_radius_check
 ******/
 BEGIN
   DECLARE
-    @v_geometry_type        varchar(30),
-    @v_dimensions           varchar(4),
-    @v_round_xy             integer,
-    @v_round_zm             integer,
+    @v_geometry_type      varchar(30),
+    @v_dimensions         varchar(4),
+    @v_round_xy           integer,
+    @v_round_zm           integer,
 
-    @v_bearing_from_start   Float,
-    @v_measure_from_start    Float,
-	@v_measure               Float,
-    @v_measure_ratio         float,
-    @v_offset_bearing       Float,
-    @v_offset               Float,
-    @v_measure_point         geometry,
+    @v_bearing_from_start Float,
+    @v_measure            Float,
+    @v_measure_ratio      float,
+    @v_offset_bearing     Float,
+    @v_offset             Float,
+    @v_clockwise          Float,
+    @v_measure_point      geometry,
 
     /* segment Variables */
-    @v_id              integer,
-    @v_max_id          integer,
-    @v_element_id      integer,
-    @v_prev_element_id integer,
-    @v_subelement_id   integer,
-    @v_segment_id      integer, 
-	@v_sZ              float,
-	@v_sM              float,
-	@v_eM              float,
-	@v_z_range         float,
-	@v_m_range         float,
-    @v_segment_length  float,
-    @v_segment_start_length float,
-    @v_segment_end_length   float,
-    @v_prev_segment    geometry,
-    @v_segment         geometry,
-    @v_next_segment    geometry,
+    @v_sZ               float,
+    @v_sM               float,
+    @v_eM               float,
+    @v_z_range          float,
+    @v_m_range          float,
+    @v_segment_length   float,
+    @v_arc_length       Float,
+    @v_prev_segment     geometry,
+    @v_segment          geometry,
+    @v_next_segment     geometry,
 
-	@v_deflection_angle float,
-	@v_circumference    float,
-	@v_radius           float,
-	@v_angle            float,
-	@v_bearing          float,
-	@v_centre_point     geometry;
+    @v_deflection_angle float,
+    @v_circumference    float,
+    @v_radius           float,
+    @v_angle            float,
+    @v_bearing          float,
+    @v_centre_point     geometry;
 
     If ( @p_linestring is null )
       Return @p_linestring;
@@ -114,8 +111,8 @@ BEGIN
 
     SET @v_round_xy   = ISNULL(@p_round_xy,3);
     SET @v_round_zm   = ISNULL(@p_round_zm,2);
-	SET @v_measure    = ROUND(@p_measure,@v_round_zm+1);
-	SET @v_offset     = ISNULL(@p_offset,0.0);
+    SET @v_measure    = ROUND(@p_measure,@v_round_zm);
+    SET @v_offset     = ISNULL(@p_offset,0.0);
     SET @v_dimensions = 'XY' 
                        + case when @p_linestring.HasZ=1 then 'Z' else '' end +
                        + 'M';
@@ -140,17 +137,13 @@ BEGIN
     -- Filter to find specific segment containing measure
     --
     SELECT TOP 1
-	       @v_id                   = v.id,
-		   @v_max_id               = v.max_id,
            @v_geometry_type        = v.geometry_type,
            @v_sZ                   = ROUND(v.sz,@v_round_xy+1),
-		   @v_sM                   = ROUND(v.sm,@v_round_xy+1),
-		   @v_eM                   = ROUND(v.em,@v_round_xy+1),
+           @v_sM                   = ROUND(v.sm,@v_round_xy+1),
+           @v_eM                   = ROUND(v.em,@v_round_xy+1),
            /* Derived values */           
-		   @v_m_range              = ROUND(v.measure_range,@v_round_zm),
+           @v_m_range              = ROUND(v.measure_range,@v_round_zm),
            @v_segment_length       = ROUND(v.segment_length,@v_round_xy+1),
-           @v_segment_start_length = ROUND(v.start_length,@v_round_xy+1),
-		   @v_segment_end_length   = ROUND(v.cumulative_length,@v_round_xy+1),
            @v_prev_segment         = v.prev_segment,
            @v_segment              = v.segment,
            @v_next_segment         = v.next_segment
@@ -174,18 +167,21 @@ BEGIN
     -- Short Circuit: Handle situation where point is at start of first segment
     IF ( @v_measure = @v_sM )
     BEGIN
-	  IF ( @v_prev_segment is not null )
-	    SET @v_measure_point = [$(cogoowner)].[STFindPointBisector](
-		                        @v_prev_segment,
-								@v_segment,
-								@v_offset,
-								@v_round_xy,@v_round_zm,@v_round_zm
+      IF ( @v_prev_segment is not null )
+        SET @v_measure_point = [$(cogoowner)].[STFindPointBisector](
+                                @v_prev_segment,
+                                @v_segment,
+                                @v_offset,
+                                @v_round_xy,@v_round_zm,@v_round_zm
                                )
       ELSE
-	    SET @v_measure_point = [$(owner)].[STOffsetPoint](
-	                             @v_segment,
+        SET @v_measure_point = [$(owner)].[STOffsetPoint](
+                                 @v_segment,
                                  0.0,
-                                 @v_offset
+                                 @v_offset,
+                                 @v_round_xy,
+                                 @v_round_zm,
+                                 @v_round_zm
                               );
       RETURN @v_measure_point;
     END;
@@ -193,33 +189,38 @@ BEGIN
     -- Short Circuit: Is point at end of last segment?
     IF ( @v_measure = @v_eM )
     BEGIN
-	  IF ( @v_next_segment is not null )
-	    SET @v_measure_point = [$(cogoowner)].[STFindPointBisector](
-		                          @v_segment,
-							      @v_next_segment,
-								  @v_offset,
-								  @v_round_xy,@v_round_zm,@v_round_zm
+      IF ( @v_next_segment is not null )
+        SET @v_measure_point = [$(cogoowner)].[STFindPointBisector](
+                                  @v_segment,
+                                  @v_next_segment,
+                                  @v_offset,
+                                  @v_round_xy,@v_round_zm,@v_round_zm
                                )
       ELSE
-	    SET @v_measure_point = [$(owner)].[STOffsetPoint](
-	                              @v_segment,
+        SET @v_measure_point = [$(owner)].[STOffsetPoint](
+                                  @v_segment,
                                   1.0,
-                                  @v_offset
+                                  @v_offset,
+                                  @v_round_xy,
+                                  @v_round_zm,
+                                  @v_round_zm
                               );
       RETURN @v_measure_point;
     END;
 
-	-- Required point is within current segment.
-	-- 
-	IF ( @v_segment.STGeometryType() = 'LineString' )
-	BEGIN
+    -- ###########################################################################
+    -- ############################## LineString #################################
+    -- ###########################################################################
+  
+    IF ( @v_segment.STGeometryType() = 'LineString' )
+    BEGIN
       SET @v_bearing_from_start = [$(cogoowner)].[STBearingBetweenPoints] (
                                      @v_segment.STStartPoint(),
                                      @v_segment.STEndPoint()
                                   );
 
-      -- Compute point along line by length
-      SET @v_measure_ratio   = (@v_measure - @v_sM) / @p_linestring.STEndPoint().M;
+      -- Compute point along line by measure
+      SET @v_measure_ratio   = (@v_measure - @v_sM) / @v_m_range;
       SET @v_measure_point   = geometry::STPointFromText(
                               'POINT(' 
                               + 
@@ -244,8 +245,7 @@ BEGIN
                             );
 
       -- Offset the point if required
-      IF (    @v_offset is not null 
-          and @v_offset <> 0.0 ) 
+      IF ( @v_offset <> 0.0 ) 
       BEGIN
         -- Compute offset bearing
         SET @v_offset_bearing = case when (@v_offset < 0) 
@@ -283,13 +283,16 @@ BEGIN
                                 @p_linestring.STSrid
                               );
       END;
-	  RETURN @v_measure_point;
+      RETURN @v_measure_point;
     END;
 
-  -- ***************************************************
-  -- We now have a CircularString
+  -- ###########################################################################
+  -- ############################## CircularString #############################
+  -- ###########################################################################
+
   -- Compute centre of circle defining CircularString
   --
+
   SET @v_centre_point = [$(cogoowner)].[STFindCircleFromArc] (@v_segment);
 
   -- Defines circle?
@@ -299,21 +302,19 @@ BEGIN
     Return null;
 
   -- Retrieve radius and remove from centre point
-  SET @v_radius = @v_centre_point.Z;
+  SET @v_radius       = @v_centre_point.Z;
   SET @v_centre_point = geometry::Point(@v_centre_point.STX,@v_centre_point.STY,@v_segment.STSrid);
 
   -- Compute circumference of circle
   SET @v_circumference = 2.0 * PI() * @v_radius;
 
+  -- Compute arcLength to our measure point
+  SET @v_measure_ratio  = (@p_measure - @v_segment.STStartPoint().M) / ( @v_segment.STEndPoint().M - @v_segment.STStartPoint().M);
+  SET @v_arc_length     = @v_segment_length * @v_measure_ratio;
+
   -- Compute the angle subtended by the arc at the centre of the circle
-  SET @v_angle         = @v_segment_length / @v_circumference * 360.0;
-
-  -- Compute length ratio to apply to @v_angle to locate point
-  SET @v_measure_ratio  = (@v_measure - @v_sM) / @p_linestring.STEndPoint().M;
-
-  -- Apply ratio to angle
-  SET @v_angle         = @v_angle * @v_measure_ratio;
-
+  SET @v_angle          = (@v_arc_length / @v_circumference) * CAST(360.0 as float);
+  
   -- Compute bearing from centre to first point of circular arc
   SET @v_bearing       = [$(cogoowner)].[STBearingBetweenPoints](
                              @v_centre_point,
@@ -321,16 +322,30 @@ BEGIN
                          );
 
   -- Adjust bearing depending on whether CircularString is rotating anticlockwise (-1) or clockwise(1) 
-  SET @v_bearing       = @v_bearing + ( @v_angle * [$(cogoowner)].[STisClockwiseArc] (@v_segment));
+  SET @v_clockwise     = [$(cogoowner)].[STisClockwiseArc] (@v_segment);
+  SET @v_bearing       = @v_bearing + ( @v_angle * @v_clockwise);
 
   -- Normalise bearing
   SET @v_bearing       = [$(cogoowner)].[STNormalizeBearing](@v_bearing);
 
+  -- Check if offset extends out past circular arc centre.
+  -- Return centre if requested otherwise return null
+  IF ( ( @v_clockwise = -1 AND @v_offset < 0 )
+    OR ( @v_clockwise = 1 AND @v_offset > 0 ) )
+  BEGIN
+   IF ( @v_radius_check = 1 AND ABS(@v_offset) > @v_radius )
+     RETURN NULL ;
+   IF ( @v_radius_check = 2 AND ABS(@v_offset) >= @v_radius )
+     RETURN @v_centre_point;
+  END;
+
   -- Compute point
+  SET @v_offset         = @v_radius - (@v_clockwise*@v_offset);
+
   SET @v_measure_point  = [$(cogoowner)].[STPointFromCOGO](
                              @v_centre_point,
                              @v_Bearing,
-                             @v_radius - @v_offset,
+                             @v_offset,
                              @p_round_xy
                           );
 

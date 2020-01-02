@@ -27,6 +27,7 @@ CREATE FUNCTION [$(lrsowner)].[STFindSegmentByMeasureRange]
   @p_start_measure Float,
   @p_end_measure   Float = null,
   @p_offset        Float = 0.0,
+  @p_radius_check  int   = 0,
   @p_round_xy      int   = 3,
   @p_round_zm      int   = 2
 )
@@ -41,6 +42,7 @@ as
  *               @p_start_measure Float,
  *               @p_end_measure   Float = null,
  *               @p_offset        Float = 0,
+ *               @p_radius_check  int   = 0,
  *               @p_round_xy      int   = 3,
  *               @p_round_zm      int   = 2
  *             )
@@ -51,6 +53,8 @@ as
  *    If a non-zero value is suppied for @p_offset, the extracted line is then offset to the left (if @p_offset < 0) or to the right (if @p_offset > 0).
  *
  *    Computes Z and M values if exist on @p_linestring.
+ *
+ *    If an offset point is for a circular string on the centre side, if the offset is > radius the point is kept if 0, removed if 1.
  *  NOTES
  *    Supports linestrings with CircularString elements.
  *  INPUTS
@@ -58,6 +62,7 @@ as
  *    @p_start_measure (float) - Measure defining start point of located geometry.
  *    @p_end_measure   (float) - Measure defining end point of located geometry.
  *    @p_offset        (float) - Offset (distance) value left (negative) or right (positive) in SRID units.
+ *    @p_radius_check    (int) - If an offset point is for a circular string on the centre side, if the offset is > radius the point is kept if 0, removed if 1, and centre point returned if 2.
  *    @p_round_xy        (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm        (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -66,8 +71,9 @@ as
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - December 2017 - Original Coding.
+ *    Simon Greener - December 2019 - Coalesced circularString and Linestring code under one function; Added @p_radius_check.
  *  COPYRIGHT
- *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
+ *    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
 ******/
 begin
   DECLARE
@@ -116,11 +122,12 @@ begin
     -- Check if zero measure range  
     If ( @v_start_measure = @v_end_measure )
       Return [$(lrsowner)].[STFindPointByMeasure] (
-                              /* @p_linestring */ @p_linestring,
-                              /* @p_measure    */ @v_start_measure,
-                              /* @p_offset     */ @v_offset,
-                              /* @p_round_xy   */ @v_round_xy,
-                              /* @p_round_zm   */ @v_round_zm
+                              /* @p_linestring  */ @p_linestring,
+                              /* @p_measure     */ @v_start_measure,
+                              /* @p_offset      */ @v_offset,
+                              /* @p_radius_check*/ @p_radius_check,
+                              /* @p_round_xy    */ @v_round_xy,
+                              /* @p_round_zm    */ @v_round_zm
                            );
 
     -- Set coordinate dimensions flag for STPointAsText function
@@ -135,11 +142,11 @@ begin
         FOR
       SELECT v.id,
              v.min_id as first_id,
-		     v.max_id as last_id,
+             v.max_id as last_id,
              /* Derived values */           
              ROUND(v.segment_length,@v_round_xy+1) as length,
              ROUND(v.start_length,  @v_round_xy+1) as startLength,
-			 ROUND(v.measure_range, @v_round_zm+1) as measureRange,
+             ROUND(v.measure_range, @v_round_zm+1) as measureRange,
              v.segment      as geom
         FROM [$(owner)].[STSegmentize] (
                /* @p_geometry     */ @p_linestring,
@@ -188,12 +195,13 @@ begin
      BEGIN
        SET @v_new_segment_geom = 
                  [$(lrsowner)].[STSplitSegmentByMeasure] (
-                    /* @p_linestring     */ @v_segment_geom,
-                    /* @p_start_measure  */ @v_start_measure,
-                    /* @p_end_measure    */ @v_end_measure,
-                    /* @p_offset         */ @v_offset,
-                    /* @p_round_xy       */ @v_round_xy,
-                    /* @p_round_zm       */ @v_round_zm
+                    /* @p_linestring   */ @v_segment_geom,
+                    /* @p_start_measure*/ @v_start_measure,
+                    /* @p_end_measure  */ @v_end_measure,
+                    /* @p_offset       */ @v_offset,
+                    /* @p_radius_check */ @p_radius_check,
+                    /* @p_round_xy     */ @v_round_xy,
+                    /* @p_round_zm     */ @v_round_zm
                  );
 
        IF ( @v_new_segment_geom is not null 
@@ -249,6 +257,7 @@ begin
                     /* @p_start_measure */ @v_segment_geom.STStartPoint().M,
                     /* @p_end_measure   */ @v_end_measure,
                     /* @p_offset        */ @v_offset,
+                    /* @p_radius_check  */ @p_radius_check,
                     /* @p_round_xy      */ @v_round_xy,
                     /* @p_round_zm      */ @v_round_zm
                  );

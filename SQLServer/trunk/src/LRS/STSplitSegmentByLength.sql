@@ -27,6 +27,7 @@ CREATE FUNCTION [$(lrsowner)].[STSplitSegmentByLength]
   @p_start_length float,
   @p_end_length   float = null,
   @p_offset       float = 0.0,
+  @p_radius_check int   = 0,
   @p_round_xy     int   = 3,
   @p_round_zm     int   = 2
 )
@@ -41,6 +42,7 @@ As
  *               @p_start_length Float,
  *               @p_end_length   Float = null,
  *               @p_offset       Float = 0.0,
+ *               @p_radius_check int   = 0,
  *               @p_round_xy     int   = 3,
  *               @p_round_zm     int   = 2
  *             )
@@ -48,6 +50,8 @@ As
  *  DESCRIPTION
  *    Given start and end lengths, this function extracts a new LineString segment from the input @p_linestring.
  *    If a non-zero value is supplied for @p_offset, the extracted LineString is then offset to the left (if @p_offset < 0) or to the right (if @p_offset > 0).
+ *    If the circularString offset causes the CircularString to disappear, NULL is returned.
+ *    If an offset point is for a circular string on the centre side, if the offset is > radius the point is kept if 0, removed if 1, and the centre returned if 2.
  *  NOTES
  *    Supports a single (2-point) LineString element only.
  *  INPUTS
@@ -55,6 +59,7 @@ As
  *    @p_start_length   (float) - Measure defining start point of located geometry.
  *    @p_end_length     (float) - Measure defining end point of located geometry.
  *    @p_offset         (float) - Offset (distance) value left (negative) or right (positive) in SRID units.
+ *    @p_radius_check     (int) - If an offset point is for a circular string on the centre side, if the offset is > radius the point is kept if 0, removed if 1.
  *    @p_round_xy         (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm         (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -63,6 +68,7 @@ As
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - December 2017 - Original Coding.
+ *    Simon Greener - December 2019 - Coalesced circularString and Linestring code under one function; Added @p_radius_check.
  *  COPYRIGHT
  *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 ******/
@@ -85,7 +91,8 @@ Begin
     @v_circle             geometry,
     @v_start_point        geometry,
     @v_mid_point          geometry,
-    @v_end_point          geometry;
+    @v_end_point          geometry,
+    @v_return_linestring  geometry;
   Begin
     IF ( @p_linestring is null )
       Return NULL;
@@ -134,6 +141,9 @@ Begin
     SET @v_start_length = @v_temp;
     -- *********************************
 
+  -- #####################################################################
+  -- ##################### Processing LineString #########################
+  -- #####################################################################
   IF ( @p_linestring.STGeometryType() = 'Linestring' ) 
   BEGIN
     -- Compute start and end points from distances...
@@ -298,10 +308,18 @@ Begin
                            );
       END;
     END;
+    SET @v_return_linestring = [$(owner)].[STMakeLine] ( 
+                                 @v_start_point, 
+                                 @v_end_point,
+                                 @v_round_xy,
+                                 @v_round_zm 
+                             );
   END
   ELSE
   BEGIN
-    -- Processing CircularString
+    -- #####################################################################
+    -- ##################### Processing CircularString #####################
+    -- #####################################################################
 
     IF ( @v_start_length > @p_linestring.STLength() )
       Return NULL;
@@ -312,13 +330,15 @@ Begin
     -- Start point will be at v_start_length from first point...
     -- 
     SET @v_start_point = [$(lrsowner)].[STFindPointByLength] (
-                             /* @p_linestring */ @p_linestring,
-                             /* @p_length     */ @v_start_length,
-                             /* @p_offset     */ @v_offset,
-                             /* @p_round_xy   */ @v_round_xy,
-                             /* @p_round_zm   */ @v_round_zm   
+                             /* @p_linestring  */ @p_linestring,
+                             /* @p_length      */ @v_start_length,
+                             /* @p_offset      */ @v_offset,
+                             /* @p_radius_check*/ @p_radius_check,
+                             /* @p_round_xy    */ @v_round_xy,
+                             /* @p_round_zm    */ @v_round_zm   
                          );
 
+    -- Need to handle offset points that disappear
     -- If start=end we have a single point
     --
     IF ( @v_start_length = @v_end_length ) 
@@ -327,12 +347,15 @@ Begin
     -- Now compute End Point
     --
     SET @v_end_point  = [$(lrsowner)].[STFindPointByLength] (
-                           /* @p_linestring */ @p_linestring,
-                           /* @p_length       */ @v_end_length,
-                           /* @p_offset       */ @v_offset,
-                           /* @p_round_xy     */ @v_round_xy,
-                           /* @p_round_zm     */ @v_round_zm   
+                           /* @p_linestring  */ @p_linestring,
+                           /* @p_length      */ @v_end_length,
+                           /* @p_offset      */ @v_offset,
+                           /* @p_radius_check*/ @p_radius_check,
+                           /* @p_round_xy    */ @v_round_xy,
+                           /* @p_round_zm    */ @v_round_zm   
                        );
+
+    -- Need to handle offset points that disappear
 
     -- We need to compute a mid point between the two start/end points
     -- Try and reuse existing mid point
@@ -368,11 +391,12 @@ Begin
       -- Compute new point at mid way between start and end points
       SET @v_mid_length = @v_start_length + ((@v_end_length - @v_start_length) / 2.0);
       SET @v_mid_point  =  [$(lrsowner)].[STFindPointByLength] (
-                             /* @p_linestring */ @p_linestring,
-                             /* @p_length       */ @v_mid_length,
-                             /* @p_offset       */ @v_offset,
-                             /* @p_round_xy     */ @v_round_xy,
-                             /* @p_round_zm     */ @v_round_zm
+                             /* @p_linestring  */ @p_linestring,
+                             /* @p_length      */ @v_mid_length,
+                             /* @p_offset      */ @v_offset,
+                             /* @p_radius_check*/ @p_radius_check,
+                             /* @p_round_xy    */ @v_round_xy,
+                             /* @p_round_zm    */ @v_round_zm
                          );
     END;
 
@@ -421,23 +445,15 @@ Begin
                  ) 
                  +
                  ')';
+    SET @v_return_linestring = geometry::STGeomFromText(@v_wkt,@p_linestring.STSrid);
   END;
 
   -- Now construct, possibly offset, and return new LineString
   -- 
-  Return case when ( @v_offset = 0.0 )
-              then [$(owner)].[STMakeLine] ( 
-                      @v_start_point, 
-                      @v_end_point,
-                      @v_round_xy,
-                      @v_round_zm )
+  Return case when @v_offset = 0.0
+              then @v_return_linestring
               else [$(owner)].[STOffsetSegment] (
-                      /* @p_linestring */ [$(owner)].[STMakeLine] (
-                                             @v_start_point, 
-                                             @v_end_point,
-                                             @v_round_xy,
-                                             @v_round_zm
-                                          ),
+                      /* @p_linestring */ @v_return_linestring,
                       /* @p_offset     */ @v_offset,
                       /* @p_round_xy   */ @v_round_xy,
                       /* @p_round_zm   */ @v_round_zm 

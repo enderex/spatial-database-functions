@@ -70,6 +70,7 @@ AS
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - January 2013 - Original coding.
+ *    Simon Greener - December 2019 - Fixed bug with Z/M handling.
  *  COPYRIGHT
  *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 ******/
@@ -221,8 +222,8 @@ BEGIN
                           /* @p_dimensions */ @v_dimensions,
                           /* @p_X          */ @v_point.STX,
                           /* @p_Y          */ @v_point.STY,
-                          /* @p_Z          */ @v_first_line.STEndPoint().Z,
-                          /* @p_M          */ @v_first_line.STEndPoint().M,
+                          /* @p_Z          */ @p_line.STEndPoint().Z,
+                          /* @p_M          */ @p_line.STEndPoint().M,
                           /* @p_round_x    */ @v_round_xy,
                           /* @p_round_y    */ @v_round_xy,
                           /* @p_round_z    */ @v_round_z,

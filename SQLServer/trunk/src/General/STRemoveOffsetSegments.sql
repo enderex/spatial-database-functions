@@ -103,7 +103,7 @@ Begin
            ) as f
        WHERE f.Dist2Boundary <= @v_tolerance
     )
-    SELECT @v_linestring = geometry::CollectionAggregate ( f.line )
+    SELECT @v_linestring = [$(owner)].[STRound](geometry::CollectionAggregate ( f.line ),@p_round_xy,@p_round_xy,@p_round_zm,@p_round_zm),
       FROM (SELECT TOP (100) PERCENT
                    s.segment as line 
               FROM ids as i

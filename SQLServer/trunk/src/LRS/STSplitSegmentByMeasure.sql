@@ -27,6 +27,7 @@ CREATE FUNCTION [$(lrsowner)].[STSplitSegmentByMeasure]
   @p_start_measure float,
   @p_end_measure   float,
   @p_offset        float = 0.0,
+  @p_radius_check  int   = 0,
   @p_round_xy      int   = 3,
   @p_round_zm      int   = 2
 )
@@ -41,6 +42,7 @@ As
  *               @p_start_measure Float,
  *               @p_end_measure   Float = null,
  *               @p_offset        Float = 0.0,
+ *               @p_radius_check  int   = 0,
  *               @p_round_xy      int   = 3,
  *               @p_round_zm      int   = 2
  *             )
@@ -57,6 +59,7 @@ As
  *    @p_start_measure   (float) - Measure defining start point of located geometry.
  *    @p_end_measure     (float) - Measure defining end point of located geometry.
  *    @p_offset          (float) - Offset (distance) value left (negative) or right (positive) in SRID units.
+ *    @p_radius_check      (int) - If 1/2, checks offset on circular arc; If point would disappear it is kept or thrown away if 1, centre returned if 2.
  *    @p_round_xy          (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm          (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -135,11 +138,12 @@ Begin
     -- Start point will be at v_start_measure from first point...
     -- 
     SET @v_start_point = [$(lrsowner)].[STFindPointByMeasure] (
-                             /* @p_linestring */ @p_linestring,
-                             /* @p_measure    */ @v_start_measure,
-                             /* @p_offset     */ @v_offset,
-                             /* @p_round_xy   */ @v_round_xy,
-                             /* @p_round_zm   */ @v_round_zm   
+                             /* @p_linestring   */ @p_linestring,
+                             /* @p_measure      */ @v_start_measure,
+                             /* @p_offset       */ @v_offset,
+                             /* @p_radius_check */ @p_radius_check,
+                             /* @p_round_xy     */ @v_round_xy,
+                             /* @p_round_zm     */ @v_round_zm   
                          );
 
     -- If start=end we have a single point
@@ -313,22 +317,24 @@ Begin
       SET @v_mid_measure = @v_start_measure + ( (@v_end_measure - @v_start_measure) / 2.0 );
       -- Compute new point at mid way between distances
       SET @v_mid_point =  [$(lrsowner)].[STFindPointByMeasure] (
-                             /* @p_linestring */ @p_linestring,
-                             /* @p_measure    */ @v_mid_measure,
-                             /* @p_offset     */ @v_offset,
-                             /* @p_round_xy   */ @v_round_xy,
-                             /* @p_round_zm   */ @v_round_zm   
+                             /* @p_linestring   */ @p_linestring,
+                             /* @p_measure      */ @v_mid_measure,
+                             /* @p_offset       */ @v_offset,
+                             /* @p_radius_check */ @p_radius_check,
+                             /* @p_round_xy     */ @v_round_xy,
+                             /* @p_round_zm     */ @v_round_zm   
                          );
     END;
 
     -- Now compute End Point
     --
     SET @v_end_point = [$(lrsowner)].[STFindPointByMeasure] (
-                           /* @p_linestring */ @p_linestring,
-                           /* @p_measure    */ @v_end_measure,
-                           /* @p_offset     */ @v_offset,
-                           /* @p_round_xy   */ @v_round_xy,
-                           /* @p_round_zm   */ @v_round_zm   
+                           /* @p_linestring   */ @p_linestring,
+                           /* @p_measure      */ @v_end_measure,
+                           /* @p_offset       */ @v_offset,
+                           /* @p_radius_check */ @p_radius_check,
+                           /* @p_round_xy     */ @v_round_xy,
+                           /* @p_round_zm     */ @v_round_zm   
                        );
 
     -- Now construct and return new CircularArc

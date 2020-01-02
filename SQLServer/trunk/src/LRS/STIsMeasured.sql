@@ -52,7 +52,7 @@ As
  *     select geometry::STPointFromText('POINT(0 0 1.1 2.2)',0) 
  *    )
  *    SELECT d.geom.STGeometryType() as gType, 
- *           dbo.STCoordDim(d.geom) as cDim,
+ *           [dbo].[STCoordDim](d.geom) as cDim,
  *           [lrs].[STIsMeasured]( d.geom ) as isMeasured
  *      FROM data as d;
  *    GO

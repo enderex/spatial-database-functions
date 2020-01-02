@@ -30,11 +30,11 @@ CREATE FUNCTION [$(owner)].[STAppend]
 )
 returns geometry 
 as
-/****f* EDITOR/STAppend (2012)
+/****m* EDITOR/STAppend (2012)
  *  NAME
  *    STAppend -- Appends second linestring to end of first linestring.
  *  SYNOPSIS 
- *    Function [$(owner)].[STAppend] (
+ *    Function [$(lrsowner)].[STAppend] (
  *               @p_linestring1 geometry,
  *               @p_linestring2 geometry,
  *               @p_round_xy    int   = 3,
@@ -65,31 +65,12 @@ as
  *    @p_round_zm         (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
  *    appended line  (geometry) - New line with second appended to first
- *  EXAMPLE
- *    select [$(owner)].[STAppend] (
- *             geometry::STGeomFromText('LINESTRING(0 0,1 1)',0),
- *             geometry::STGeomFromText('CIRCULARSTRING(10 10,15 15,20 10)',0),
- *             3,2
- *           ).STAsText() as geom;
- *
- *    geom
- *    GEOMETRYCOLLECTION (CIRCULARSTRING (10 10, 15 15, 20 10), LINESTRING (0 0, 1 1))
- *
- *    select [$(owner)].[STAppend] (
- *             geometry::STGeomFromText('LINESTRING(0 0,10 10)',0),
- *             geometry::STGeomFromText('CIRCULARSTRING(10 10,15 15,20 10)',0),
- *             3,2
- *           ).STAsText() as geom;
- * 
- *    geom
- *    COMPOUNDCURVE (CIRCULARSTRING (20 10, 15 15, 10 10), (10 10, 0 0))
  *  AUTHOR
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - January 2018 - Original Coding.
- *    Simon Greener - October 2019 - Circular String fixes.
  *  COPYRIGHT
- *    (c) 2008-2019 by TheSpatialDBAdvisor/Simon Greener
+ *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 ******/
 begin
   DECLARE
@@ -128,11 +109,29 @@ begin
                                  'CircularString',
                                  'CompoundCurve' ) )
       Return @p_linestring2;
+
     SET @v_GeometryType2 = @p_linestring2.STGeometryType();
+    IF ( @v_GeometryType2 = 'CompoundCurve' AND 
+         @v_GeometryType1 <> 'CompoundCurve' )
+    BEGIN
+      -- Put compoundCurve first
+      SET @v_linestring1   = geometry::STGeomFromText(@p_linestring2.AsTextZM(),@p_linestring2.STSrid);
+      SET @v_linestring2   = geometry::STGeomFromText(@p_linestring1.AsTextZM(),@p_linestring2.STSrid);
+      SET @v_GeometryType1 = @p_linestring2.STGeometryType();
+      SET @v_GeometryType2 = @p_linestring1.STGeometryType();
+    END
+    ELSE
+    BEGIN
+     SET @v_linestring1  = @p_linestring1;
+     SET @v_linestring2  = @p_linestring2;
+    END;
+
+    -- second cannot be a MultiLineString or CompoundCurve
     IF (@v_GeometryType2 NOT IN ('LineString',
-                                 'CircularString') )  -- second cannot be a MultiLineString or CompoundCurve
+                                 'CircularString' ) ) 
       Return @p_linestring1;
-    IF ( @v_GeometryType1 = 'MultiLineString' and @v_GeometryType2 NOT IN ('LineString','CircularString') )
+
+    IF ( @v_GeometryType1 = 'MultiLineString' and @v_GeometryType2 <> 'LineString' )
       Return @p_linestring1;
 
     -- Check dimensions
@@ -151,8 +150,9 @@ begin
     -- ******************************************************************************
     -- Process 
     --
-    SET @v_linestring1  = @p_linestring1;
-    SET @v_linestring2  = @p_linestring2;
+    --IF ( @v_dimensions = 'XY' )
+    --  Return @p_linestring1.STUnion(@p_linestring2);
+
     SET @v_wkt          = '';
 
     IF ( @v_geometryType1 = 'MultiLineString' ) 
@@ -269,6 +269,7 @@ begin
         SET @v_reversed_line = [$(owner)].[STReverse] (@v_linestring2,@v_round_xy,@v_round_zm);
         SET @v_wkt_remainder = @v_reversed_line.AsTextZM();
         SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX(',',@v_wkt_remainder)+1,LEN(@v_wkt_remainder));
+        SET @v_wkt_remainder = REPLACE(REPLACE(@v_wkt_remainder,'((','('),'))',')');
         SET @v_wkt           = REPLACE(@v_linestring1.AsTextZM(),')',',') + @v_wkt_remainder;
         -- Return geometry
         Return geometry::STGeomFromText(@v_wkt,@v_linestring1.STSrid);
@@ -302,17 +303,12 @@ begin
 
     -- We have processed situations where both are LINESTRING or CIRCULARSTRING
     -- What is left is a LINESTRING and a CIRCULARSTRING ...
+
+    --
     -- When combined these create COMPOUNDCURVE geometries.
     -- SQL Server's STUnion creates COMPOUNDCURVE(CIRCULARSTRING(),()) when points match even if CIRCULARSTRING second
     -- Except when DISJOINT then GEOMETRYCOLLECTION
     --
-    IF ( @v_GeometryType2 = 'CircularString' ) 
-    BEGIN
-      -- SQL Server's STUnion always puts CIRCULARSTRING() first in returned COMPOUNDCURVE/GEOMETRYCOLLECTION
-      SET @v_linestring1   = @p_linestring2;
-      SET @v_linestring2   = @p_linestring1;
-    END;
-
     -- 1. Share start/end point?
     -- Must Round to ensure match
     IF ( [$(owner)].[STEquals](@v_linestring1.STEndPoint(),
@@ -323,8 +319,20 @@ begin
     BEGIN
       -- Add Second to End of First  ....
       SET @v_wkt_remainder = @v_linestring2.AsTextZM();
-      SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX('(',@v_wkt_remainder)-1,LEN(@v_wkt_remainder));  -- Remove Linestring Tag
-      SET @v_wkt           = 'COMPOUNDCURVE (' + @v_linestring1.AsTextZM() + ',' + @v_wkt_remainder + ')';
+      IF ( @v_linestring2.STGeometryType() = 'LineString' ) 
+      BEGIN
+        -- Get rid of LINESTRING WKT prefix
+        SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX('(',@v_wkt_remainder),LEN(@v_wkt_remainder)); 
+        SET @v_wkt_remainder = REPLACE(REPLACE(@v_wkt_remainder,'((','('),'))',')');
+      END;
+      SET @v_wkt = @v_linestring1.AsTextZM();
+      IF ( @v_linestring1.STGeometryType() = 'CompoundCurve' ) 
+      BEGIN
+        -- Remove CompundCurve Tag
+        SET @v_wkt = SUBSTRING(@v_wkt,CHARINDEX('(',@v_wkt)+1,LEN(@v_wkt));
+        SET @v_wkt = REPLACE(REPLACE(@v_wkt,'))',')'),'((','(');
+      END;
+      SET @v_wkt   = 'COMPOUNDCURVE (' + REPLACE(@v_wkt + ',' + @v_wkt_remainder,'LINESTRING','') + ')';
       -- Return geometry
       Return geometry::STGeomFromText(@v_wkt,@v_linestring1.STSrid);
     END;
@@ -338,9 +346,22 @@ begin
     BEGIN
       -- Reverse first and add second to its end ...
       SET @v_reversed_line = [$(owner)].[STReverse] (@v_linestring1,@v_round_xy,@v_round_zm);
-      SET @v_wkt_remainder = @v_linestring2.AsTextZM();
-      SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX('(',@v_wkt_remainder)-1,LEN(@v_wkt_remainder));
-      SET @v_wkt           = 'COMPOUNDCURVE (' + @v_reversed_line.AsTextZM() + ',' + @v_wkt_remainder + ')';
+
+      SET @v_wkt = @v_reversed_line.AsTextZM();
+      IF ( @v_reversed_line.STGeometryType() = 'CompoundCurve' ) 
+      BEGIN
+        -- Get rid of COMPOUNDCURVE WKT Wrap
+        SET @v_wkt = SUBSTRING(@v_wkt,CHARINDEX('(',@v_wkt)+1,LEN(@v_wkt));
+        SET @v_wkt = REPLACE(REPLACE(@v_wkt,'))',')'),'((','(');
+      END;
+
+      SET @v_wkt_remainder           = @v_linestring2.AsTextZM();
+      IF ( @v_linestring2.STGeometryType() = 'CompoundCurve' ) 
+      BEGIN
+        SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX('(',@v_wkt_remainder)+1,LEN(@v_wkt_remainder));
+        SET @v_wkt_remainder = REPLACE(REPLACE(@v_wkt_remainder,'))',')'),'((','(');
+      END;
+      SET @v_wkt   = 'COMPOUNDCURVE (' + REPLACE(@v_wkt + ',' + @v_wkt_remainder ,'LINESTRING','')  + ')';
       -- Return geometry
       Return geometry::STGeomFromText(@v_wkt,@v_linestring1.STSrid);
     END;
@@ -352,11 +373,25 @@ begin
                           @v_round_zm,
                           @v_round_zm) = 1 )
     BEGIN
-      -- Add Reversed Second to Reversed First....
+      -- Add Reverse of Second to Reverse of First....
       SET @v_reversed_line = [$(owner)].[STReverse](@v_linestring1,@v_round_xy,@v_round_zm);
-      SET @v_wkt_remainder = [$(owner)].[STReverse](@v_linestring2,@v_round_xy,@v_round_zm).AsTextZM();
-      SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX('(',@v_wkt_remainder)-1,LEN(@v_wkt_remainder));
-      SET @v_wkt           = 'COMPOUNDCURVE (' + @v_reversed_line.AsTextZM() + ',' + @v_wkt_remainder + ')';
+      SET @v_wkt = @v_reversed_line.AsTextZM();
+      IF ( @v_reversed_line.STGeometryType() = 'CompoundCurve' ) 
+      BEGIN
+        -- Get rid of COMPOUNDCURVE WKT Wrap
+        SET @v_wkt = SUBSTRING(@v_wkt,CHARINDEX('(',@v_wkt)+1,LEN(@v_wkt));
+        SET @v_wkt = REPLACE(REPLACE(@v_wkt,'))',')'),'((','(');
+      END;
+
+      SET @v_reversed_line = [$(owner)].[STReverse](@v_linestring2,@v_round_xy,@v_round_zm);
+      SET @v_wkt_remainder = @v_reversed_line.AsTextZM();
+      IF ( @v_reversed_line.STGeometryType() = 'CompoundCurve' ) 
+      BEGIN
+        -- Remove COMPOUNDCURVE WKT Prefix
+        SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX('(',@v_wkt_remainder)+1,LEN(@v_wkt_remainder));
+        SET @v_wkt_remainder = REPLACE(REPLACE(@v_wkt_remainder,'))',')'),'((','(');
+      END;
+      SET @v_wkt   = 'COMPOUNDCURVE (' + REPLACE(@v_wkt + ',' + @v_wkt_remainder ,'LINESTRING','')  + ')';
       -- Return geometry
       Return geometry::STGeomFromText(@v_wkt,@v_linestring1.STSrid);
     END;
@@ -369,20 +404,36 @@ begin
                           @v_round_zm) = 1 )
     BEGIN
       -- Add Reverse of Second to End of First ....
+      -- First
+      SET @v_wkt = @v_linestring1.AsTextZM();
+      IF ( @v_linestring1.STGeometryType() = 'CompoundCurve' ) 
+      BEGIN
+        SET @v_wkt = SUBSTRING(@v_wkt,CHARINDEX('(',@v_wkt)+1,LEN(@v_wkt));
+        SET @v_wkt = REPLACE(REPLACE(@v_wkt,'))',')'),'((','(');
+      END;
+      -- Second
       SET @v_reversed_line = [$(owner)].[STReverse] (@v_linestring2,@v_round_xy,@v_round_zm);
       SET @v_wkt_remainder = @v_reversed_line.AsTextZM();
-      SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX('(',@v_wkt_remainder)-1,LEN(@v_wkt_remainder));
-      SET @v_wkt           = 'COMPOUNDCURVE (' + @v_linestring1.AsTextZM() + ',' + @v_wkt_remainder + ')';
+      IF ( @v_linestring1.STGeometryType() = 'CompoundCurve' ) 
+      BEGIN
+        SET @v_wkt_remainder = SUBSTRING(@v_wkt_remainder,CHARINDEX('(',@v_wkt_remainder)+1,LEN(@v_wkt_remainder));
+        SET @v_wkt_remainder = REPLACE(REPLACE(@v_wkt_remainder,'))',')'),'((','(');
+      END;
+      SET @v_wkt   = 'COMPOUNDCURVE (' + REPLACE(@v_wkt + ',' + @v_wkt_remainder ,'LINESTRING','')  + ')';
       -- Return geometry
       Return geometry::STGeomFromText(@v_wkt,@v_linestring1.STSrid);
     END;
 
+    -- CircularString combinations result in a GeometryCollection (why not MultiCurve?)
     SET @v_wkt = 'GEOMETRYCOLLECTION ('
-	                 + @v_linestring1.AsTextZM()
-	                 + ','
-	                 + @v_linestring2.AsTextZM()
-	                 + ')';
-
+                 +
+                 @v_linestring1.AsTextZM()
+                 +
+                 ','
+                 +
+                 @v_linestring2.AsTextZM()
+                 +
+                 ')';
     -- Return geometry
     Return geometry::STGeomFromText(@v_wkt,@v_linestring1.STSrid);
   End;

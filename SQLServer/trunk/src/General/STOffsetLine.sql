@@ -50,7 +50,7 @@ AS
  *  NOTES
  *    Does not currently support circular strings or compoundCurves.
  *    Uses STOneSidedBuffer.
- *    Z ordinates are not supported and where exist will be removed.
+ *    Z and M ordinates are not supported and where exist will be removed.
  *  INPUTS
  *    @p_linestring (geometry) - Must be a (Multi)linestring geometry.
  *    @p_distance   (float)    - if < 0 then linestring is created on left side of original; if > 0 then offset linestring it to right side of original.
@@ -173,7 +173,7 @@ BEGIN
 
       IF ( @v_linestring.STNumPoints() = 2 ) 
       BEGIN
-        SET @v_linestring = [$(owner)].[STOffsetLineSegent] ( 
+        SET @v_linestring = [$(owner)].[STOffsetSegment] ( 
                                   @v_linestring,
                                   @p_distance,
                                   @v_round_xy,
@@ -265,17 +265,6 @@ BEGIN
 
       SET @v_nGeom = @v_nGeom + 1;
      END; /* While Loop */
-
-     -- Add Measures back in 
-     -- (rough approach that does not take into account possible loss of segments)
-     IF ( @p_linestring.HasM=1 )
-       SET @v_result_geom = [lrs].[STAddMeasure] (
-                               @v_result_geom,
-                               @p_linestring.STStartPoint().M,
-                               @p_linestring.STEndPoint().M,
-                               @v_round_xy,
-                               @v_round_zm
-                            );
      Return @v_result_geom;
   END;
 END;

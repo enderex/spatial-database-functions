@@ -29,6 +29,7 @@ CREATE FUNCTION [$(lrsowner)].[STFindSegmentByLengthRange]
   @p_start_length Float,
   @p_end_length   Float = null,
   @p_offset       Float = 0,
+  @p_radius_check int   = 0,
   @p_round_xy     int   = 3,
   @p_round_zm     int   = 2
 )
@@ -43,6 +44,7 @@ as
  *               @p_start_length Float,
  *               @p_end_length   Float = null,
  *               @p_offset       Float = 0,
+ *               @p_radius_check int   = 0,
  *               @p_round_xy     int   = 3,
  *               @p_round_zm     int   = 2
  *             )
@@ -51,6 +53,7 @@ as
  *    Given a start and end length, this function extracts the line segment defined between them (a point if start=end).
  *    If a non-zero value is suppied for @p_offset, the extracted line is then offset to the left (if @p_offset < 0) or
  *    to the right (if @p_offset > 0).
+ *    If @p_radius_check is set to 1, the function will set to NULL any offset points in CircularStrings that disappear; if 2 the centre point is returned otherwise the disappearing point is returned.
  *  NOTES
  *    Supports linestrings with CircularString elements.
  *  INPUTS
@@ -58,6 +61,7 @@ as
  *    @p_start_measure (float) - Measure defining start point of located geometry.
  *    @p_end_measure   (float) - Measure defining end point of located geometry.
  *    @p_offset        (float) - Offset (distance) value left (negative) or right (positive) in p_units.
+ *    @p_radius_check    (int) - If Point disappears in CircularString: 1 causes NULL to be returned; 2 returns centre point; 0 returns the offset point regardless.
  *    @p_round_xy        (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm        (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -181,11 +185,12 @@ begin
     -- Check if zero length range (ie point solution)
     If ( @v_start_length = @v_end_length )
       Return [$(lrsowner)].[STFindPointByLength] (
-                              /* @p_linestring */ @p_linestring,
-                              /* @p_length     */ @v_start_length,
-                              /* @p_offset     */ @v_offset,
-                              /* @p_round_xy   */ @v_round_xy,
-                              /* @p_round_zm   */ @v_round_zm
+                              /* @p_linestring   */ @p_linestring,
+                              /* @p_length       */ @v_start_length,
+                              /* @p_offset       */ 0.0, -- @v_offset,
+                              /* @p_radius_check */ 0,   -- @p_radius_check,
+                              /* @p_round_xy     */ @v_round_xy,
+                              /* @p_round_zm     */ @v_round_zm
                            );
 
     -- Set coordinate dimensions flag for STPointAsText function
@@ -200,7 +205,7 @@ begin
         FOR
       SELECT v.id,
              v.min_id as first_id,
-		     v.max_id as last_id,
+             v.max_id as last_id,
              /* Derived values */           
              ROUND(v.segment_length,@v_round_xy+1) as length,
              ROUND(v.start_length,@v_round_xy+1) as startLength,
@@ -256,36 +261,12 @@ begin
                     /* @p_linestring     */ @v_segment_geom,
                     /* @p_start_distance */ @v_start_length - @v_LengthFromStart,
                     /* @p_end_distance   */ @v_end_length   - @v_LengthFromStart,
-                    /* @p_offset         */ @v_offset,
+                    /* @p_offset         */ 0.0, -- @v_offset,
+                    /* @p_radius_check   */ 0,   -- @p_radius_check,
                     /* @p_round_xy       */ @v_round_xy,
                     /* @p_round_zm       */ @v_round_zm
                  );
-/*
-       IF ( @v_segment_geom.STGeometryType() = 'LineString' ) 
-       BEGIN
-          SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitLineSegmentByLength] (
-                    /* @p_linestring     */ @v_segment_geom,
-                    /* @p_start_distance */ @v_start_length - @v_LengthFromStart,
-                    /* @p_end_distance   */ @v_end_length   - @v_LengthFromStart,
-                    /* @p_offset         */ @v_offset,
-                    /* @p_round_xy       */ @v_round_xy,
-                    /* @p_round_zm       */ @v_round_zm
-                 );
-       END
-       ELSE -- CircularString
-       BEGIN
-          SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitCircularStringByLength] (
-                    /* @p_linestring     */ @v_segment_geom,
-                    /* @p_start_distance */ @v_start_length - @v_LengthFromStart,
-                    /* @p_end_distance   */ @v_end_length   - @v_LengthFromStart,
-                    /* @p_offset         */ @v_offset,
-                    /* @p_round_xy       */ @v_round_xy,
-                    /* @p_round_zm       */ @v_round_zm
-                 );
-       END; -- End of CircularString Processing of Start Point
-*/
+
        IF ( @v_new_segment_geom is not null 
         AND @v_new_segment_geom.STGeometryType() in ('Point','LineString','CircularString') ) 
        BEGIN
@@ -340,36 +321,12 @@ begin
                     /* @p_linestring     */ @v_segment_geom,
                     /* @p_start_distance */ 0.0,
                     /* @p_end_distance   */ @v_end_distance,
-                    /* @p_offset         */ @v_offset,
+                    /* @p_offset         */ 0.0, -- @v_offset,
+                    /* @p_radius_check   */ 0,   -- @p_radius_check,
                     /* @p_round_xy       */ @v_round_xy,
                     /* @p_round_zm       */ @v_round_zm
                  );
-/*
-       IF ( @v_segment_geom.STGeometryType() = 'LineString' ) 
-       BEGIN
-          SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitLineSegmentByLength] (
-                    /* @p_linestring     */ @v_segment_geom,
-                    /* @p_start_distance */ 0.0,
-                    /* @p_end_distance   */ @v_end_distance,
-                    /* @p_offset         */ @v_offset,
-                    /* @p_round_xy       */ @v_round_xy,
-                    /* @p_round_zm       */ @v_round_zm
-                 );
-       END
-       ELSE -- IF ( @v_segment_geom.STGeometryType() = 'LineString' ) ... ELSE 
-       BEGIN
-          SET @v_new_segment_geom = 
-                 [$(lrsowner)].[STSplitCircularStringByLength] (
-                    /* @p_linestring     */ @v_segment_geom,
-                    /* @p_start_distance */ 0.0,
-                    /* @p_end_distance   */ @v_end_distance,
-                    /* @p_offset         */ @v_offset,
-                    /* @p_round_xy       */ @v_round_xy,
-                    /* @p_round_zm       */ @v_round_zm
-                 );
-       END; -- End of CircularString Processing of Start Point
-*/
+
        IF ( @v_new_segment_geom.STGeometryType() in ('Point','LineString','CircularString') ) 
        BEGIN
          -- Add segment to return geom

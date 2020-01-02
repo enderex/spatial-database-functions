@@ -88,7 +88,7 @@ IF EXISTS (
      WHERE id = object_id(N'[$(lrsowner)].[STLocateBetweenElevations]') 
     AND xtype IN (N'FN', N'IF', N'TF')
 )
-BEGIN
+
   DROP FUNCTION [$(lrsowner)].[STLocateBetweenElevations];
   PRINT 'Dropped [$(lrsowner)].[STLocateBetweenElevations] ... ';
 END;
@@ -101,10 +101,11 @@ GO
 
 CREATE FUNCTION [$(lrsowner)].[STLineInterpolatePoint] 
 (
-  @p_linestring geometry,
-  @p_fraction   Float,
-  @p_round_xy   int   = 3,
-  @p_round_zm   int   = 2
+  @p_linestring   geometry,
+  @p_fraction     Float,
+  @p_radius_check int = 0,
+  @p_round_xy     int = 3,
+  @p_round_zm     int = 2
 )
 Returns geometry 
 AS
@@ -113,10 +114,11 @@ AS
  *    STLineInterpolatePoint -- Returns point geometry at supplied fraction along linestring.
  *  SYNOPSIS 
  *    Function [$(lrsowner)].[STLineInterpolatePoint] (
- *               @p_linestring geometry,
- *               @p_fraction   Float
- *               @p_round_xy   int   = 3,
- *               @p_round_zm   int   = 2
+ *               @p_linestring   geometry,
+ *               @p_fraction     Float
+ *               @p_radius_check int = 0,
+ *               @p_round_xy     int = 3,
+ *               @p_round_zm     int = 2
  *             )
  *     Returns geometry 
  *  DESCRIPTION
@@ -200,11 +202,12 @@ AS
 ******/
 BEGIN
   RETURN [$(lrsowner)].[STFindPointByRatio] (
-            /* p_linestring */ @p_linestring,
-            /* @p_ratio     */ @p_fraction,
-            /* @p_offset    */ 0.0,
-            /* @p_round_xy  */ @p_round_xy,
-            /* @p_round_zm  */ @p_round_zm
+            /* p_linestring    */ @p_linestring,
+            /* @p_ratio        */ @p_fraction,
+            /* @p_offset       */ 0.0,
+            /* @p_radius_check */ @p_radius_check,
+            /* @p_round_xy     */ @p_round_xy,
+            /* @p_round_zm     */ @p_round_zm
          );
 END
 GO

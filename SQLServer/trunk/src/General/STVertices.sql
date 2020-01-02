@@ -3,7 +3,7 @@ SET QUOTED_IDENTIFIER ON
 GO
 
 PRINT '******************************************************************';
-PRINT 'Database Schema Variables are: Owner($(cogoowner)) owner(dbo)';
+PRINT 'Database Schema Variables are: Owner($(cogoowner)) owner($(owner))';
 GO
 
 IF EXISTS (
@@ -27,13 +27,13 @@ CREATE FUNCTION [$(owner)].[STVertices]
 )
 Returns @Points TABLE
 (
-  uid int,   /* unique id */
-  pid int,   /* Point Id */
-  mid int,   /* Part Id */
-  rid int,   /* Ring Id - Polygon Only */
-  x   float,
-  y   float,
-  z   float,
+  uid   int,   /* unique id */
+  pid   int,   /* Point Id */
+  mid   int,   /* Part Id */
+  rid   int,   /* Ring Id - Polygon Only */
+  x     float,
+  y     float,
+  z     float,
   m     float,
   point geometry
 )

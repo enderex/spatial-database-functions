@@ -65,6 +65,7 @@ As
  *  HISTORY
  *    Simon Greener - January  2013 - Original Coding.
  *    Simon Greener - December 2017 - Converted to TSQL for SQL Spatial.
+ *    Simon Greener - December 2019 - Fixed bug with handling CircularString.
  *  COPYRIGHT
  *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
 ******/
@@ -232,18 +233,18 @@ Begin
      END;
 
      -- Is this a circularArc?
+     -- Is this a circularArc?
      IF ( @v_segment_geom.STGeometryType() = 'CircularString' and @v_mx is not null) 
      BEGIN
-       -- compute and write mid vertex of curve
-       SET @v_mm  = @v_last_m + @v_mSign*(@v_mm-@v_sm); 
-       -- Print out new point
+       -- compute and write a new mid vertex of the CircularString
+       -- 
        SET @v_wkt = @v_wkt + 
                     [$(owner)].[STPointAsText] (
                        /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
                        /* @p_X          */ @v_mx,
                        /* @p_Y          */ @v_my,
                        /* @p_Z          */ @v_mz,
-                       /* @p_M          */ @v_mm,
+                       /* @p_M          */ @v_last_m + @v_mSign * (@v_mm-@v_sm),
                        /* @p_round_x    */ @v_round_xy,
                        /* @p_round_y    */ @v_round_xy,
                        /* @p_round_z    */ @v_round_zm,
@@ -251,8 +252,6 @@ Begin
                     )
                     +
                     ',';
-       SET @v_last_m = @v_mm;
-       SET @v_sm     = @v_mm;  -- for next calculation
      END;
 
      -- Compute next/last measure
