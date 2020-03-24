@@ -17,9 +17,12 @@ zip -r deploy\SC4SSSCE_SQL_Server_Spatial_Complete_Edition.zip ^
        Drop_All.sql ^
        LoadGeneral.sql ^
        LoadLRS.sql ^
+       RunTestsGeneral.sql ^
+       RunTestsLRS.sql ^
        install_cmd ^
        installSQLAuthMode_cmd ^
        Function_Count.sql ^
+       src\STGetGeomMetadata.sql ^
        src\General\*.* ^
        src\LRS\*.* ^
        test\General\*.* ^

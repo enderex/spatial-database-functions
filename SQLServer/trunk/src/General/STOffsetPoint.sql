@@ -20,7 +20,6 @@ PRINT 'Creating [$(owner)].[STOffsetPoint] ...';
 GO
 
 CREATE Function [$(owner)].[STOffsetPoint] (
-ALTER Function [$(owner)].[STOffsetPoint](
   @p_linestring geometry,
   @p_ratio      Float,
   @p_offset     float,
@@ -63,7 +62,7 @@ BEGIN
   IF (@p_linestring is null or @p_linestring.STIsEmpty()=1)
     Return NULL;
 
-  SET @v_ratio = COALESCE(@p_ratio,0.0);
+  SET @v_ratio = ISNULL(@p_ratio,0.0);
   IF (@v_ratio NOT BETWEEN 0 AND 1) 
     Return @p_linestring;
 
@@ -87,7 +86,18 @@ BEGIN
   SET @v_offset     = ISNULL(@p_offset,0.0);
   SET @v_dimensions = 'XY' 
                       + case when @v_linestring.HasZ=1 then 'Z' else '' end +
-                      + 'M';
+                      + case when @v_linestring.HasM=1 then 'M' else '' end ;
+
+  -- Short circuit if start/end coord.
+  IF ( @v_offset = 0.0 and (ROUND(@v_ratio,8) = 0.0 or ROUND(@v_ratio,8) = 1.0) )
+  BEGIN
+    Return case when @v_ratio = 0.0
+                Then @v_linestring.STStartPoint()
+                when @v_ratio = 1.0
+                then @v_linestring.STEndPoint()
+                else NULL
+            end;
+  END;
 
   -- ###########################################################################
   -- ############################## CircularString #############################
@@ -95,21 +105,8 @@ BEGIN
 
   IF ( @v_geometry_type = 'CircularString' ) 
   BEGIN
-
-    -- Short circuit if start/end coord.
-    IF ( @v_offset = 0.0 and (ROUND(@v_ratio,8) = 0.0 or ROUND(@v_ratio,8) = 1.0) )
-    BEGIN
-      Return case when @v_ratio = 0.0
-                  Then @v_linestring.STStartPoint()
-                  when @v_ratio = 1.0
-                  then @v_linestring.STEndPoint()
-                  else NULL
-              end;
-    END;
-
     -- Compute centre of circle defining CircularString
     --
-
     SET @v_centre = [$(cogoowner)].[STFindCircleFromArc] (@v_linestring);
   
     -- Defines circle?
@@ -223,7 +220,7 @@ BEGIN
     -- ############################## LineString #################################
     -- ###########################################################################
 
-    -- DEBUG dbms_output.put_line('  LineString: Compute base offset');
+    -- LineString: Compute base offset
     SET @v_az    = RADIANS(
                        [$(cogoowner)].[STBearingBetweenPoints] (
                          @v_linestring.STStartPoint(),

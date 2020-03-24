@@ -109,7 +109,7 @@ BEGIN
         IF ( @v_geomn = 1 ) 
           SET @v_rgeom = @v_geom;
         ELSE
-          SET @v_rgeom = [$(owner)].[STAppend](@v_rgeom,@v_geom,8,8);         
+          SET @v_rgeom = [$(owner)].[STAppend](@v_rgeom,@v_geom,15,15);         
       END;
       SET @v_geomn = @v_geomn + 1;
     END;

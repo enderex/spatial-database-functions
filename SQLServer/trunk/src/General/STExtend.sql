@@ -219,7 +219,7 @@ CREATE FUNCTION [$(owner)].[STReduce]
 )
 returns geometry
 as
-/****f* EDITOR/STReduce (2008)
+/****m* EDITOR/STReduce (2008)
  *  NAME
  *    STReduce -- Function which extends the first or last vertex connected segment of a linestring.
  *  SYNOPSIS
@@ -256,6 +256,7 @@ as
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - December 2017 - Original TSQL Coding for SQL Server.
+ *    Simon Greener - February 2020 - Fixed bug with reduction ratio.
  *  COPYRIGHT
  *    (c) 2012-2017 by TheSpatialDBAdvisor/Simon Greener
  *  LICENSE
@@ -320,8 +321,8 @@ Begin
         SET @v_pt_id          = @v_pt_id + 1;
         SET @v_end_pt         = @v_linestring.STPointN(@v_pt_id);
         SET @v_internal_pt    = @v_linestring.STPointN(@v_pt_id + 1);
-        SET @v_deltaX         = @v_end_pt.STX - @v_internal_pt.STX;
-        SET @v_deltaY         = @v_end_pt.STY - @v_internal_pt.STY;
+        SET @v_deltaX         = @v_internal_pt.STX - @v_end_pt.STX;
+        SET @v_deltaY         = @v_internal_pt.STY - @v_end_pt.STY;
         SET @v_segment_length = ROUND(case when @v_isGeography = 1
                                           then [$(owner)].[STToGeography] (@v_end_pt,     @p_linestring.STSrid).STDistance( 
                                                [$(owner)].[STToGeography] (@v_internal_pt,@p_linestring.STSrid) )
@@ -342,9 +343,11 @@ Begin
         ELSE
         BEGIN
           -- To Do: Handle Z and M
-          SET @v_new_point  = geometry::Point(round(@v_internal_pt.STX + @v_deltaX * ((@v_segment_length + @v_reduction_length) / @v_segment_length), @v_round_xy),
-                                              round(@v_internal_pt.STY + @v_deltaY * ((@v_segment_length + @v_reduction_length) / @v_segment_length), @v_round_xy),
-                                              @p_linestring.STSrid);
+          SET @v_new_point  = geometry::Point(
+                                  round(@v_end_pt.STX + @v_deltaX * (@v_reduction_length / @v_segment_length), @v_round_xy),
+                                  round(@v_end_pt.STY + @v_deltaY * (@v_reduction_length / @v_segment_length), @v_round_xy),
+                                  @p_linestring.STSrid
+                              );
           SET @v_linestring = [$(owner)].[STUpdateN] (
                                  @v_linestring,
                                  @v_new_point,
@@ -367,8 +370,8 @@ Begin
         SET @v_pt_id          = @v_pt_id - 1;
         SET @v_end_pt         = @v_linestring.STPointN(@v_pt_id);
         SET @v_internal_pt    = @v_linestring.STPointN(@v_pt_id - 1);
-        SET @v_deltaX         = @v_end_pt.STX - @v_internal_pt.STX;
-        SET @v_deltaY         = @v_end_pt.STY - @v_internal_pt.STY;
+        SET @v_deltaX         = @v_internal_pt.STX - @v_end_pt.STX;
+        SET @v_deltaY         = @v_internal_pt.STY - @v_end_pt.STY;
         SET @v_segment_length = ROUND(case when @v_isGeography = 1
                                           then [$(owner)].[STToGeography] (@v_end_pt,     @p_linestring.STSrid).STDistance( 
                                                [$(owner)].[STToGeography] (@v_internal_pt,@p_linestring.STSrid) )
@@ -388,9 +391,11 @@ Begin
         ELSE
         BEGIN
           -- To Do: Handle Z and M
-          SET @v_new_point  = geometry::Point(round(@v_internal_pt.STX + @v_deltaX * ((@v_segment_length + @v_reduction_length) / @v_segment_length), @v_round_xy),
-                                              round(@v_internal_pt.STY + @v_deltaY * ((@v_segment_length + @v_reduction_length) / @v_segment_length), @v_round_xy),
-                                              @p_linestring.STSrid);
+          SET @v_new_point  = geometry::Point(
+                                 round(@v_end_pt.STX + @v_deltaX * (@v_reduction_length / @v_segment_length), @v_round_xy),
+                                 round(@v_end_pt.STY + @v_deltaY * (@v_reduction_length / @v_segment_length), @v_round_xy),
+                                 @p_linestring.STSrid
+                              );
           SET @v_linestring = [$(owner)].[STUpdateN] (
                                  @v_linestring,
                                  @v_new_point,
@@ -402,7 +407,9 @@ Begin
         END;
       END; -- LOOP
     END;   -- IF ( @v_end IN ('BOTH','END') )
+
     Return @v_linestring;
+
   END;
 END;
 GO

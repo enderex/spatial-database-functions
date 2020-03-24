@@ -112,7 +112,7 @@ select a.linestring.STGeometryType()       as geom_type,
        ).STBuffer(0.2) as fsegment
   from data as a
        cross apply
-       [dbo].[generate_series](0,
+       [$(owner)].[generate_series](0,
                                round(a.lineString.STLength(),0),
                                round(a.lineString.STLength(),0)/8.0 ) as g
  order by geom_type, start_length;

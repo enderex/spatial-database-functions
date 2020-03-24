@@ -36,42 +36,27 @@ PRINT 'Creating [$(lrsowner)].[STSplitProcedure]...'
 GO
 
 CREATE PROCEDURE [$(lrsowner)].[STSplitProcedure] (
-  @p_linestring geometry,
-  @p_point      geometry,
-  @p_line1      geometry OUTPUT,
-  @p_line2      geometry OUTPUT,
-  @p_round_xy   int   = 3,
-  @p_round_zm   int   = 2
+  @p_linestring   geometry,
+  @p_point        geometry,
+  @p_line1        geometry OUTPUT,
+  @p_line2        geometry OUTPUT,
+  @p_round_xy     int   = 3,
+  @p_round_zm     int   = 2
 )
 AS  
 /****m* LRS/STSplitProcedure (2012)
  *  NAME
  *    STSplitProcedure -- Procedure that splits a line into two parts.
  *  SYNOPSIS
- *    Function [$(lrsowner)].[STSplitProcedure] (
- *       @p_linestring geometry,
- *       @p_point      geometry,
- *       @p_line1      geometry OUTPUT,
- *       @p_line2      geometry OUTPUT,
- *       @p_round_xy   int = 3,
- *       @p_round_zm   int = 2
+ *    Function STSplitProcedure (
+ *       @p_linestring   geometry,
+ *       @p_point        geometry,
+ *       @p_line1        geometry OUTPUT,
+ *       @p_line2        geometry OUTPUT,
+ *       @p_round_xy     int = 3,
+ *       @p_round_zm     int = 2
  *     )
  *     Returns geometry 
- *  USAGE
- *    declare @v_linestring geometry = geometry::STGeomFromText('LINESTRING(0 0,10 10,20 20,30 30,40 40,50 50,60 60,70 70,80 80,90 90,100 100)',0),
- *            @v_point      geometry = geometry::STGeomFromText('POINT(50 50)',0),
- *            @v_line1      geometry,
- *            @v_line2      geometry;
- *    exec [$(lrsowner)].[STSplitProcedure] @p_linestring=@v_linestring,
- *                              @p_point=@v_point,
- *                              @p_line1=@v_line1 OUTPUT,
- *                              @p_line2=@v_line2 OUTPUT,
- *                              @p_round_xy=3,
- *                              @p_round_zm=2;
- *    select @v_line1.STAsText() as line1, @v_line2.STAsText() as line2
- *    GO
- *    line1                                               line2
- *    LINESTRING (0 0, 10 10, 20 20, 30 30, 40 40, 50 50)	LINESTRING (50 50, 60 60, 70 70, 80 80, 90 90, 100 100)
  *  DESCRIPTION
  *    Splits @p_linestring at position defined by @p_point.
  *    If @p_point is not on the line it is first snapped to the line.
@@ -85,6 +70,21 @@ AS
  *    @p_round_zm        (int) - Decimal degrees of precision for when formatting Z ordinate in WKT.
  *  RESULT
  *    Two linestrings (geometry) - Two parts of split linestring.
+ *  EXAMPLE
+ *    declare @v_linestring geometry = geometry::STGeomFromText('LINESTRING(0 0,10 10,20 20,30 30,40 40,50 50,60 60,70 70,80 80,90 90,100 100)',0),
+ *            @v_point      geometry = geometry::STGeomFromText('POINT(50 50)',0),
+ *            @v_line1      geometry,
+ *            @v_line2      geometry;
+ *    exec lrs.STSplitProcedure @p_linestring=@v_linestring,
+ *                              @p_point=@v_point,
+ *                              @p_line1=@v_line1 OUTPUT,
+ *                              @p_line2=@v_line2 OUTPUT,
+ *                              @p_round_xy=3,
+ *                              @p_round_zm=2;
+ *    select @v_line1.STAsText() as line1, @v_line2.STAsText() as line2
+ *    GO
+ *    line1                                               line2
+ *    LINESTRING (0 0, 10 10, 20 20, 30 30, 40 40, 50 50)    LINESTRING (50 50, 60 60, 70 70, 80 80, 90 90, 100 100)
  *  AUTHOR
  *    Simon Greener
  *  HISTORY
@@ -94,14 +94,18 @@ AS
 ******/
 BEGIN 
   Declare
-	@v_projectedPoint geometry,
-	@v_isMeasured     varchar(5);
+    @v_projectedPoint geometry,
+    @v_isMeasured     varchar(5);
+
   IF (@p_linestring is null or @p_point is null)
     Return;
+
   IF (ISNULL(@p_linestring.STSrid,0) <> ISNULL(@p_point.STSrid,0))
     Return;
+
   IF ( @p_linestring.STGeometryType() not in ('LineString','CircularString','MultiLineString','CircularCurve') )
     Return;
+
   IF ( @p_point.STGeometryType() <> 'Point')
     Return;
 
@@ -110,12 +114,12 @@ BEGIN
   /* Snap point to line and returning point.
      @v_projectedPoint's Z/M set to Z/M values in @p_linestring.
      Except where @p_linestring does not have measures, the length 
-	 from the start point of @p_length to @p_point is returnd in M ordinate. */
+     from the start point of @p_length to @p_point is returnd in M ordinate. */
   SET @v_projectedPoint = [$(lrsowner)].[STProjectPoint] (
            /* @p_linestring*/ @p_Linestring,
            /* @p_point     */ @p_point,
            /* @p_round_xy  */ @p_round_xy,
-           /* @p_round_zm  */ case when @v_isMeasured = 'TRUE' then @p_round_zm else 8 end
+           /* @p_round_zm  */ @p_round_zm
         );
 
    /* Now split the linestring using length or measure information */
@@ -127,15 +131,17 @@ BEGIN
             /* @p_start_measure */ 0.0,
             /* @p_end_measure   */ @v_projectedPoint.M,
             /* @p_offset        */ 0,
+            /* @p_radius_check  */ 0,
             /* @p_round_xy      */ @p_round_xy,
             /* @p_round_zm      */ @p_round_zm
           );
      SET @p_line2 = 
-	       [$(lrsowner)].[STFindSegmentByMeasureRange] (
+           [$(lrsowner)].[STFindSegmentByMeasureRange] (
              /* @p_linestring    */ @p_Linestring,
              /* @p_start_measure */ @v_projectedPoint.M,
-             /* @p_end_measure   */ [$(lrsowner)].[STEndMeasure](@p_Linestring),
+             /* @p_end_measure   */ lrs.STEndMeasure(@p_Linestring),
              /* @p_offset        */ 0,
+             /* @p_radius_check  */ 0,
              /* @p_round_xy      */ @p_round_xy,
              /* @p_round_zm      */ @p_round_zm
           );
@@ -148,17 +154,19 @@ BEGIN
              /* @p_start_length */ 0.0,
              /* @p_end_length   */ @v_projectedPoint.M,
              /* @p_offset       */ 0,
+             /* @p_radius_check */ 0,
              /* @p_round_xy     */ @p_round_xy,
-             /* @p_round_zm     */ 8 /* Deliberate as M will hold length */
+             /* @p_round_zm     */ @p_round_zm
            );
      SET @p_line2 = 
-	       [$(lrsowner)].[STFindSegmentByLengthRange] (
+           [$(lrsowner)].[STFindSegmentByLengthRange] (
              /* @p_linestring   */ @p_Linestring,
              /* @p_start_length */ @v_projectedPoint.M,
              /* @p_end_length   */ @p_Linestring.STLength(),
              /* @p_offset       */ 0,
+             /* @p_radius_check */ 0,
              /* @p_round_xy     */ @p_round_xy,
-             /* @p_round_zm     */ 8 /* Deliberate as M will hold length */
+             /* @p_round_zm     */ @p_round_zm
            );
    END;
    RETURN;
@@ -232,16 +240,20 @@ AS
 ******/
 BEGIN 
   Declare
-	@v_line1          geometry,
-	@v_line2          geometry,
-	@v_projectedPoint geometry,
-	@v_isMeasured     varchar(5);
+    @v_line1          geometry,
+    @v_line2          geometry,
+    @v_projectedPoint geometry,
+    @v_isMeasured     varchar(5);
+
   IF (@p_linestring is null or @p_point is null)
     Return;
+
   IF (ISNULL(@p_linestring.STSrid,0) <> ISNULL(@p_point.STSrid,0))
     Return;
+
   IF ( @p_linestring.STGeometryType() not in ('LineString','CircularString','MultiLineString','CircularCurve') )
     Return;
+
   IF ( @p_point.STGeometryType() <> 'Point')
     Return;
 
@@ -263,19 +275,21 @@ BEGIN
    BEGIN
      SET @v_line1 = 
           [$(lrsowner)].[STFindSegmentByMeasureRange] (
-            /* @p_linestring    */ @p_Linestring,
-            /* @p_start_measure */ 0.0,
-            /* @p_end_measure   */ @v_projectedPoint.M,
-            /* @p_offset        */ 0,
-            /* @p_round_xy      */ @p_round_xy,
-            /* @p_round_zm      */ @p_round_zm
+             /* @p_linestring    */ @p_Linestring,
+             /* @p_start_measure */ 0.0,
+             /* @p_end_measure   */ @v_projectedPoint.M,
+             /* @p_offset        */ 0,
+             /* @p_radius_check  */ 0,
+             /* @p_round_xy      */ @p_round_xy,
+             /* @p_round_zm      */ @p_round_zm
           );
      SET @v_line2 = 
-	       [$(lrsowner)].[STFindSegmentByMeasureRange] (
+           [$(lrsowner)].[STFindSegmentByMeasureRange] (
              /* @p_linestring    */ @p_Linestring,
              /* @p_start_measure */ @v_projectedPoint.M,
              /* @p_end_measure   */ [$(lrsowner)].[STEndMeasure](@p_Linestring),
              /* @p_offset        */ 0,
+             /* @p_radius_check  */ 0,
              /* @p_round_xy      */ @p_round_xy,
              /* @p_round_zm      */ @p_round_zm
           );
@@ -288,15 +302,17 @@ BEGIN
              /* @p_start_length */ 0.0,
              /* @p_end_length   */ @v_projectedPoint.M,
              /* @p_offset       */ 0,
+             /* @p_radius_check */ 0,
              /* @p_round_xy     */ @p_round_xy,
              /* @p_round_zm     */ 8 /* Deliberate as M will hold length */
            );
      SET @v_line2 = 
-	       [$(lrsowner)].[STFindSegmentByLengthRange] (
+           [$(lrsowner)].[STFindSegmentByLengthRange] (
              /* @p_linestring   */ @p_Linestring,
              /* @p_start_length */ @v_projectedPoint.M,
              /* @p_end_length   */ @p_Linestring.STLength(),
              /* @p_offset       */ 0,
+             /* @p_radius_check */ 0,
              /* @p_round_xy     */ @p_round_xy,
              /* @p_round_zm     */ 8 /* Deliberate as M will hold length */
            );

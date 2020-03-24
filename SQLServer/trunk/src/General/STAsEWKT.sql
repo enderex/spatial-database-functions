@@ -39,6 +39,8 @@ As
  *    Export WKT or PostGIS-style EWKT.
  *  NOTES
  *    A description of the EWKT structure is available in the PostGIS documentation.
+ *  PARAMETERS
+ *    @p_geometry (geometry) -- Any valid or empty geometry object.
  *  RESULT
  *    EWKT (varchar(max) -- EWKT string describing @p_geometry.
  *  EXAMPLE
@@ -78,7 +80,7 @@ As
  *    GO
  *    
  *    ----------------------------
- *    SRID=2274;POINTM(1 2 NULL 3)
+ *    SRID=2274;POINTM(1 2 3)
  *    
  *    (1 row affected)
  *    
@@ -119,28 +121,15 @@ Begin
     Return @v_ewkt;
   END;
 
-  SET @v_dimensions = case when @p_geometry.HasZ=1 then 'Z' else '' end +
+  SET @v_dimensions = case when @p_geometry.HasZ=1 and @p_geometry.STPointN(1).Z is not null then 'Z' else '' end +
                       case when @p_geometry.HasM=1 then 'M' else '' end;
 
   -- Handle POINT differently
   IF ( @p_geometry.STGeometryType() = 'Point' ) 
   BEGIN
-    SET @v_ewkt = @v_srid_prefix + 'POINT' + @v_dimensions + '(';
-    SET @v_ewkt = @v_ewkt +
-                  + 
-                  [$(owner)].[STPointAsText] (
-                     /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ 'XY' + @v_dimensions,
-                     /* @p_X          */ @p_geometry.STX,
-                     /* @p_Y          */ @p_geometry.STY,
-                     /* @p_Z          */ case when @v_dimensions in ('Z','ZM') then @p_geometry.Z else @p_geometry.M end,
-                     /* @p_M          */ case when @v_dimensions in ('ZM','M') then @p_geometry.M else null end,
-                     /* @p_round_x    */ 12,
-                     /* @p_round_y    */ 12,
-                     /* @p_round_z    */ 12,
-                     /* @p_round_m    */ 12
-                  )
-                  + 
-                  ')';
+    SET @v_ewkt = REPLACE( REPLACE( REPLACE( @p_geometry.AsTextZM(),'POINT ',''), '(',''), ')','');
+    SET @v_ewkt = @v_srid_prefix + 'POINT' + @v_dimensions + '(' + @v_ewkt + ')';
+	SET @v_ewkt = case when @v_dimensions = 'M' then REPLACE(@v_ewkt,' NULL','') else @v_ewkt end;
     Return @v_ewkt;
   END; 
 
@@ -149,7 +138,7 @@ Begin
   --
   SET @v_textZM = @p_geometry.AsTextZM();
   IF ( @v_textZM like '% NULL %' )
-   SET @v_dimensions = REPLACE(@v_dimensions,'Z','');
+    SET @v_dimensions = REPLACE(@v_dimensions,'Z','');
 
   -- For all others we use generic SQL
   -- Build EWKT String...
@@ -179,7 +168,7 @@ Begin
              from [$(owner)].[Tokenizer](@v_textZM,'(,)') t
            ) a
   ) 
-  select @v_ewkt = STRING_AGG ( f.token + f.separator, '' ) WITHIN GROUP ( ORDER BY f.id ASC )
+  select @v_ewkt =  STRING_AGG ( f.token + f.separator, '' ) WITHIN GROUP ( ORDER BY f.id ASC)
     from data as f
 
   Return @v_ewkt;

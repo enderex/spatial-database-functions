@@ -403,17 +403,17 @@ Begin
       return null;
 
     SET @v_dimensions = 'XY' 
-                       + case when   @p_start_point.HasZ=1 
-                                   and @p_mid_point.HasZ=1
-                                   and @p_end_point.HasZ=1
-                                   and @p_start_point.Z = @p_mid_point.Z
-                                   and @p_mid_point.Z   = @p_end_point.Z
+                       + case when @p_start_point.HasZ=1 
+                               and @p_mid_point.HasZ=1
+                               and @p_end_point.HasZ=1
+                               and @p_start_point.Z = @p_mid_point.Z
+                               and @p_mid_point.Z   = @p_end_point.Z
                               then 'Z' 
                               else '' 
                           end 
-                       + case when   @p_start_point.HasM=1 
-                                   and @p_mid_point.HasM=1
-                                   and @p_end_point.HasM=1
+                       + case when @p_start_point.HasM=1 
+                               and @p_mid_point.HasM=1
+                               and @p_end_point.HasM=1
                               then 'M' 
                               else '' 
                           end;
@@ -428,7 +428,7 @@ Begin
                              @p_end_point.STX,   @p_end_point.STY 
                           );
     IF (ABS(@v_angle3points) = PI() or @v_angle3points = 0.0 )
-	BEGIN
+    BEGIN
       SET @v_wkt = 'LINESTRING(' 
                  +
                  [$(owner)].[STPointAsText] (
@@ -472,10 +472,10 @@ Begin
                  )
                  +
                  ')';
-	END
-	ELSE
-	BEGIN
-	  SET @v_wkt = 'CIRCULARSTRING (' 
+    END
+    ELSE
+    BEGIN
+      SET @v_wkt = 'CIRCULARSTRING (' 
                  +
                  [$(owner)].[STPointAsText] (
                           @v_dimensions,

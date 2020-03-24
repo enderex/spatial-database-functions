@@ -25,20 +25,20 @@ IF EXISTS (
     AND xtype IN (N'FN', N'IF', N'TF')
 )
 BEGIN
-  DROP FUNCTION [$(owner)].[STMakeLineWktFromGeometryCollection];
-  PRINT 'Dropped [$(owner)].[STMakeLineWktFromGeometryCollection] ...';
+  DROP FUNCTION [$(owner)].[STMakeLineWKTFromGeometryCollection];
+  PRINT 'Dropped [$(owner)].[STMakeLineWKTFromGeometryCollection] ...';
 END;
 GO
 
 IF EXISTS (
     SELECT * 
       FROM sysobjects 
-     WHERE id = object_id(N'[$(owner)].[STMakeLineWktFromGeometryCollection]') 
+     WHERE id = object_id(N'[$(owner)].[STMakeLineWKTFromGeographyCollection]') 
     AND xtype IN (N'FN', N'IF', N'TF')
 )
 BEGIN
-  DROP FUNCTION [$(owner)].[STMakeLineWktFromGeographyCollection];
-  PRINT 'Dropped [$(owner)].[STMakeLineWktFromGeographyCollection] ...';
+  DROP FUNCTION [$(owner)].[STMakeLineWKTFromGeographyCollection];
+  PRINT 'Dropped [$(owner)].[STMakeLineWKTFromGeographyCollection] ...';
 END;
 GO
 
@@ -93,10 +93,10 @@ AS
  ******/
 BEGIN
   DECLARE
-    @v_wkt        varchar(max),
-    @v_geomn      int,
-    @v_geom       geometry,
-   @v_return_geom geometry;
+    @v_wkt         varchar(max),
+    @v_geomn       int,
+    @v_geom        geometry,
+    @v_return_geom geometry;
   BEGIN
     IF (@p_geometry_collection is null)
       return geometry::STGeomFromText('LINESTRING EMPTY',0);
@@ -139,25 +139,25 @@ BEGIN
 END;
 GO
 
-PRINT 'Creating [$(owner)].[STMakeLineWktFromGeometryCollection] ...';
+PRINT 'Creating [$(owner)].[STMakeLineWKTFromGeometryCollection] ...';
 GO
 
-CREATE FUNCTION [$(owner)].[STMakeLineWktFromGeometryCollection] 
+CREATE FUNCTION [$(owner)].[STMakeLineWKTFromGeometryCollection] 
 (
   @p_points geometry
 )
 Returns varchar(max)
 AS
-/****f* CREATE/STMakeLineWktFromGeometryCollection (2008)
+/****f* CREATE/STMakeLineWKTFromGeometryCollection (2008)
  *  NAME
- *    STMakeLineWktFromGeometryCollection -- Creates a linestring from supplied GeometryCollection geometry.
+ *    STMakeLineWKTFromGeometryCollection -- Creates a linestring from supplied GeometryCollection geometry.
  *  SYNOPSIS
- *    Function [STMakeLineWktFromGeometryCollection] (
+ *    Function [STMakeLineWKTFromGeometryCollection] (
  *               @p_points geometry
  *             )
  *     Returns varchar(max) 
  *  USAGE
- *    SELECT [$(owner)].[STMakeLineWktFromGeometryCollection](geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(0 0),POINT(10 10))',28355) as line;
+ *    SELECT [$(owner)].[STMakeLineWKTFromGeometryCollection](geometry::STGeomFromText('GEOMETRYCOLLECTION(POINT(0 0),POINT(10 10))',28355) as line;
  *    LINE
  *    LINESTRING(0 0,10 10)
  *  DESCRIPTION
@@ -180,59 +180,61 @@ BEGIN
     @v_wkt   varchar(max),
     @v_geomn int,
     @v_geom  geometry;
+
+  IF (@p_points is null)
+    return 'LINESTRING EMPTY';
+
+  If ( @p_points.STIsValid() = 0 ) 
+    Return @p_points.AsTextZM();
+
+  IF (@p_points.STGeometryType() IN ('LineString','MultiLineString') )
+    Return @p_points.AsTextZM();
+
+  IF (@p_points.STGeometryType() <> 'GeometryCollection' )
+    Return 'LINESTRING EMPTY';
+
+  SET @v_wkt = 'LINESTRING (';
+  SET @v_geomn = 1;
+  WHILE ( @v_geomn <= @p_points.STNumGeometries() ) 
   BEGIN
-    IF (@p_points is null)
-      return 'LINESTRING EMPTY';
-
-    IF (@p_points.STGeometryType() IN ('LineString','MultiLineString') )
-      Return @p_points.AsTextZM();
-
-    IF (@p_points.STGeometryType() <> 'GeometryCollection' )
-      Return 'LINESTRING EMPTY';
-
-    SET @v_wkt = 'LINESTRING (';
-    SET @v_geomn = 1;
-    while ( @v_geomn <= @p_points.STNumGeometries() ) 
+    SET @v_geom = @p_points.STGeometryN(@v_geomn);
+    IF ( @v_geom.STGeometryType() = 'Point' ) 
     BEGIN
-      SET @v_geom = @p_points.STGeometryN(@v_geomn);
-      IF ( @v_geom.STGeometryType() = 'Point' ) 
-      BEGIN
-        SET @v_wkt = @v_wkt
-                     +
-                     case when @v_geomn <> 1 then ', ' else '' end
-                     +
-                     [$(owner)].[STPointGeomAsText](@v_geom,8,8,8);
-      END;
-      SET @v_geomn = @v_geomn + 1;
+      SET @v_wkt = @v_wkt
+                   +
+                   case when @v_geomn <> 1 then ', ' else '' end
+                   +
+                   [$(owner)].[STPointGeomAsText](@v_geom,8,8,8);
     END;
-    IF ( @v_wkt = 'LINESTRING (' ) 
-      Return 'LINESTRING EMPTY';
-    SET @v_wkt = @v_wkt + ')';
-    Return @v_wkt; 
+    SET @v_geomn = @v_geomn + 1;
   END;
-END;
+  IF ( @v_wkt = 'LINESTRING (' ) 
+    Return 'LINESTRING EMPTY';
+  SET @v_wkt = @v_wkt + ')';
+  Return @v_wkt; 
+END
 GO
 
 PRINT '**************************************************************';
-PRINT 'Creating [$(owner)].[STMakeLineWktFromGeographyCollection] ...';
+PRINT 'Creating [$(owner)].[STMakeLineWKTFromGeographyCollection] ...';
 GO
 
-CREATE FUNCTION [$(owner)].[STMakeLineWktFromGeographyCollection] 
+CREATE FUNCTION [$(owner)].[STMakeLineWKTFromGeographyCollection] 
 (
   @p_points geography
 )
 Returns varchar(max)
 AS
-/****f* CREATE/STMakeLineWktFromGeographyCollection (2008)
+/****f* CREATE/STMakeLineWKTFromGeographyCollection (2008)
  *  NAME
- *    STMakeLineWktFromGeographyCollection -- Creates a linestring from supplied GeometryCollection geography.
+ *    STMakeLineWKTFromGeographyCollection -- Creates a linestring from supplied GeometryCollection geography.
  *  SYNOPSIS
- *    Function [STMakeLineWktFromGeographyCollection] (
+ *    Function [STMakeLineWKTFromGeographyCollection] (
  *               @p_points geography
  *             )
  *     Returns varchar(max) 
  *  USAGE
- *    SELECT [$(owner)].[STMakeLineWktFromGeographyCollection](geography::STGeomFromText('GEOMETRYCOLLECTION(POINT(0 0),POINT(10 10))',28355) as line;
+ *    SELECT [$(owner)].[STMakeLineWKTFromGeographyCollection](geography::STGeomFromText('GEOMETRYCOLLECTION(POINT(0 0),POINT(10 10))',28355) as line;
  *    LINE
  *    LINESTRING(0 0,10 10)
  *  DESCRIPTION
@@ -257,7 +259,7 @@ BEGIN
     @v_geogn      int,
     @v_geog       geography;
   BEGIN
-    IF (@p_points is null)
+    IF (@p_points IS NULL)
       Return 'LINESTRING EMPTY';
 
     IF (@p_points.STGeometryType() IN ('LineString','MultiLineString') )
@@ -286,7 +288,7 @@ BEGIN
                         @v_geog.Lat,
                         @v_geog.Z,
                         @v_geog.M,
-                        8,8,8,8);
+                        12,12,12,12);
       END;
       SET @v_geogn = @v_geogn + 1;
     END;

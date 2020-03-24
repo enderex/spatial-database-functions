@@ -90,247 +90,249 @@ BEGIN
     @v_start_point     geometry,
     @v_mid_point       geometry,
     @v_end_point       geometry;
-  Begin
-    If ( @p_linestring is null )
-      Return @p_linestring;
 
-    If ( ABS(ISNULL(@p_offset,0.0)) = 0.0 )
-      Return @p_linestring;
+  If ( @p_linestring is null )
+    Return @p_linestring;
 
-    SET @v_gtype = @p_linestring.STGeometryType();
-    IF ( @v_gtype NOT IN ('LineString','CircularString' ) )
-      Return @p_linestring;
+  If ( @p_linestring.STIsValid() = 0 ) 
+    Return @p_linestring;
 
-    IF ( @v_gtype = 'LineString' and @p_linestring.STNumPoints() <> 2 )
-      Return @p_linestring;
+  If ( ABS(ISNULL(@p_offset,0.0)) = 0.0 )
+    Return @p_linestring;
 
-    IF ( @v_gtype = 'CircularString' and @p_linestring.STNumPoints() <> 3 and @p_linestring.STNumCurves() <> 1)
-      Return @p_linestring;
+  SET @v_gtype = @p_linestring.STGeometryType();
+  IF ( @v_gtype NOT IN ('LineString','CircularString' ) )
+    Return @p_linestring;
 
-    -- Set flag for STPointFromText
-    SET @v_dimensions  = 'XY' 
-                         + case when @p_linestring.HasZ=1 then 'Z' else '' end 
-                         + case when @p_linestring.HasM=1 then 'M' else '' end;
-    SET @v_round_xy    = ISNULL(@p_round_xy,3);
-    SET @v_round_zm    = ISNULL(@p_round_zm,2);
-    SET @v_sign        = SIGN(@p_offset);
-    SET @v_offset      = ABS(@p_offset);
+  IF ( @v_gtype = 'LineString' and @p_linestring.STNumPoints() <> 2 )
+    Return @p_linestring;
 
-    IF ( @v_gtype = 'LineString' ) 
-    BEGIN
-      -- Compute common bearing as radians not degrees ...
-      SET @v_bearing = [$(cogoowner)].[STBearingBetweenPoints] (
-                           @p_linestring.STStartPoint(),
-                           @p_linestring.STEndPoint()
-                       );
+  IF ( @v_gtype = 'CircularString' and [$(owner)].[STNumCircularStrings] (@p_linestring) > 1 )
+    Return @p_linestring;
 
-      SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
-                          @v_bearing 
-                          + 
-                          (@v_sign * 90.0) -- If left, then -90 else 90
-                       );
+  -- Set flag for STPointFromText
+  SET @v_dimensions  = 'XY' 
+                       + case when @p_linestring.HasZ=1 then 'Z' else '' end 
+                       + case when @p_linestring.HasM=1 then 'M' else '' end;
+  SET @v_round_xy    = ISNULL(@p_round_xy,3);
+  SET @v_round_zm    = ISNULL(@p_round_zm,2);
+  SET @v_sign        = SIGN(@p_offset);
+  SET @v_offset      = ABS(@p_offset);
 
-      -- Compute first offset point
-      SET @v_start_point = [$(cogoowner)].[STPointFromCOGO] ( 
-                             @p_linestring.STStartPoint(),
-                             @v_bearing,
-                             @v_offset, -- Has to be +ve
-                             @v_round_xy
-                           );
+  IF ( @v_gtype = 'LineString' ) 
+  BEGIN
+    -- Compute common bearing as radians not degrees ...
+    SET @v_bearing = [$(cogoowner)].[STBearingBetweenPoints] (
+                         @p_linestring.STStartPoint(),
+                         @p_linestring.STEndPoint()
+                     );
 
-      -- Create deltas to apply to End Ordinate...
-      SET @v_delta_x = @v_start_point.STX - @p_linestring.STStartPoint().STX;
-      SET @v_delta_y = @v_start_point.STY - @p_linestring.STStartPoint().STY;
+    SET @v_bearing = [$(cogoowner)].[STNormalizeBearing] ( 
+                        @v_bearing 
+                        + 
+                        (@v_sign * 90.0) -- If left, then -90 else 90
+                     );
 
-      -- Now create offset linestring
-      SET @v_wkt = 'LINESTRING ('
-                 +
-                 [$(owner)].[STPointAsText] (
-                   /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
-                   /* @p_X          */ @v_start_point.STX,
-                   /* @p_Y          */ @v_start_point.STY,
-                   /* @p_Z          */ @p_linestring.STStartPoint().Z,
-                   /* @p_M          */ @p_linestring.STStartPoint().M,
-                   /* @p_round_x    */ @v_round_xy,
-                   /* @p_round_y    */ @v_round_xy,
-                   /* @p_round_z    */ @v_round_zm,
-                   /* @p_round_m    */ @v_round_zm
-                 )
-                 +
-                 ','
-                 +
-                 [$(owner)].[STPointAsText] (
-                   /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
-                   /* @p_X          */ @p_linestring.STEndPoint().STX + @v_delta_x,
-                   /* @p_Y          */ @p_linestring.STEndPoint().STY + @v_delta_y,
-                   /* @p_Z          */ @p_linestring.STEndPoint().Z,
-                   /* @p_M          */ @p_linestring.STEndPoint().M,
-                   /* @p_round_x    */ @v_round_xy,
-                   /* @p_round_y    */ @v_round_xy,
-                   /* @p_round_z    */ @v_round_zm,
-                   /* @p_round_m    */ @v_round_zm
-                 )
-                 +
-                 ')';
-      RETURN geometry::STGeomFromText(@v_wkt,
-                                      @p_linestring.STSrid);
-    END;
-
-    -- ###################################################
-    -- Now we are processing a CircularCurve
-    -- 
-
-    -- Compute curve center
-    -- 
-    SET @v_circle = [$(cogoowner)].[STFindCircleFromArc] ( @p_linestring );
-
-    -- Is collinear?
-    IF ( @v_circle.STX = -1 
-     and @v_circle.STY = -1 
-     and @v_circle.Z   = -1 )
-    BEGIN
-      Return [$(owner)].[STDeleteN] (
-                /* @p_geometry */ @p_linestring,
-                /* @p_position */ 2,
-                /* @p_round_xy */ @p_round_xy,
-                /* @p_round_zm */ @p_round_zm
-             )
-    END;
-
-    -- Compute rotation of circular arc (from starting point) to ensure offset is applied correctly to the radius
-    -- 
-    SET @v_subtended_angle = [$(cogoowner)].[STSubtendedAngle] (
-                                @p_linestring.STStartPoint().STX,
-                                @p_linestring.STStartPoint().STY,
-                                @v_circle.STX,
-                                @v_circle.STY,
-                                @p_linestring.STEndPoint().STX,
-                                @p_linestring.STEndPoint().STY
-                             );
-
-    --     If @v_subtended_angle is -ve, the centre point is on right, and the circularString curves to right; 
-    -- And if @v_subtended_angle is +ve, the centre point is on left,  and the circularString curves to left.
-    -- 
-    -- Therefore:
-    --
-    --     If @v_subtended_angle is -ve (right):
-    --        If @v_sign is -ve (left) Then
-    --           @v_offset should be radius + v_offset.
-    --        Else @v_sign is +ve (right) 
-    --           @v_offset should be radius - v_offset (check no < 0).
-    --
-    --     If @v_subtended_angle is +ve (right) 
-    --        IF @v_sign is -ve (left) THEN
-    --           @v_offset should be radius - v_offset (check no < 0).
-    --        Else @v_sign is +ve (right)
-    --           @v_offset should be radius + v_offset
-    --
-    SET @v_offset = case when @v_subtended_angle < 0
-                         then case when @v_sign < 0 
-                                   then @v_circle.Z + @v_offset 
-                                   else @v_circle.Z - @v_offset
-                               end
-                         else case when @v_sign < 0 
-                                   then @v_circle.Z - @v_offset
-                                   else @v_circle.Z + @v_offset 
-                               end
-                     end;
-
-    -- Check if curve will degenerate into a single point
-    IF ( @v_offset <= 0.0 )
-      RETURN geometry::Point(@v_circle.STX,
-                             @v_circle.STY,
-                             @p_linestring.STSrid);
-
-    -- Now compute new circularString points
-    --
-    -- Start Point
-    --
-    SET @v_bearing     = [$(cogoowner)].[STBearingBetweenPoints] (
-                            @v_circle,
-                            @p_linestring.STStartPoint()
-                         );
+    -- Compute first offset point
     SET @v_start_point = [$(cogoowner)].[STPointFromCOGO] ( 
-                            @v_circle,
-                            @v_bearing,
-                            @v_offset,
-                            @v_round_xy
-                       );
-    -- Mid Point
-    --
-    SET @v_bearing     = [$(cogoowner)].[STBearingBetweenPoints] (
-                            @v_circle,
-                            @p_linestring.STPointN(2)
-                         );
-    SET @v_mid_point   = [$(cogoowner)].[STPointFromCOGO] ( 
-                            @v_circle,
-                            @v_bearing,
-                            @v_offset,
-                            @v_round_xy
-                         );
-    -- End Point
-    --
-    SET @v_bearing     = [$(cogoowner)].[STBearingBetweenPoints] (
-                            @v_circle,
-                            @p_linestring.STEndPoint()
-                         );
-    SET @v_end_point   = [$(cogoowner)].[STPointFromCOGO] ( 
-                            @v_circle,
-                            @v_bearing,
-                            @v_offset,
-                            @v_round_xy
+                           @p_linestring.STStartPoint(),
+                           @v_bearing,
+                           @v_offset, -- Has to be +ve
+                           @v_round_xy
                          );
 
-    -- #######################################################
-    -- Create CircularString to return.
-    SET @v_wkt = 'CIRCULARSTRING ('
-                 +
-                 [$(owner)].[STPointAsText] (
-                    /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
-                    /* @p_X          */ @v_start_point.STX,
-                    /* @p_Y          */ @v_start_point.STY,
-                    /* @p_Z          */ @p_linestring.STStartPoint().Z,
-                    /* @p_M          */ @p_linestring.STStartPoint().M,
-                    /* @p_round_x    */ @v_round_xy,
-                    /* @p_round_y    */ @v_round_xy,
-                    /* @p_round_z    */ @v_round_zm,
-                    /* @p_round_m    */ @v_round_zm
-                )
-                +
-                ','
-                +
-                [$(owner)].[STPointAsText] (
-                    /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
-                    /* @p_X          */ @v_mid_point.STX,
-                    /* @p_Y          */ @v_mid_point.STY,
-                    /* @p_Z          */ @p_linestring.STPointN(2).Z,
-                    /* @p_M          */ @p_linestring.STPointN(2).M,
-                    /* @p_round_x    */ @v_round_xy,
-                    /* @p_round_y    */ @v_round_xy,
-                    /* @p_round_z    */ @v_round_zm,
-                    /* @p_round_m    */ @v_round_zm
+    -- Create deltas to apply to End Ordinate...
+    SET @v_delta_x = @v_start_point.STX - @p_linestring.STStartPoint().STX;
+    SET @v_delta_y = @v_start_point.STY - @p_linestring.STStartPoint().STY;
+
+    -- Now create offset linestring
+    SET @v_wkt = 'LINESTRING ('
+               +
+               [$(owner)].[STPointAsText] (
+                 /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
+                 /* @p_X          */ @v_start_point.STX,
+                 /* @p_Y          */ @v_start_point.STY,
+                 /* @p_Z          */ @p_linestring.STStartPoint().Z,
+                 /* @p_M          */ @p_linestring.STStartPoint().M,
+                 /* @p_round_x    */ @v_round_xy,
+                 /* @p_round_y    */ @v_round_xy,
+                 /* @p_round_z    */ @v_round_zm,
+                 /* @p_round_m    */ @v_round_zm
                )
                +
                ','
                +
                [$(owner)].[STPointAsText] (
-                    /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
-                    /* @p_X          */ @v_end_point.STX,
-                    /* @p_Y          */ @v_end_point.STY,
-                    /* @p_Z          */ @p_linestring.STEndPoint().Z,
-                    /* @p_M          */ @p_linestring.STEndPoint().M,
-                    /* @p_round_x    */ @v_round_xy,
-                    /* @p_round_y    */ @v_round_xy,
-                    /* @p_round_z    */ @v_round_zm,
-                    /* @p_round_m    */ @v_round_zm
+                 /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
+                 /* @p_X          */ @p_linestring.STEndPoint().STX + @v_delta_x,
+                 /* @p_Y          */ @p_linestring.STEndPoint().STY + @v_delta_y,
+                 /* @p_Z          */ @p_linestring.STEndPoint().Z,
+                 /* @p_M          */ @p_linestring.STEndPoint().M,
+                 /* @p_round_x    */ @v_round_xy,
+                 /* @p_round_y    */ @v_round_xy,
+                 /* @p_round_z    */ @v_round_zm,
+                 /* @p_round_m    */ @v_round_zm
                )
                +
                ')';
-
-    -- Now return circular arc
-    Return geometry::STGeomFromText(@v_wkt,
+    RETURN geometry::STGeomFromText(@v_wkt,
                                     @p_linestring.STSrid);
-  End;
+  END;
+
+  -- ###################################################
+  -- Now we are processing a CircularCurve
+  -- 
+
+  -- Compute curve center
+  -- 
+  SET @v_circle = [$(cogoowner)].[STFindCircleFromArc] ( @p_linestring );
+
+  -- Is collinear?
+  IF ( @v_circle.STX = -1 
+   and @v_circle.STY = -1 
+   and @v_circle.Z   = -1 )
+  BEGIN
+    Return [$(owner)].[STDeleteN] (
+              /* @p_geometry */ @p_linestring,
+              /* @p_position */ 2,
+              /* @p_round_xy */ @p_round_xy,
+              /* @p_round_zm */ @p_round_zm
+           )
+  END;
+
+  -- Compute rotation of circular arc (from starting point) to ensure offset is applied correctly to the radius
+  -- 
+  SET @v_subtended_angle = [$(cogoowner)].[STSubtendedAngle] (
+                              @p_linestring.STStartPoint().STX,
+                              @p_linestring.STStartPoint().STY,
+                              @v_circle.STX,
+                              @v_circle.STY,
+                              @p_linestring.STEndPoint().STX,
+                              @p_linestring.STEndPoint().STY
+                           );
+
+  --     If @v_subtended_angle is -ve, the centre point is on right, and the circularString curves to right; 
+  -- And if @v_subtended_angle is +ve, the centre point is on left,  and the circularString curves to left.
+  -- 
+  -- Therefore:
+  --
+  --     If @v_subtended_angle is -ve (right):
+  --        If @v_sign is -ve (left) Then
+  --           @v_offset should be radius + v_offset.
+  --        Else @v_sign is +ve (right) 
+  --           @v_offset should be radius - v_offset (check no < 0).
+  --
+  --     If @v_subtended_angle is +ve (right) 
+  --        IF @v_sign is -ve (left) THEN
+  --           @v_offset should be radius - v_offset (check no < 0).
+  --        Else @v_sign is +ve (right)
+  --           @v_offset should be radius + v_offset
+  --
+  SET @v_offset = case when @v_subtended_angle < 0
+                       then case when @v_sign < 0 
+                                 then @v_circle.Z + @v_offset 
+                                 else @v_circle.Z - @v_offset
+                             end
+                       else case when @v_sign < 0 
+                                 then @v_circle.Z - @v_offset
+                                 else @v_circle.Z + @v_offset 
+                             end
+                   end;
+
+  -- Check if curve will degenerate into a single point
+  IF ( @v_offset <= 0.0 )
+    RETURN geometry::Point(@v_circle.STX,
+                           @v_circle.STY,
+                           @p_linestring.STSrid);
+
+  -- Now compute new circularString points
+  --
+  -- Start Point
+  --
+  SET @v_bearing     = [$(cogoowner)].[STBearingBetweenPoints] (
+                          @v_circle,
+                          @p_linestring.STStartPoint()
+                       );
+  SET @v_start_point = [$(cogoowner)].[STPointFromCOGO] ( 
+                          @v_circle,
+                          @v_bearing,
+                          @v_offset,
+                          @v_round_xy
+                     );
+  -- Mid Point
+  --
+  SET @v_bearing     = [$(cogoowner)].[STBearingBetweenPoints] (
+                          @v_circle,
+                          @p_linestring.STPointN(2)
+                       );
+  SET @v_mid_point   = [$(cogoowner)].[STPointFromCOGO] ( 
+                          @v_circle,
+                          @v_bearing,
+                          @v_offset,
+                          @v_round_xy
+                       );
+  -- End Point
+  --
+  SET @v_bearing     = [$(cogoowner)].[STBearingBetweenPoints] (
+                          @v_circle,
+                          @p_linestring.STEndPoint()
+                       );
+  SET @v_end_point   = [$(cogoowner)].[STPointFromCOGO] ( 
+                          @v_circle,
+                          @v_bearing,
+                          @v_offset,
+                          @v_round_xy
+                       );
+
+  -- #######################################################
+  -- Create CircularString to return.
+  SET @v_wkt = 'CIRCULARSTRING ('
+               +
+               [$(owner)].[STPointAsText] (
+                  /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
+                  /* @p_X          */ @v_start_point.STX,
+                  /* @p_Y          */ @v_start_point.STY,
+                  /* @p_Z          */ @p_linestring.STStartPoint().Z,
+                  /* @p_M          */ @p_linestring.STStartPoint().M,
+                  /* @p_round_x    */ @v_round_xy,
+                  /* @p_round_y    */ @v_round_xy,
+                  /* @p_round_z    */ @v_round_zm,
+                  /* @p_round_m    */ @v_round_zm
+              )
+              +
+              ','
+              +
+              [$(owner)].[STPointAsText] (
+                  /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
+                  /* @p_X          */ @v_mid_point.STX,
+                  /* @p_Y          */ @v_mid_point.STY,
+                  /* @p_Z          */ @p_linestring.STPointN(2).Z,
+                  /* @p_M          */ @p_linestring.STPointN(2).M,
+                  /* @p_round_x    */ @v_round_xy,
+                  /* @p_round_y    */ @v_round_xy,
+                  /* @p_round_z    */ @v_round_zm,
+                  /* @p_round_m    */ @v_round_zm
+              )
+              +
+              ','
+              +
+              [$(owner)].[STPointAsText] (
+                  /* @p_dimensions XY, XYZ, XYM, XYZM or NULL (XY) */ @v_dimensions,
+                  /* @p_X          */ @v_end_point.STX,
+                  /* @p_Y          */ @v_end_point.STY,
+                  /* @p_Z          */ @p_linestring.STEndPoint().Z,
+                  /* @p_M          */ @p_linestring.STEndPoint().M,
+                  /* @p_round_x    */ @v_round_xy,
+                  /* @p_round_y    */ @v_round_xy,
+                  /* @p_round_z    */ @v_round_zm,
+                  /* @p_round_m    */ @v_round_zm
+              )
+              +
+              ')';
+
+  -- Now return circular arc
+  Return geometry::STGeomFromText(@v_wkt,
+                                  @p_linestring.STSrid);
 End;
 GO
 

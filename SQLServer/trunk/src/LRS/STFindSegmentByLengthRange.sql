@@ -29,7 +29,7 @@ CREATE FUNCTION [$(lrsowner)].[STFindSegmentByLengthRange]
   @p_start_length Float,
   @p_end_length   Float = null,
   @p_offset       Float = 0,
-  @p_radius_check int   = 0,
+  @p_radius_check int   = 1,
   @p_round_xy     int   = 3,
   @p_round_zm     int   = 2
 )
@@ -44,7 +44,7 @@ as
  *               @p_start_length Float,
  *               @p_end_length   Float = null,
  *               @p_offset       Float = 0,
- *               @p_radius_check int   = 0,
+ *               @p_radius_check int   = 1,
  *               @p_round_xy     int   = 3,
  *               @p_round_zm     int   = 2
  *             )
@@ -53,7 +53,10 @@ as
  *    Given a start and end length, this function extracts the line segment defined between them (a point if start=end).
  *    If a non-zero value is suppied for @p_offset, the extracted line is then offset to the left (if @p_offset < 0) or
  *    to the right (if @p_offset > 0).
- *    If @p_radius_check is set to 1, the function will set to NULL any offset points in CircularStrings that disappear; if 2 the centre point is returned otherwise the disappearing point is returned.
+ *    If a genenerated point is on the side of the centre of a CircularString ie offset > radius, @p_radius_check: 
+ *        0 returns the offset point regardless.
+ *        1 causes NULL to be returned; 
+ *        2 returns centre point; 
  *  NOTES
  *    Supports linestrings with CircularString elements.
  *  INPUTS
@@ -61,7 +64,7 @@ as
  *    @p_start_measure (float) - Measure defining start point of located geometry.
  *    @p_end_measure   (float) - Measure defining end point of located geometry.
  *    @p_offset        (float) - Offset (distance) value left (negative) or right (positive) in p_units.
- *    @p_radius_check    (int) - If Point disappears in CircularString: 1 causes NULL to be returned; 2 returns centre point; 0 returns the offset point regardless.
+ *    @p_radius_check    (int) - 0 returns the offset point regardless; 1 causes NULL to be returned; 2 returns centre point; 
  *    @p_round_xy        (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm        (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -188,7 +191,7 @@ begin
                               /* @p_linestring   */ @p_linestring,
                               /* @p_length       */ @v_start_length,
                               /* @p_offset       */ 0.0, -- @v_offset,
-                              /* @p_radius_check */ 0,   -- @p_radius_check,
+                              /* @p_radius_check */ 0, -- @p_radius_check,
                               /* @p_round_xy     */ @v_round_xy,
                               /* @p_round_zm     */ @v_round_zm
                            );
@@ -262,7 +265,7 @@ begin
                     /* @p_start_distance */ @v_start_length - @v_LengthFromStart,
                     /* @p_end_distance   */ @v_end_length   - @v_LengthFromStart,
                     /* @p_offset         */ 0.0, -- @v_offset,
-                    /* @p_radius_check   */ 0,   -- @p_radius_check,
+                    /* @p_radius_check   */ 0, -- @p_radius_check,
                     /* @p_round_xy       */ @v_round_xy,
                     /* @p_round_zm       */ @v_round_zm
                  );
@@ -322,7 +325,7 @@ begin
                     /* @p_start_distance */ 0.0,
                     /* @p_end_distance   */ @v_end_distance,
                     /* @p_offset         */ 0.0, -- @v_offset,
-                    /* @p_radius_check   */ 0,   -- @p_radius_check,
+                    /* @p_radius_check   */ 0, -- @p_radius_check,
                     /* @p_round_xy       */ @v_round_xy,
                     /* @p_round_zm       */ @v_round_zm
                  );

@@ -24,11 +24,13 @@ GO
 :r src/general/Tokenizer.sql  
 :r src/general/STFormatNumber.sql 
 :r src/general/STEquals.sql 
+:r src/general/STPointFunctions.sql  
 :r src/general/STToGeomGeog.sql 
 :r src/general/STIsGeographicSrid.sql 
 :r src/general/STMBR.sql 
 :r src/general/STMakeEnvelope.sql 
 :r src/general/STMakeEnvelopeFromText.sql 
+:r src/general/STGeomFromEWKT.sql 
 
 :r src/general/STMorton.sql  
 :r src/general/date_fns.sql  
@@ -39,6 +41,7 @@ GO
 :r src/general/STIsCompound.sql 
 :r src/general/STIsGeo.sql 
 :r src/general/STCoordDim.sql 
+:r src/general/STTo2D.sql 
 :r src/general/STNumDims.sql 
 :r src/general/STNumRings.sql 
 :r src/general/STStartPoint.sql  
@@ -46,13 +49,17 @@ GO
 :r src/general/STIsPseudoMultiCurve.sql  
 
 :r src/general/STPointAsText.sql 
+:r src/general/STAsEWKT.sql 
 :r src/general/STMakePoint.sql 
 :r src/general/STRound.sql  
 
 :r src/general/DD2DMS.sql 
 :r src/general/STBearingAndDistance.sql 
+:r src/general/STBearingAlongLine.sql 
 :r src/general/STGeographic.sql 
 :r src/general/STCOGOFunctions.sql 
+:r src/general/STComputeTangentPoint.sql 
+:r src/general/STFindPointBisector.sql 
 :r src/general/STGeographicDistance.sql 
 :r src/general/STEllipsoidParameters.sql 
 :r src/general/STDirectVincenty.sql 
@@ -60,6 +67,7 @@ GO
 :r src/general/STAzimuth.sql 
 :r src/general/STFindDeflectionAngle.sql
 :r src/general/STFindAngleBetween.sql 
+:r src/general/STSnapPointToGeom.sql
 
 :r src/general/STExtract.sql  
 :r src/general/STExtractPolygon.sql  
@@ -73,7 +81,6 @@ GO
 :r src/general/STNumCircularStrings.sql
 :r src/general/STCircularStringN.sql
 
--- :r src/general/STSegment.sql 
 :r src/general/STSegmentLine.sql 
 :r src/general/STIsCollinear.sql
 :r src/general/STReverse.sql  
@@ -81,8 +88,13 @@ GO
 :r src/general/STMakeLineFromCollection.sql
 
 :r src/general/STFindLineIntersection.sql 
+:r src/general/STIntersect2CircularArcs.sql -- Calls next
+:r src/general/STIntersectCircularArc.sql   -- Calls prev
+
 :r src/general/STVectorize.sql 
 :r src/general/STSegmentize.sql 
+:r src/general/STWhichSide.sql 
+:r src/general/STOffsetPoint.sql  
 :r src/general/STFilterRings.sql 
 :r src/general/STVertices.sql  
 

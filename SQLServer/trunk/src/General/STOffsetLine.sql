@@ -90,6 +90,9 @@ BEGIN
     If ( @p_linestring is null )
       Return @p_linestring;
 
+    If ( @p_linestring.STIsValid() = 0 ) 
+      Return @p_linestring;
+
     If ( ISNULL(ABS(@p_distance),0.0) = 0.0 )
       Return @p_linestring;
 

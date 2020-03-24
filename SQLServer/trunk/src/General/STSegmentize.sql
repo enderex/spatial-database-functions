@@ -310,9 +310,9 @@ SELECT TOP (100) PERCENT
                g.ez - g.sz as z_range,
                CAST(CASE WHEN @p_point is not null then g.segment.STDistance(@p_point) else NULL end as float) as closest_distance,
                --SUM(g.em) OVER (order by g.element_id, g.sub_element_id, g.segment_id)                 as cumulative_measure,
-			   case when (g.em-g.sm) > 0 
-			        then SUM(g.em) OVER (order by  g.element_id, g.sub_element_id, g.segment_id)
-					else FIRST_VALUE(g.sm) OVER(ORDER BY  g.element_id, g.sub_element_id, g.segment_id)  +
+               case when (g.em-g.sm) > 0 
+                    then SUM(g.em) OVER (order by  g.element_id, g.sub_element_id, g.segment_id)
+                    else FIRST_VALUE(g.sm) OVER(ORDER BY  g.element_id, g.sub_element_id, g.segment_id)  +
                                  SUM(g.em-g.sm) OVER (order BY g.element_id, g.sub_element_id, g.segment_id) 
                 end as cumulative_measure,
                SUM(g.segment.STLength()) OVER (order by g.element_id, g.sub_element_id, g.segment_id) as cumulative_length,
@@ -334,12 +334,12 @@ SELECT TOP (100) PERCENT
                             then [$(owner)].[STMakeCircularLine](sp,mp,ep,15,15,15)
                             else geometry::STGeomFromText(
                                   'LINESTRING(' +
-                                    FORMAT(sp.STX,'#######################0.#########################') + ' ' +
-                                    FORMAT(sp.STY,'#######################0.#########################') + 
+                                    FORMAT(sp.STX,'#######################0.###############') + ' ' +
+                                    FORMAT(sp.STY,'#######################0.###############') + 
                                     case when CHARINDEX('Z',f.dimensions) > 0
                                          then ' ' + 
                                               case when sp.Z is not null
-                                                   then FORMAT(sp.Z,'#######################0.#########################')
+                                                   then FORMAT(sp.Z,'#######################0.###############')
                                                    else 'NULL'
                                                end
                                          else case when CHARINDEX('M',f.dimensions) > 0 then ' NULL' else '' end
@@ -347,18 +347,18 @@ SELECT TOP (100) PERCENT
                                     case when CHARINDEX('M',f.dimensions) > 0
                                          then ' ' + 
                                               case when sp.M is not null 
-                                                   then FORMAT(sp.M,'#######################0.#########################')
+                                                   then FORMAT(sp.M,'#######################0.###############')
                                                    else 'NULL'
                                                 end
                                          else '' 
                                      end
                                      + ',' +
-                                    FORMAT(ep.STX,'#######################0.#########################') + ' ' +
-                                    FORMAT(ep.STY,'#######################0.#########################') + 
+                                    FORMAT(ep.STX,'#######################0.###############') + ' ' +
+                                    FORMAT(ep.STY,'#######################0.###############') + 
                                     case when CHARINDEX('Z',f.dimensions) > 0
                                          then ' ' + 
                                               case when ep.Z is not null
-                                                   then FORMAT(ep.Z,'#######################0.#########################')
+                                                   then FORMAT(ep.Z,'#######################0.###############')
                                                    else 'NULL'
                                                end
                                          else case when CHARINDEX('M',f.dimensions) > 0 then ' NULL' else '' end
@@ -366,7 +366,7 @@ SELECT TOP (100) PERCENT
                                     case when CHARINDEX('M',f.dimensions) > 0
                                          then ' ' + 
                                               case when ep.M is not null 
-                                                   then FORMAT(ep.M,'#######################0.#########################')
+                                                   then FORMAT(ep.M,'#######################0.###############')
                                                    else 'NULL'
                                                 end
                                          else '' 
@@ -492,22 +492,22 @@ SELECT TOP (100) PERCENT
     OR (UPPER(@p_filter) = 'MEASURE_RANGE' AND 
         @p_start_value is not null AND 
         @p_end_value   is not null AND 
-		( 
+        ( 
           (
             -- If range increasing then ==> Greatest(h.sm,@p_start_value) < Least(h.em,@p_end_value)
-		    h.measure_range > 0 AND
+            h.measure_range > 0 AND
             case when ROUND(h.sm,@p_round_m) < ROUND(@p_start_value,@p_round_m) then ROUND(@p_start_value,@p_round_m) else ROUND(h.sm,@p_round_m) end 
             < 
             case when ROUND(h.em,@p_round_m) < ROUND(@p_end_value,@p_round_m) then ROUND(h.em,@p_round_m) else ROUND(@p_end_value,@p_round_m) end
           )
-		) OR (
+        ) OR (
           (
             -- If range decreasing then ==> Greatest(h.em,@p_end_value) < Least(h.sm,@p_start_value)
-		    h.measure_range < 0 AND
+            h.measure_range < 0 AND
             case when ROUND(h.em,@p_round_m) < ROUND(@p_end_value,@p_round_m) then ROUND(@p_end_value,@p_round_m) else ROUND(h.em,@p_round_m) end 
             < 
             case when ROUND(h.sm,@p_round_m) < ROUND(@p_start_value,@p_round_m) then ROUND(h.sm,@p_round_m) else ROUND(@p_start_value,@p_round_m) end
-		  )
+          )
         )
        )
   ORDER BY h.element_id, h.sub_element_id, h.segment_id;

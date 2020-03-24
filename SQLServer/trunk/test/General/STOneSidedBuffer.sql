@@ -7,27 +7,131 @@ GO
 
 with data as (
 select 'Ordinary 2 Point Linestring' as test, geometry::STGeomFromText('LINESTRING(0 0, 1 0)',0) as linestring
+union all 
+select 'Self Joining Linestring'     as test, geometry::STGeomFromText('LINESTRING(20 0,21 0,22 3,24 5,22 10,19 5,20 0)',0) as linestring
 union all
-select 'Self Joining Linestring'     as test, geometry::STGeomFromText('LINESTRING(0 0,1 0,2 3,4 5,2 10,-1 5,0 0)',0) as linestring
-union all
-select 'Ends within buffer distance' as test, geometry::STGeomFromText('LINESTRING(0 0,1 0,2 3,4 5,2 10,-1 5,0 0.3)',0) as linestring
+select 'Ends within buffer distance' as test, geometry::STGeomFromText('LINESTRING(40 0,41 0,42 3,44 5,42 10,39 5,40 0.3)',0) as linestring
 )
-select d.linestring.STAsText() as sqBuff from data as d
+select 'Original' as text, d.linestring.STBuffer(0.1) as sqBuff from data as d
 union all
-select [$(owner)].[STOneSidedBuffer](d.linestring,/*BuffDist*/0.5,/*@p_square*/1,2,1).STAsText() as sqBuff from data as d;
+select d.test, [$(owner)].[STOneSidedBuffer](d.linestring,/*BuffDist*/1.0,/*@p_square*/0,3,2) as sqBuff from data as d
+union all
+select d.test, [$(owner)].[STOneSidedBuffer](d.linestring,/*BuffDist*/-1.0,/*@p_square*/1,3,2) as sqBuff from data as d;
 GO
 
+-- LinearRing
+with data as (
 select geometry::STGeomFromText('LINESTRING(0 0, 10 0, 10 10, 0 10,0 0)',0) as geom
+)
+select geom.STBuffer(0.1) from data
 union all
-select [$(owner)].[STOneSidedBuffer](geometry::STGeomFromText('LINESTRING (0 0, 10 0, 10 10, 0 10,0 0)',0),-1.0,1,3,2)
+select [$(owner)].[STOneSidedBuffer](geom,-1.0,1,3,2) from data
 union all
-select [$(owner)].[STOneSidedBuffer](geometry::STGeomFromText('LINESTRING (0 0, 10 0, 10 10, 0 10,0 0)',0),1.0,0,3,2);
+select [$(owner)].[STOneSidedBuffer](geom, 1.0,0,3,2) from data;
 GO
 
 -- Nearly closed
 select geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5)',0).STBuffer(0.01) as rGeom
 union all
 select [$(owner)].[STOneSidedBuffer] (geometry::STGeomFromText('LINESTRING(0 0, 1 0, 1 1, 10 0, 10 -10, 5 -5)',0),-0.5,1,3,1).STAsText() as pGeom;
+GO
+
+-- Crossing STIsSimple() = 0
+with data as (
+select geometry::STGeomFromText('LINESTRING(0 0, 1 1, 11 10, 11 6,0 6,0 0)',0) as geom
+)
+select geom.STIsSimple() as text, geom.STBuffer(0.1) from data
+union all
+select -1, [$(owner)].[STOneSidedBuffer](geom,-1.0,1,3,2) from data
+union all
+select 1, [$(owner)].[STOneSidedBuffer](geom, 1.0,0,3,2) from data;
+GO
+
+-- **************************************
+
+-- CircularString and CompoundCurve...
+with data as (
+select geometry::STGeomFromText('
+CIRCULARSTRING (
+2173742.0037621  259304.411434516 NULL 3498.52,
+2173712.74541767 259214.837554961 NULL 3186.7865,
+2173742.05001496 259159.972709981 NULL 0)',2274) as linestring
+)
+select a.linestring.STBuffer(4.0) as geom from data as a union all
+select [$(owner)].[STOneSidedBuffer](a.linestring,100.0,1,3,3) from data as a
+go
+
+select [$(owner)].[STOneSidedBuffer](
+geometry::STGeomFromText(
+'COMPOUNDCURVE(
+CIRCULARSTRING (
+2173732.74541767 259614.837554961 NULL 3186.7865,
+2173749.05001496 259459.972709981 NULL 0,
+2173742.0037621  259304.411434516 NULL 3498.52,
+2173712.74541767 259214.837554961 NULL 3186.7865,
+2173742.05001496 259159.972709981 NULL 0)
+)',2274),offset.IntValue,1,3,3)
+from dbo.Generate_Series(-50,50,50) as offset
+where offset.IntValue <> 0;
+
+-- *************************************************************************************************
+
+with Ramp_H as (
+select geometry::STGeomFromText('COMPOUNDCURVE ((2173369.79254475 259887.575230554 NULL 2600,2173381.122467 259911.320734575 NULL 2626.3106),
+CIRCULARSTRING (2173381.122467 259911.320734575 NULL 2626.3106,2173433.84355779 259955.557426129 NULL 0,2173501.82006501 259944.806018785 NULL 2768.24))', 2274) as geom
+)
+select a.geom.STBuffer(2.0) from Ramp_H as a union all
+select [$(owner)].[STOneSidedBuffer](a.geom, 50.0,1,3,3) b from Ramp_H as a union all
+select [$(owner)].[STOneSidedBuffer](a.geom,-50.0,1,3,3) b from Ramp_H as a
+GO
+
+with RFP1 as (
+select geometry::STGeomFromText('COMPOUNDCURVE ((2172150.6845635027 258351.6130952388 NULL 7500, 2171796.8166267127 257562.7279690057 NULL 8364.6171999999933), 
+CIRCULARSTRING (2171796.8166267127 257562.7279690057 NULL 8364.6171999999933, 2171785.1539784111 257183.20449278614 NULL 0, 2172044.2970194966 256905.68157368898 NULL 9143.7173000000039), 
+(2172044.2970194966 256905.68157368898 NULL 9143.7173000000039, 2172405.6545540541 256740.52740873396 NULL 9541.0274000000063), 
+CIRCULARSTRING (2172405.6545540541 256740.52740873396 NULL 9541.0274000000063, 2172647.6470565521 256579.20296130711 NULL 0, 2172826.9283746332 256350.1960671097 NULL 10125.168300000005), 
+(2172826.9283746332 256350.1960671097 NULL 10125.168300000005, 2172922.0147634745 256178.15253089368 NULL 10321.740000000005))', 2274) as geom
+)
+select a.geom.STBuffer(2.0) from RFP1 as a union all
+select [$(owner)].[STOneSidedBuffer](a.geom,-100.0,1,3,3) from RFP1 as a union all
+select [$(owner)].[STOneSidedBuffer](a.geom, 100.0,1,3,3) from RFP1 as a;
+GO
+
+with RFP2 as (
+select geometry::STGeomFromText('COMPOUNDCURVE ((2172689.5850816667 263297.43350273371 NULL 20000, 2172870.5653368235 263341.6981946826 NULL 20186.314400000003), 
+CIRCULARSTRING (2172870.5653368235 263341.6981946826 NULL 20186.314400000003, 2172949.36071442 263374.02539862844 NULL 0, 2173015.1427358091 263428.122397691 NULL 20357.287800000006), 
+(2173015.1427358091 263428.122397691 NULL 20357.287800000006, 2173091.9710562378 263513.43623405695 NULL 20472.096300000005), 
+CIRCULARSTRING (2173091.9710562378 263513.43623405695 NULL 20472.096300000005, 2173234.6914302604 263621.66524513043 NULL 0, 2173407.26756607 263669.62461698055 NULL 20832.466700000004), 
+(2173407.26756607 263669.62461698055 NULL 20832.466700000004, 2173737.8756920993 263696.85831338167 NULL 21164.1939), 
+CIRCULARSTRING (2173737.8756920993 263696.85831338167 NULL 21164.1939, 2174060.2842410011 263742.02676398389 NULL 0, 2174375.4616589993 263823.57832141221 NULL 21815.659499999994), 
+(2174375.4616589993 263823.57832141221 NULL 21815.659499999994, 2174455.1104600877 263849.10933355987 NULL 21899.300000000003))', 2274) as geom
+)
+select a.geom.STBuffer(2.0) from RFP2 as a union all
+select [$(owner)].[STOneSidedBuffer](a.geom,-100.0,1,3,3) from RFP2 as a;
+GO
+
+with Ramp_H as (
+select geometry::STGeomFromText('COMPOUNDCURVE (
+(2173251.19755045 260565.663264811 NULL 2000,2173324.62503405 260532.888690099 NULL 2080.4098),
+ CIRCULARSTRING (2173324.62503405 260532.888690099 NULL 2080.4098,2173345.78352624 260520.72691965 NULL 0,2173364.04390489 260504.535902888 NULL 2129.3036),
+ CIRCULARSTRING (2173364.04390489 260504.535902888 NULL 2129.3036,2173381.19882422 260470.679448103 NULL 0,2173378.16228123 260432.846523359 NULL 2206.1746),
+ (2173378.16228123 260432.846523359 NULL 2206.1746,2173355.55940427 260371.804622516 NULL 2271.2667,2173350.99754606 260362.115766078 NULL 2281.9758),
+ CIRCULARSTRING (2173350.99754606 260362.115766078 NULL 2281.9758,2173336.7026266 260144.609642233 NULL 0,2173474.30695651 259975.558445781 NULL 2728.2803),
+ (2173474.30695651 259975.558445781 NULL 2728.2803,2173476.92754695 259974.081665367 NULL 2731.2883),
+ CIRCULARSTRING (2173476.92754695 259974.081665367 NULL 2731.2883,2173644.89258743 259822.983578196 NULL 0,2173732.74541767 259614.837554961 NULL 3186.7865),
+ CIRCULARSTRING (2173732.74541767 259614.837554961 NULL 3186.7865,2173749.05001496 259459.972709981 NULL 0,2173742.0037621 259304.411434516 NULL 3498.52))',2274) as geom
+)
+select  50.0 as offset, [$(owner)].[STOneSidedBuffer](a.geom, 50.0,1,3,3) as geom from Ramp_H as a union all
+select -50.0 as offset, [$(owner)].[STOneSidedBuffer](a.geom,-50.0,1,3,3) from Ramp_H as a;
+GO
+
+with Ramp_H1 as ( 
+ select geometry::STGeomFromText('COMPOUNDCURVE (
+ (2173369.79254475 259887.575230554 NULL 2600,2173381.122467 259911.320734575 NULL 2626.3106), 
+ CIRCULARSTRING (2173381.122467 259911.320734575 NULL 2626.3106,2173433.84355779 259955.557426129 NULL 0,2173501.82006501 259944.806018785 NULL 2768.24))', 2274) as geom 
+ ) 
+select a.geom.STBuffer(2.0) from Ramp_H1 as a union all 
+select [$(owner)].[STOneSidedBuffer](a.geom,-100.0,1,3,3) from Ramp_H1 as a; 
 GO
 
 

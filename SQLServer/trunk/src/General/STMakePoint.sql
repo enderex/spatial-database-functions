@@ -75,12 +75,8 @@ As
 Begin
   Declare
     @v_dimensions varchar(4),
-    @v_wkt        varchar(max),
-    @v_round_xy   int,
-    @v_round_zm   int;
+    @v_wkt        varchar(max);
   Begin
-    SET @v_round_xy = 10;
-    SET @v_round_zm = 10;
     -- Set coordinate dimensions flag for STPointAsText function
     SET @v_dimensions = 'XY' 
                        + case when @p_Z is not null then 'Z' else '' end 
@@ -92,10 +88,10 @@ Begin
                    @p_Y,
                    @p_Z,
                    @p_M,
-                   @v_round_xy,
-                   @v_round_xy,
-                   @v_round_zm,
-                   @v_round_zm 
+                   15,
+                   15,
+                   15,
+                   15
                  );
     IF (@v_wkt is null)
       Return NULL;

@@ -253,7 +253,7 @@ CREATE FUNCTION [$(cogoowner)].[STFindCircle]
 )
 Returns geometry
 As
-/****f* COGO/STFindCircle (2008)
+/****m* COGO/STFindCircle (2008)
  *  NAME
  *    STFindCircle -- Finds a circle's centre X and Y and Radius from three points.
  *  SYNOPSIS
@@ -271,13 +271,13 @@ As
  *    Returns -1 as value of all parameters if three points do not define a circle.
  *    Assumes planar projection eg UTM.
  *  INPUTS
- *    @p_X1    (Float) : X ordinate of first point on circle
- *    @p_Y1    (Float) : Y ordinate of first point on circle
- *    @p_X2    (Float) : X ordinate of second point on circle
- *    @p_Y2    (Float) : Y ordinate of second point on circle
- *    @p_X3    (Float) : X ordinate of third point on circle
- *    @p_Y3    (Float) : Y ordinate of third point on circle
- *    @p_srid    (int) : Planar SRID value.
+ *    @p_X1   (Float) : X ordinate of first point on circle
+ *    @p_Y1   (Float) : Y ordinate of first point on circle
+ *    @p_X2   (Float) : X ordinate of second point on circle
+ *    @p_Y2   (Float) : Y ordinate of second point on circle
+ *    @p_X3   (Float) : X ordinate of third point on circle
+ *    @p_Y3   (Float) : Y ordinate of third point on circle
+ *    @p_SRID (int)   : Planar SRID value.
  *  RESULT
  *    Point (geometry) : X ordinate of centre of circle.
  *                       Y ordinate of centre of circle.
@@ -287,8 +287,9 @@ As
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - December 2017 - Original coding.
+ *    Simon Greener - January 2020  -- Removed call to STMakePoint to speed up funtion.
  *  COPYRIGHT
- *    (c) 2008-2018 by TheSpatialDBAdvisor/Simon Greener
+ *    (c) 2012-2020 by TheSpatialDBAdvisor/Simon Greener
  ******/
 Begin
   Declare
@@ -302,34 +303,32 @@ Begin
     @vCY       float,
     @vRadius   float,
     @center    geometry;
-  Begin
-    IF ( @p_X1 is null or @p_Y1 is null 
-      or @p_X2 is null or @p_Y2 is null 
-      or @p_X3 is null or @p_Y3 is null )
-      Return NULL;
-    SET @vOffset =   POWER(@p_X2,2) + POWER(@p_Y2,2);
-    SET @vBc     = ( POWER(@p_X1,2) + POWER(@p_Y1,2) - @vOffset ) / 2.0;
-    SET @vCd     = ( @vOffset - POWER(@p_X3,2) - POWER(@p_Y3,2) ) / 2.0;
-    SET @vDet    = ( @p_X1 - @p_X2 ) * ( @p_Y2 - @p_Y3 )
-                 - ( @p_X2 - @p_X3 ) * ( @p_Y1 - @p_Y2 ); 
-    if (ABS(@vDet) < @cTol) 
-      Return geometry::Parse('POINT(-1 -1 -1)');
-    SET @vIdet   = 1.0 / @vDet;
-    SET @vCX     = ( @vBc * (@p_Y2 - @p_Y3) - 
-                     @vCd * (@p_Y1 - @p_Y2) 
-                   );
-    SET @vCX     = @vCX * @viDet;
-    SET @vCY     = ( @vCd * (@p_X1 - @p_X2) - 
-                     @vBc * (@p_X2 - @p_X3) 
-                   );
-    SET @vCY     = @vCY * @viDet;
-    SET @vRadius = SQRT( POWER(@p_X2 - @vCX,2) + POWER(@p_Y2 - @vCY,2));
-    Return [$(owner)].[STMakePoint](/* @p_x    */ @vCX, 
-                                    /* @p_y    */ @vCY, 
-                                    /* @p_z    */ @vRadius, 
-                                    /* @p_m    */ NULL,  
-                                    /* @p_srid */ ISNULL(@p_SRID,0));
-  END;
+
+  IF ( @p_X1 is null or @p_Y1 is null 
+    or @p_X2 is null or @p_Y2 is null 
+    or @p_X3 is null or @p_Y3 is null )
+   Return NULL;
+
+  SET @vOffset =   POWER(@p_X2,2.0) + POWER(@p_Y2,2.0);
+  SET @vBc     = ( POWER(@p_X1,2.0) + POWER(@p_Y1,2.0) - @vOffset ) / CAST(2.0 as float);
+  SET @vCd     = ( @vOffset - POWER(@p_X3,2.0) - POWER(@p_Y3,2.0) ) / CAST(2.0 as float);
+  SET @vDet    = ( @p_X1 - @p_X2 ) 
+               * ( @p_Y2 - @p_Y3 )
+               - ( @p_X2 - @p_X3 )
+               * ( @p_Y1 - @p_Y2 ); 
+  if (ABS(@vDet) < @cTol) 
+    Return geometry::Parse('POINT(-1 -1 -1)');
+  SET @vIdet   = CAST(1.0 as float) / @vDet;
+  SET @vCX     = ( @vBc * (@p_Y2 - @p_Y3) - @vCd * (@p_Y1 - @p_Y2) ) * @viDet;
+  SET @vCY     = ( @vCd * (@p_X1 - @p_X2) - @vBc * (@p_X2 - @p_X3) ) * @viDet;
+  SET @vRadius = SQRT( POWER(@p_X2 - @vCX,2.0) + POWER(@p_Y2 - @vCY,2.0));
+  Return geometry::STGeomFromText(
+           'POINT(' + FORMAT(@vCX,    '#######################0.###############')+ ' ' + 
+                      FORMAT(@vCY,    '#######################0.###############')+ ' ' + 
+                      FORMAT(@vRadius,'#######################0.###############')  +
+           ')'
+           ,ISNULL(@p_srid,0)
+         );
 End;
 GO
 
@@ -454,12 +453,12 @@ Begin
                    POWER(@p_circular_arc.STPointN(1).STY,2) 
                    - 
                    @vOffset;
-    SET @vBc     = @vBc / 2.0;
+    SET @vBc     = @vBc / CAST(2.0 as float);
     SET @vCd     = ( @vOffset 
                    - POWER(@p_circular_arc.STPointN(3).STX,2) 
                    - POWER(@p_circular_arc.STPointN(3).STY,2)
                    );
-    SET @vCd     = @vCd / 2.0;
+    SET @vCd     = @vCd / CAST(2.0 as float);
     SET @vDet    = (  (@p_circular_arc.STPointN(1).STX - @p_circular_arc.STPointN(2).STX ) 
                     * (@p_circular_arc.STPointN(2).STY - @p_circular_arc.STPointN(3).STY)
                    )
@@ -469,7 +468,7 @@ Begin
                    ); 
     if (ABS(@vDet) < @cTol) 
       Return geometry::Parse('POINT(-1 -1 -1)');
-    SET @vIdet   = 1.0 / @vDet;
+    SET @vIdet   = CAST(1.0 as float) / @vDet;
     SET @vCX     =  (  (@vBc * (@p_circular_arc.STPointN(2).STY - @p_circular_arc.STPointN(3).STY))
                      - (@vCd * (@p_circular_arc.STPointN(1).STY - @p_circular_arc.STPointN(2).STY))
                     );
@@ -563,7 +562,7 @@ BEGIN
       RETURN NULL;
 
     -- if @iSegments is negative then the @dDeltaTheta value will be negative and so the cirlce will be anticlockwise
-    SET @dDeltaTheta  = 2.0 * PI() / @iSegments;
+    SET @dDeltaTheta  = CAST(2.0 as float) * PI() / @iSegments;
     SET @dStartX = ROUND(@p_dCentreX + @p_dRadius,@v_round_xy);
     SET @dStartY = ROUND(@p_dCentreY,             @v_round_xy);
 
@@ -645,8 +644,8 @@ Begin
     @v_dCentreToChordMidPoint Float;
   Begin
     SET @v_dCentreToChordMidPoint = @p_dRadius - @p_dArcToChordSeparation;
-    SET @v_dAngleRad              = 2.0 * aCos(@v_dCentreToChordMidPoint/@p_dRadius);
-    Return CEILING( (2.0 * PI() ) / @v_dAngleRad );
+    SET @v_dAngleRad              = CAST(2.0 as float) * aCos(@v_dCentreToChordMidPoint/@p_dRadius);
+    Return CEILING( (CAST(2.0 as float) * PI() ) / @v_dAngleRad );
   End;
 END;
 GO
@@ -692,8 +691,8 @@ Begin
     @v_dChord    Float,
     @v_dAngleRad Float;
   Begin
-    SET @v_dAngleRad = ( @p_dAngle / 180.0 ) * PI();
-    SET @v_dChord    = 2.0 * @p_dRadius * SIN(@v_dAngleRad / 2.0);
+    SET @v_dAngleRad = ( @p_dAngle / CAST(180.0 as float) ) * PI();
+    SET @v_dChord    = CAST(2.0 as float) * @p_dRadius * SIN(@v_dAngleRad / CAST(2.0 as float) );
     Return @v_dChord;
   End;
 End;
@@ -740,7 +739,7 @@ Begin
     @v_dArc      Float,
     @v_dAngleRad Float;
   Begin
-    SET @v_dAngleRad = ( @p_dAngle / 180.0 ) * PI();
+    SET @v_dAngleRad = ( @p_dAngle / CAST(180.0 as float) ) * PI();
     SET @v_dArc      = @p_dRadius * @v_dAngleRad;
     Return @v_dArc;
   End;
@@ -794,8 +793,8 @@ Begin
     @v_dCentreToChordMidPoint Float,
     @v_dArcChordSeparation    Float;
   BegiN
-    SET @v_dAngleRad              = ( @p_dAngle / 180.0 ) * PI();
-    SET @v_dCentreToChordMidPoint = @p_dRadius * cos(@v_dAngleRad/2.0);
+    SET @v_dAngleRad              = ( @p_dAngle / CAST(180.0 as float) ) * PI();
+    SET @v_dCentreToChordMidPoint = @p_dRadius * COS(@v_dAngleRad/CAST(2.0 as float));
     SET @v_dArcChordSeparation    = @p_dRadius - @v_dCentreToChordMidPoint;
     Return @v_dArcChordSeparation;
   End;

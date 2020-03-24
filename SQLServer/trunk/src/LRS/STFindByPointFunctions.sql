@@ -502,7 +502,7 @@ BEGIN
             /* @p_start_measure */ @p_point,
             /* @p_round_xy      */ @p_round_xy,
             /* @p_round_zm      */ @p_round_zm
-         ).M;
+         );
 END
 GO
 

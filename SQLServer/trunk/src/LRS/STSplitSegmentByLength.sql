@@ -27,7 +27,7 @@ CREATE FUNCTION [$(lrsowner)].[STSplitSegmentByLength]
   @p_start_length float,
   @p_end_length   float = null,
   @p_offset       float = 0.0,
-  @p_radius_check int   = 0,
+  @p_radius_check int   = 1,
   @p_round_xy     int   = 3,
   @p_round_zm     int   = 2
 )
@@ -42,7 +42,7 @@ As
  *               @p_start_length Float,
  *               @p_end_length   Float = null,
  *               @p_offset       Float = 0.0,
- *               @p_radius_check int   = 0,
+ *               @p_radius_check Bit   = 1,
  *               @p_round_xy     int   = 3,
  *               @p_round_zm     int   = 2
  *             )
@@ -51,7 +51,10 @@ As
  *    Given start and end lengths, this function extracts a new LineString segment from the input @p_linestring.
  *    If a non-zero value is supplied for @p_offset, the extracted LineString is then offset to the left (if @p_offset < 0) or to the right (if @p_offset > 0).
  *    If the circularString offset causes the CircularString to disappear, NULL is returned.
- *    If an offset point is for a circular string on the centre side, if the offset is > radius the point is kept if 0, removed if 1, and the centre returned if 2.
+ *    If a genenerated point is on the side of the centre of a CircularString ie offset > radius: 
+ *        0 returns the offset point regardless.
+ *        1 causes NULL to be returned; 
+ *        2 returns centre point; 
  *  NOTES
  *    Supports a single (2-point) LineString element only.
  *  INPUTS
@@ -59,7 +62,7 @@ As
  *    @p_start_length   (float) - Measure defining start point of located geometry.
  *    @p_end_length     (float) - Measure defining end point of located geometry.
  *    @p_offset         (float) - Offset (distance) value left (negative) or right (positive) in SRID units.
- *    @p_radius_check     (int) - If an offset point is for a circular string on the centre side, if the offset is > radius the point is kept if 0, removed if 1.
+ *    @p_radius_check     (int) - 0 returns the offset point regardless; 1 causes NULL to be returned; 2 returns centre point; 
  *    @p_round_xy         (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm         (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT

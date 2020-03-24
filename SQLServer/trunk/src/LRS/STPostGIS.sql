@@ -7,7 +7,7 @@ PRINT 'Database Schema Variables are: Cogo($(cogoowner)), LRS(lrs) Owner($(owner
 GO
 
 /* TOBEDONE
-ST_LineInterpolatePoints   — Returns one or more points interpolated along a line.
+ST_LineInterpolatePoints - Returns one or more points interpolated along a line.
 */
 
 IF EXISTS (
@@ -88,7 +88,7 @@ IF EXISTS (
      WHERE id = object_id(N'[$(lrsowner)].[STLocateBetweenElevations]') 
     AND xtype IN (N'FN', N'IF', N'TF')
 )
-
+BEGIN
   DROP FUNCTION [$(lrsowner)].[STLocateBetweenElevations];
   PRINT 'Dropped [$(lrsowner)].[STLocateBetweenElevations] ... ';
 END;
@@ -103,7 +103,6 @@ CREATE FUNCTION [$(lrsowner)].[STLineInterpolatePoint]
 (
   @p_linestring   geometry,
   @p_fraction     Float,
-  @p_radius_check int = 0,
   @p_round_xy     int = 3,
   @p_round_zm     int = 2
 )
@@ -116,7 +115,6 @@ AS
  *    Function [$(lrsowner)].[STLineInterpolatePoint] (
  *               @p_linestring   geometry,
  *               @p_fraction     Float
- *               @p_radius_check int = 0,
  *               @p_round_xy     int = 3,
  *               @p_round_zm     int = 2
  *             )
@@ -147,6 +145,7 @@ AS
  *           [$(lrsowner)].[STLineInterpolatePoint] (
  *              @p_linestring geometry::STGeomFromText('LINESTRING(-4 -4 0  1, 0  0 0  5.6, 10  0 0 15.61, 10 10 0 25.4)',0),
  *              @p_fraction   f.fraction,
+ *              0,
  *              @p_round_xy   4,
  *              @p_round_zm   3
  *           ).AsTextZM() as fPoint
@@ -205,7 +204,7 @@ BEGIN
             /* p_linestring    */ @p_linestring,
             /* @p_ratio        */ @p_fraction,
             /* @p_offset       */ 0.0,
-            /* @p_radius_check */ @p_radius_check,
+            /* @p_radius_check */ 0,
             /* @p_round_xy     */ @p_round_xy,
             /* @p_round_zm     */ @p_round_zm
          );
@@ -423,11 +422,12 @@ as
 ******/
 begin
   Return [$(lrsowner)].[STFindPointByMeasure] (
-           /* @p_linestring */ @p_linestring,
-           /* @p_measure    */ @p_measure,
-           /* @p_offset     */ @p_offset, 
-           /* @p_round_xy   */ @p_round_xy,
-           /* @p_round_zm   */ @p_round_zm
+           /* @p_linestring   */ @p_linestring,
+           /* @p_measure      */ @p_measure,
+           /* @p_offset       */ @p_offset, 
+           /* @p_radius_check */ 0,
+           /* @p_round_xy     */ @p_round_xy,
+           /* @p_round_zm     */ @p_round_zm
          );
 END
 go
@@ -498,6 +498,7 @@ begin
                                  /* @p_start_measure */ @p_start_measure,
                                  /* @p_end_measure   */ @p_end_measure,
                                  /* @p_offset        */ @p_offset, 
+                                 /* @p_radius_check  */ 0,
                                  /* @p_round_xy      */ @p_round_xy,
                                  /* @p_round_zm      */ @p_round_zm
                                );
@@ -607,6 +608,7 @@ begin
                                       /* @p_start_measure */ @v_start_measure,
                                       /* @p_end_measure   */ @v_end_measure,
                                       /* @p_offset        */ @p_offset, 
+                                      /* @p_radius_check  */ 0,
                                       /* @p_round_xy      */ @p_round_xy,
                                       /* @p_round_zm      */ @p_round_zm
                                     )
@@ -615,6 +617,7 @@ begin
                                       /* @p_start_measure */ @v_start_measure,
                                       /* @p_end_measure   */ @v_end_measure,
                                       /* @p_offset        */ @p_offset, 
+                                      /* @p_radius_check  */ 0,
                                       /* @p_round_xy      */ @p_round_xy,
                                       /* @p_round_zm      */ @p_round_zm
                                     )

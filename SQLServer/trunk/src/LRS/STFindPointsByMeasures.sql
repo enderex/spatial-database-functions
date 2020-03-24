@@ -6,56 +6,63 @@ PRINT '*************************************************************************
 PRINT 'Database Schema Variables are: Cogo($(cogoowner)), LRS(lrs) Owner($(owner))';
 GO
 
-PRINT 'Deleting [$(lrsowner)].[STFindPointsByDeltaMeasure] ...'
+PRINT 'Deleting [$(lrsowner)].[STFindPointsByMeasures] ...'
 GO
 
 IF EXISTS (
     SELECT * 
       FROM sysobjects 
-     WHERE id = object_id(N'[$(lrsowner)].[STFindPointsByDeltaMeasure]') 
+     WHERE id = object_id(N'[$(lrsowner)].[STFindPointsByMeasures]') 
     AND xtype IN (N'FN', N'IF', N'TF')
 )
 BEGIN
-  DROP FUNCTION IF EXISTS [$(lrsowner)].[STFindPointsByDeltaMeasure];
-  PRINT 'Dropped [$(lrsowner)].[STFindPointsByDeltaMeasure] ... ';
+  DROP FUNCTION IF EXISTS [$(lrsowner)].[STFindPointsByMeasures];
+  PRINT 'Dropped [$(lrsowner)].[STFindPointsByMeasures] ... ';
 END;
 GO
 
-PRINT 'Creating [$(lrsowner)].[STFindPointsByDeltaMeasure] ...'
+PRINT 'Creating [$(lrsowner)].[STFindPointsByMeasures] ...'
 GO
 
-CREATE FUNCTION [$(lrsowner)].[STFindPointsByDeltaMeasure] 
+CREATE FUNCTION [$(lrsowner)].[STFindPointsByMeasures] 
 (
   @p_linestring    geometry,
   @p_measure_delta Float,
   @p_offsets       varchar(1000),
-  @p_round_xy      int   = 3,
-  @p_round_zm      int   = 2
+  @p_radius_check  int = 0,
+  @p_round_xy      int = 3,
+  @p_round_zm      int = 2
 )
 Returns geometry 
 AS
-/****m* LRS/STFindPointsByDeltaMeasure (2012)
+/****m* LRS/STFindPointsByMeasures (2012)
  *  NAME
- *    STFindPointsByDeltaMeasure -- Returns (possibly offset) point geometry at supplied measure along linestring.
+ *    STFindPointsByMeasures -- Returns (possibly offset) point geometry at supplied measure along linestring.
  *  SYNOPSIS 
- *    Function [$(lrsowner)].[STFindPointsByDeltaMeasure] (
- *               @p_linestring geometry,
- *               @p_measure    Float,
- *               @p_offset     Float = 0.0,
- *               @p_round_xy   int   = 3,
- *               @p_round_zm   int   = 2
+ *    Function [$(lrsowner)].[STFindPointsByMeasures] (
+ *               @p_linestring   geometry,
+ *               @p_measure      Float,
+ *               @p_offsets      varchar(1000),
+ *               @p_radius_check int   = 0,
+ *               @p_round_xy     int   = 3,
+ *               @p_round_zm     int   = 2
  *             )
  *     Returns geometry 
  *  DESCRIPTION
  *    Given a measure, this function returns a geometry point at that measure.
  *    If a non-zero/null value is suppied for @p_offset, the found point is offset (perpendicular to line)
  *    to the left (if @p_offset < 0) or to the right (if @p_offset > 0).
+ *    If a genenerated point is on the side of the centre of a CircularString ie offset > radius: 
+ *        0 returns the offset point regardless.
+ *        1 causes NULL to be returned; 
+ *        2 returns centre point; 
  *  NOTES
  *    Supports LineStrings with CircularString elements.
  *  INPUTS
  *    @p_linestring (geometry) - Linestring geometry with measures.
  *    @p_measure       (float) - Measure defining position of point to be located.
- *    @p_offset        (float) - Offset (distance) value left (negative) or right (positive) in p_units.
+ *    @p_offsets     (varchar) - A set of offsets coded in a CSV string eg '-2,0,2' 
+ *    @p_radius_check    (int) - If Point disappears in CircularString: 1 causes NULL to be returned; 2 returns centre point; 0 returns the offset point regardless.
  *    @p_round_xy        (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm        (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -77,11 +84,11 @@ BEGIN
     @v_Offsets            varchar(1000),
     @v_NumOffsets         integer,
     @v_OffsetN            integer,
-	@v_measure            Float,
-	@v_measure_delta      Float,
+    @v_measure            Float,
+    @v_measure_delta      Float,
 
-	@v_i                  integer,
-	@v_num_points         integer,
+    @v_i                  integer,
+    @v_num_points         integer,
     @v_measure_point      geometry,
 
     /* segment Variables */
@@ -90,20 +97,20 @@ BEGIN
     @v_prev_element_id  integer,
     @v_subelement_id    integer,
     @v_segment_id       integer, 
-	@v_sM               float,
-	@v_eM               float,
-	@v_z_range          float,
-	@v_m_range          float,
+    @v_sM               float,
+    @v_eM               float,
+    @v_z_range          float,
+    @v_m_range          float,
     @v_prev_segment     geometry,
     @v_segment          geometry,
     @v_next_segment     geometry,
 
-	@v_deflection_angle float,
-	@v_circumference    float,
-	@v_radius           float,
-	@v_angle            float,
-	@v_bearing          float,
-	@v_centre_point     geometry;
+    @v_deflection_angle float,
+    @v_circumference    float,
+    @v_radius           float,
+    @v_angle            float,
+    @v_bearing          float,
+    @v_centre_point     geometry;
 
   If ( @p_linestring is null )
     Return @p_linestring;
@@ -131,8 +138,8 @@ BEGIN
    CURSOR FAST_FORWARD 
       FOR
    SELECT v.id,
-		  ROUND(v.sm,@v_round_xy+1),
-		  ROUND(v.em,@v_round_xy+1),
+          ROUND(v.sm,@v_round_xy+1),
+          ROUND(v.em,@v_round_xy+1),
           ROUND(v.measure_range,@v_round_zm),
           v.prev_segment,
           v.segment,
@@ -178,10 +185,10 @@ BEGIN
   BEGIN
 
     -- How many points do we need to create within this segment that will be offset?
-	SET @v_i = 1
-	SET @v_num_points = CEILING( (@v_eM - @v_measure) / @v_measure_delta); 
-	WHILE (@v_i <= @v_num_points )
-	BEGIN
+    SET @v_i = 1
+    SET @v_num_points = CEILING( (@v_eM - @v_measure) / @v_measure_delta); 
+    WHILE (@v_i <= @v_num_points )
+    BEGIN
       -- Loop over all offsets for this measure point
       SET @v_offsetN    = 1;
       SET @v_Offsets    = REPLACE(ISNULL(@p_offsets,'0'),' ','');
@@ -193,21 +200,21 @@ BEGIN
                                    then @v_offsets
                                    else SUBSTRING(@v_offsets,1,CHARINDEX(',',@v_offsets,1)-1)
                                end as float);
-	    SET @v_offsets = SUBSTRING(@v_offsets,CHARINDEX(',',@v_offsets,1)+1,LEN(@v_offsets));
-        SET @v_measure_point = [$(lrsowner)].[STFindPointByMeasure](@v_segment,@v_measure,@v_offset,2,@v_round_xy,@v_round_zm);
+        SET @v_offsets = SUBSTRING(@v_offsets,CHARINDEX(',',@v_offsets,1)+1,LEN(@v_offsets));
+        SET @v_measure_point = [$(lrsowner)].[STFindPointByMeasure](@v_segment,@v_measure,@v_offset,@p_radius_check,@v_round_xy,@v_round_zm);
         SET @v_wkt          += '(' + [$(owner)].[STPointGeomAsText](@v_measure_point,@v_round_xy,@v_round_zm,@v_round_zm) + '),';
         SET @v_OffsetN      += 1;
-	  END;
+      END;
       SET @v_i              += 1;                -- Next point
-	  SET @v_measure        += @v_measure_delta; -- Compute next measure 
+      SET @v_measure        += @v_measure_delta; -- Compute next measure 
     END; -- WHILE (@v_i <= @v_num_points )
 
     -- Deal with inflection point between two linestrings
     IF ( @v_next_segment is not null )
-	BEGIN
-	  SET @v_deflection_angle = [$(cogoowner)].[STFindDeflectionAngle](@v_segment,@v_next_segment);
-	  IF ( ROUND(@v_deflection_angle,6) <> 0.0 )
-	  BEGIN
+    BEGIN
+      SET @v_deflection_angle = [$(cogoowner)].[STFindDeflectionAngle](@v_segment,@v_next_segment);
+      IF ( ROUND(@v_deflection_angle,6) <> 0.0 )
+      BEGIN
         SET @v_offsetN = 1;
         SET @v_Offsets = REPLACE(ISNULL(@p_offsets,'0'),' ','');
         WHILE ( @v_OffsetN <= @v_NumOffsets )
@@ -216,13 +223,13 @@ BEGIN
                                      then @v_offsets
                                      else SUBSTRING(@v_offsets,1,CHARINDEX(',',@v_offsets,1)-1)
                                  end as float);
-	      SET @v_offsets = SUBSTRING(@v_offsets,CHARINDEX(',',@v_offsets,1)+1,LEN(@v_offsets));
-		  SET @v_measure_point =      [$(cogoowner)].[STFindPointBisector](@v_segment,@v_next_segment,@v_offset,@v_round_xy,@v_round_zm,@v_round_zm);
-	      SET @v_wkt          += '(' + [$(owner)].[STPointGeomAsText]  (@v_measure_point,@v_round_xy,@v_round_zm,@v_round_zm) + '),';
+          SET @v_offsets = SUBSTRING(@v_offsets,CHARINDEX(',',@v_offsets,1)+1,LEN(@v_offsets));
+          SET @v_measure_point =      [$(cogoowner)].[STFindPointBisector](@v_segment,@v_next_segment,@v_offset,@v_round_xy,@v_round_zm,@v_round_zm);
+          SET @v_wkt          += '(' + [$(owner)].[STPointGeomAsText]  (@v_measure_point,@v_round_xy,@v_round_zm,@v_round_zm) + '),';
           SET @v_OffsetN      += 1;
-		END;
-	  END;
-	END;
+        END;
+      END;
+    END;
 
     FETCH NEXT 
      FROM cFilteredSegments 
@@ -235,7 +242,6 @@ BEGIN
           @v_next_segment;
 
   END; -- WHILE ( @@FETCH_STATUS = 0 )
-
 
   CLOSE      cFilteredSegments;
   DEALLOCATE cFilteredSegments;

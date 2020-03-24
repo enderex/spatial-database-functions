@@ -27,7 +27,7 @@ CREATE FUNCTION [$(lrsowner)].[STFindSegmentByMeasureRange]
   @p_start_measure Float,
   @p_end_measure   Float = null,
   @p_offset        Float = 0.0,
-  @p_radius_check  int   = 0,
+  @p_radius_check  int   = 1,
   @p_round_xy      int   = 3,
   @p_round_zm      int   = 2
 )
@@ -42,7 +42,7 @@ as
  *               @p_start_measure Float,
  *               @p_end_measure   Float = null,
  *               @p_offset        Float = 0,
- *               @p_radius_check  int   = 0,
+ *               @p_radius_check  int   = 1,
  *               @p_round_xy      int   = 3,
  *               @p_round_zm      int   = 2
  *             )
@@ -54,7 +54,10 @@ as
  *
  *    Computes Z and M values if exist on @p_linestring.
  *
- *    If an offset point is for a circular string on the centre side, if the offset is > radius the point is kept if 0, removed if 1.
+ *    If a genenerated point is on the side of the centre of a CircularString ie offset > radius: 
+ *        0 returns the offset point regardless.
+ *        1 causes NULL to be returned; 
+ *        2 returns centre point; 
  *  NOTES
  *    Supports linestrings with CircularString elements.
  *  INPUTS
@@ -62,7 +65,7 @@ as
  *    @p_start_measure (float) - Measure defining start point of located geometry.
  *    @p_end_measure   (float) - Measure defining end point of located geometry.
  *    @p_offset        (float) - Offset (distance) value left (negative) or right (positive) in SRID units.
- *    @p_radius_check    (int) - If an offset point is for a circular string on the centre side, if the offset is > radius the point is kept if 0, removed if 1, and centre point returned if 2.
+ *    @p_radius_check    (int) - 0 returns the offset point regardless; 1 causes NULL to be returned; 2 returns centre point; 
  *    @p_round_xy        (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm        (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT

@@ -24,21 +24,14 @@ GO
 :r src/LRS/STAddMeasure.sql 
 :r src/LRS/STIsMeasured.sql 
 :r src/LRS/STPointToCircularArc.sql 
-:r src/LRS/STFindArcPointByLength.sql 
-:r src/LRS/STFindArcPointByMeasure.sql 
 :r src/LRS/STExamineMeasures.sql  
-:r src/LRS/STFilterLineSegmentByLength.sql 
-:r src/LRS/STFilterLineSegmentByMeasure.sql 
-:r src/LRS/STSplitCircularStringByLength.sql 
-:r src/LRS/STSplitCircularStringByMeasure.sql 
-:r src/LRS/STSplitLineSegmentByLength.sql 
-:r src/LRS/STSplitLineSegmentByMeasure.sql 
+:r src/LRS/STSplitSegmentByLength.sql 
+:r src/LRS/STSplitSegmentByMeasure.sql 
 :r src/LRS/STFindByPointFunctions.sql 
 :r src/LRS/STFindPointByLength.sql 
 :r src/LRS/STFindPointByMeasure.sql 
 :r src/LRS/STFindSegmentByLengthRange.sql 
 :r src/LRS/STFindSegmentByMeasureRange.sql 
--- :r src/LRS/STFindSegmentByZRange.sql 
 :r src/LRS/STResetMeasure.sql 
 :r src/LRS/STReverseMeasure.sql 
 :r src/LRS/STRemoveMeasure.sql 
@@ -46,6 +39,8 @@ GO
 :r src/LRS/STValidityFunctions.sql  
 :r src/LRS/STSplitFunctions.sql 
 :r src/LRS/STPostGIS.sql  
+:r src/LRS/STFindPointsByMeasures.sql
+-- :r src/LRS/STFindSegmentByZRange.sql 
 
 :r Function_Count.sql 
 

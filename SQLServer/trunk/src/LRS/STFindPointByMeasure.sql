@@ -26,7 +26,7 @@ CREATE FUNCTION [$(lrsowner)].[STFindPointByMeasure]
   @p_linestring   geometry,
   @p_measure      Float,
   @p_offset       Float = 0.0,
-  @p_radius_check bit   = 1,
+  @p_radius_check int   = 0,
   @p_round_xy     int   = 3,
   @p_round_zm     int   = 2
 )
@@ -40,22 +40,26 @@ AS
  *               @p_linestring   geometry,
  *               @p_measure      Float,
  *               @p_offset       Float = 0.0,
- *               @p_radius_check bit = 1,
+ *               @p_radius_check int   = 0,
  *               @p_round_xy     int   = 3,
  *               @p_round_zm     int   = 2
  *             )
  *     Returns geometry 
  *  DESCRIPTION
  *    Given a measure, this function returns a geometry point at that measure.
- *    If a non-zero/null value is suppied for @p_offset, the found point is offset (perpendicular to LineString/circularString) to the left (if @p_offset < 0) or to the right (if @p_offset > 0).
- *    If the offset is greater than the radius of the CircularString, and @p_radius_check is 1, no point is returned, if 2 the centre of the arc is returned, otherwise a point is returned.
+ *    If a non-zero/null value is suppied for @p_offset, the found point is offset (perpendicular to line)
+ *    to the left (if @p_offset < 0) or to the right (if @p_offset > 0).
+ *    If a genenerated point is on the side of the centre of a CircularString ie offset > radius: 
+ *        0 returns the offset point regardless.
+ *        1 causes NULL to be returned; 
+ *        2 returns centre point; 
  *  NOTES
  *    Supports LineStrings with CircularString elements.
  *  INPUTS
  *    @p_linestring (geometry) - Linestring geometry with measures.
  *    @p_measure       (float) - Measure defining position of point to be located.
  *    @p_offset        (float) - Offset (distance) value left (negative) or right (positive) in p_units.
- *    @p_radius_check    (int) - If measure point and offset is on same side as centre of circular string and offset > radius: no point is returned if (1), centre point returned if 2, otherwise computed point is returned.
+ *    @p_radius_check    (int) - If Point disappears inside a CircularString (offset > radius): 1 causes NULL to be returned; 2 returns centre point; 0 returns the offset point regardless.
  *    @p_round_xy        (int) - Decimal degrees of precision to which calculated XY ordinates are rounded.
  *    @p_round_zm        (int) - Decimal degrees of precision to which calculated ZM ordinates are rounded.
  *  RESULT
@@ -64,7 +68,6 @@ AS
  *    Simon Greener
  *  HISTORY
  *    Simon Greener - December 2017 - Original Coding.
- *    Simon Greener - December 2019 - Added @p_radius_check
 ******/
 BEGIN
   DECLARE
@@ -93,6 +96,7 @@ BEGIN
     @v_segment          geometry,
     @v_next_segment     geometry,
 
+    @v_radius_check     integer,
     @v_deflection_angle float,
     @v_circumference    float,
     @v_radius           float,
@@ -109,13 +113,14 @@ BEGIN
     If ( @p_linestring.HasM <> 1 )
       Return @p_linestring;
 
-    SET @v_round_xy   = ISNULL(@p_round_xy,3);
-    SET @v_round_zm   = ISNULL(@p_round_zm,2);
-    SET @v_measure    = ROUND(@p_measure,@v_round_zm);
-    SET @v_offset     = ISNULL(@p_offset,0.0);
-    SET @v_dimensions = 'XY' 
-                       + case when @p_linestring.HasZ=1 then 'Z' else '' end +
-                       + 'M';
+    SET @v_radius_check = ISNULL(@p_radius_check,1);
+    SET @v_round_xy     = ISNULL(@p_round_xy,3);
+    SET @v_round_zm     = ISNULL(@p_round_zm,2);
+    SET @v_measure      = ROUND(@p_measure,@v_round_zm);
+    SET @v_offset       = ISNULL(@p_offset,0.0);
+    SET @v_dimensions   = 'XY' 
+                         + case when @p_linestring.HasZ=1 then 'Z' else '' end +
+                         + 'M';
 
     SET @v_geometry_type = @p_linestring.STGeometryType();
     IF ( @v_geometry_type NOT IN ('LineString','MultiLineString','CircularString','CompoundCurve') )

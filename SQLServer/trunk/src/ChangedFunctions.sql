@@ -11,3 +11,4 @@ SELECT SCHEMA_NAME(schema_id) AS 'Schema',
  WHERE SCHEMA_NAME(schema_id) in ('dbo','lrs','cogo')
    and type in ('FN', 'IF', 'FN', 'AF', 'FS', 'FT', 'P')
  ORDER BY so.modify_date desc;
+
