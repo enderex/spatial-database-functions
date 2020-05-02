@@ -1,10 +1,30 @@
-use DEVDB
-go
-
-Drop Function If Exists [dbo].[STPolygonize];
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
 GO
 
-Create Function [dbo].[STPolygonize] (
+PRINT '******************************************************************';
+PRINT 'Database Schema Variables are: Owner($(cogoowner)) owner($(owner))';
+GO
+
+IF EXISTS (SELECT * 
+             FROM sysobjects 
+            WHERE id = object_id (N'[$(owner)].[STPolygonize]')
+              AND xtype IN (N'FN', N'IF', N'TF') 
+)
+BEGIN
+  DROP FUNCTION [$(owner)].[STPolygonize];
+  Print 'Dropped [$(owner)].[STPolygonize] ....';
+END;
+GO
+
+Print 'Creating [$(owner)].[STPolygonize]....';
+GO
+
+
+DROP FUNCTION IF EXISTS [$(owner)].[STPolygonize];
+GO
+
+CREATE FUNCTION [$(owner)].[STPolygonize] (
   @p_polygon_collection geometry,
   @p_similarity         float = 1.0,
   @p_round_xy           integer = 3,
@@ -46,7 +66,7 @@ Begin
   -- Calling function can ensure this by using ....
   --
   --SELECT @v_polygon_collection = geometry::CollectionAggregate(f.geom)
-  --  FROM [dbo].[STCollectionDeduplicate] ( @p_polygon_collection, 3 /* POLYGON */, @v_similarity ) as f
+  --  FROM [$(owner)].[STCollectionDeduplicate] ( @p_polygon_collection, 3 /* POLYGON */, @v_similarity ) as f
   -- ORDER BY f.geom.STArea() DESC;
 
   SET @v_polygon_collection = @p_polygon_collection;
@@ -57,7 +77,7 @@ Begin
   WHILE ( @v_loop <= ISNULL(@p_loops,10) and @v_keep_processing <> 0 )
   BEGIN
     -- Load first into empty collection
-    SET @v_collection = [dbo].[STCollectionAppend] (
+    SET @v_collection = [$(owner)].[STCollectionAppend] (
                                @v_collection,
                                @v_polygon_collection.STGeometryN(1),
                                0
@@ -73,13 +93,13 @@ Begin
       -- Handle geometries that have no relationship with any object in the collection
       -- In collection mode, STDetermine returns a comma separated list eg 'DISJOINT,EQUALS,CONTAINS',
       -- Or, if the collection has one geometry, a single word eg EQUALS
-      SET @v_relationship = [dbo].[STDetermine](@v_collection,@v_geom_i,@v_similarity);
+      SET @v_relationship = [$(owner)].[STDetermine](@v_collection,@v_geom_i,@v_similarity);
 
       -- If only have single token in @v_relationship then it means we can add the geometry directly
       IF (@v_relationship IN ('DISJOINT','TOUCHES'))
       BEGIN
         -- Not in collection so add it
-        SET @v_collection = [dbo].[STCollectionAppend] (@v_collection,@v_geom_i,1);
+        SET @v_collection = [$(owner)].[STCollectionAppend] (@v_collection,@v_geom_i,1);
         SET @v_i += 1;
         CONTINUE;
       END;
@@ -118,14 +138,14 @@ Begin
                 END as geom
          FROM (SELECT @v_collection.STGeometryN(geomN.[IntValue]) as geom,
                       /* Get specific 1:1 relationship */
-                      [dbo].[STDetermine](@v_collection.STGeometryN(geomN.[IntValue]),
+                      [$(owner)].[STDetermine](@v_collection.STGeometryN(geomN.[IntValue]),
                                           @v_geom_i,
                                           @v_similarity
                       ) as relationship
-                 FROM [dbo].[Generate_Series](1,@v_collection.STNumGeometries(),1) as geomN
+                 FROM [$(owner)].[Generate_Series](1,@v_collection.STNumGeometries(),1) as geomN
               ) as a
               CROSS APPLY
-              [dbo].[generate_series](
+              [$(owner)].[generate_series](
                     1,
                     CASE 
                     WHEN a.relationship = 'OVERLAPS' 
@@ -138,12 +158,12 @@ Begin
               ) as i
            ) as f
         WHERE f.geom.STIsValid() = 1
-          -- AND [dbo].[STThinnessRatio](a.geom) > 0.00002
+          -- AND [$(owner)].[STThinnessRatio](a.geom) > 0.00002
       )
-      SELECT @v_collection = [dbo].[STRound] (geometry::CollectionAggregate(r.geom),@v_round_xy,@v_round_xy,@v_round_xy,@v_round_xy)
+      SELECT @v_collection = [$(owner)].[STRound] (geometry::CollectionAggregate(r.geom),@v_round_xy,@v_round_xy,@v_round_xy,@v_round_xy)
         FROM processed as a
              cross apply
-             [dbo].[STCollectionDeduplicate] (a.cGeom,3/*Polygon*/,@v_similarity) as r;
+             [$(owner)].[STCollectionDeduplicate] (a.cGeom,3/*Polygon*/,@v_similarity) as r;
 
       SET @v_collection = @v_collection.MakeValid();
 
@@ -164,7 +184,7 @@ Begin
     -- Filter out points and linestrings, only returning polygons
     --
     SELECT @v_collection = geometry::CollectionAggregate(f.geom)
-      FROM [dbo].[STCollectionDeduplicate] ( @v_collection, 3 /* Polygon */, @v_similarity ) as f;
+      FROM [$(owner)].[STCollectionDeduplicate] ( @v_collection, 3 /* Polygon */, @v_similarity ) as f;
 
     SET @v_collection = @v_collection.MakeValid();
 
@@ -177,7 +197,7 @@ Begin
     SET @v_num_geoms       = @v_collection.STNumGeometries();
     WHILE ( @v_i <= @v_num_geoms )
     BEGIN
-      SET @v_relationship = dbo.STDetermine(
+      SET @v_relationship = [$(owner)].[STDetermine](
                                 @v_collection,
                                 @v_collection.STGeometryN(@v_i),
                                 @v_similarity
@@ -205,7 +225,7 @@ Begin
   INSERT INTO @polygons (id,polygon)
   SELECT geomN.IntValue as id,
          @v_collection.STGeometryN(geomN.IntValue) as polygon
-    FROM [dbo].[generate_series](1,@v_collection.STNumGeometries(),1) as geomN;
+    FROM [$(owner)].[generate_series](1,@v_collection.STNumGeometries(),1) as geomN;
   RETURN;
 END;
 GO
@@ -213,7 +233,7 @@ GO
 -- ***********************************************************************************
 
 select p.id, p.polygon.STAsText() as polygon
-  from [dbo].[STPolygonize](
+  from [$(owner)].[STPolygonize](
 geometry::STGeomFromText(
 'GEOMETRYCOLLECTION(
 POLYGON((1 1,9 1,9 9,1 9,1 1)),
@@ -231,8 +251,8 @@ POLYGON((3.5 1.5,4.5 1.5,4.5 3.5,3.5 3.5,3.5 1.5)))',0)
 select p.polygon.STAsText() as rGeom
        --p.polygon.STArea() as area,
        --p.polygon.STLength() as perimeter,
-       --CAST([dbo].[STThinnessRatio](p.polygon) as decimal(12,10)) as thinR
-  from [dbo].[STPolygonize](
+       --CAST([$(owner)].[STThinnessRatio](p.polygon) as decimal(12,10)) as thinR
+  from [$(owner)].[STPolygonize](
 geometry::STGeomFromText('
 GEOMETRYCOLLECTION (
 Polygon ((-164269.8421000000089407 -1485141.98409999907016754, -164171.02209999971091747 -1485530.05790000036358833, -163373.06230000033974648 -1485340.88959999941289425, -163470.6119999997317791 -1484944.89310000091791153, -164269.8421000000089407 -1485141.98409999907016754)),
@@ -263,8 +283,8 @@ select geometry::CollectionAggregate(b.geom) as geomC
                   from MNUnit as f
                ) as a
                cross apply
-               [DEVDB].[dbo].[STCollectionDeDuplicate](
-                             dbo.STRound(a.geomC,2,2,1,1),
+               [DEVDB].[$(owner)].[STCollectionDeDuplicate](
+                             $(owner).[STRound](a.geomC,2,2,1,1),
                              3,0.9999) as b
          ORDER BY b.geom.STArea() desc
        ) as b
@@ -273,31 +293,31 @@ select p.id,
        p.polygon.STAsText() as geom
   from collection as a
        cross apply
-       [dbo].[STPolygonize](a.geomC,0.99999,2,3) as p;
+       [$(owner)].[STPolygonize](a.geomC,0.99999,2,3) as p;
 
 /*
-select round([devdb].[dbo].[STSimilarityByArea](b.geom,c.geom),5) as similarity,
-             [devdb].[dbo].[STDetermine](b.geom,c.geom,0.9999) as determine
+select round([devdb].[$(owner)].[STSimilarityByArea](b.geom,c.geom),5) as similarity,
+             [devdb].[$(owner)].[STDetermine](b.geom,c.geom,0.9999) as determine
   from geometryCollection as a
        cross apply
-       dbo.STCollectionExtract(a.geom,3) as b
+       $(owner).[STCollectionExtract](a.geom,3) as b
        cross apply
-       dbo.STCollectionDeDuplicate(a.geom,3,0.99999) as c
+       $(owner).[STCollectionDeDuplicate](a.geom,3,0.99999) as c
 
 select p.id, 
        p.polygon.STArea() as area,
        p.polygon.STLength() as perimeter,
-       [dbo].[STThinnessRatio](p.polygon) as thinR,
+       [$(owner)].[STThinnessRatio](p.polygon) as thinR,
        p.polygon.STAsText() as geom
   from geometrycollection as a
        cross apply
-       [dbo].[STPolygonize](a.geom,0.99999,2,5) as p;
+       [$(owner)].[STPolygonize](a.geom,0.99999,2,5) as p;
 */
 
 with polygons as (
 select geometry::STGeomFromText('POLYGON ((-164647.92 -1486881.52, -163875.03 -1486692.41, -164171.02 -1485530.06, -164171.02 -1485530.06, -164269.84 -1485141.98, -165838.38 -1485528.05, -165633.91 -1486298.35, -164844.56 -1486103.07, -164647.92 -1486881.52))',0) as polygon1,
        geometry::STGeomFromText('POLYGON ((-164647.92 -1486881.52, -163875.03 -1486692.41, -164269.84 -1485141.98, -165838.38 -1485528.05, -165633.91 -1486298.35, -165633.91 -1486298.35, -165633.91 -1486298.35, -164844.56 -1486103.07, -164647.92 -1486881.52))',0) as polygon2
 )
-select [dbo].[STDetermine](a.polygon1,a.polygon2,0.99999) as determine,
-       [dbo].[STSimilarityByArea](a.polygon1,a.polygon2) as similarity
+select [$(owner)].[STDetermine](a.polygon1,a.polygon2,0.99999) as determine,
+       [$(owner)].[STSimilarityByArea](a.polygon1,a.polygon2) as similarity
   from polygons as a;

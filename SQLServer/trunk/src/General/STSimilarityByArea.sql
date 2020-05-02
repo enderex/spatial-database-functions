@@ -1,15 +1,26 @@
-USE [DEVDB]
-GO
-
-/****** Object:  UserDefinedFunction [dbo].[STSimilarityByArea]    Script Date: 20/04/2020 6:01:57 PM ******/
 SET ANSI_NULLS ON
-GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
+PRINT '******************************************************************';
+PRINT 'Database Schema Variables are: Owner($(cogoowner)) owner($(owner))';
+GO
 
-CREATE function [dbo].[STSimilarityByArea](
+IF EXISTS (SELECT * 
+             FROM sysobjects 
+            WHERE id = object_id (N'[$(owner)].[STSimilarityByArea]')
+              AND xtype IN (N'FN', N'IF', N'TF') 
+)
+BEGIN
+  DROP FUNCTION [$(owner)].[STSimilarityByArea];
+  Print 'Dropped [$(owner)].[STSimilarityByArea] ....';
+END;
+GO
+
+Print 'Creating [$(owner)].[STSimilarityByArea]....';
+GO
+
+CREATE FUNCTION [$(owner)].[STSimilarityByArea](
   @p_geometry1 geometry,
   @p_geometry2 geometry
 )

@@ -1,15 +1,26 @@
-USE [DEVDB]
-GO
-
-/****** Object:  UserDefinedFunction [dbo].[STReduce]    Script Date: 20/04/2020 6:02:17 PM ******/
 SET ANSI_NULLS ON
-GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
+PRINT '******************************************************************';
+PRINT 'Database Schema Variables are: Owner($(cogoowner)) owner($(owner))';
+GO
 
-CREATE FUNCTION [dbo].[STReduce]
+IF EXISTS (SELECT * 
+             FROM sysobjects 
+            WHERE id = object_id (N'[$(owner)].[STReduce]')
+              AND xtype IN (N'FN', N'IF', N'TF') 
+)
+BEGIN
+  DROP FUNCTION [$(owner)].[STReduce];
+  Print 'Dropped [$(owner)].[STReduce] ....';
+END;
+GO
+
+Print 'Creating [$(owner)].[STReduce]....';
+GO
+
+CREATE FUNCTION [$(owner)].[STReduce]
 (
   @p_linestring       geometry,
   @p_reduction_length float,
@@ -95,7 +106,7 @@ Begin
     IF ( @p_reduction_length is NULL OR @p_reduction_length = 0 ) 
       Return @p_linestring;
 
-    SET @v_isGeography = [dbo].[STIsGeographicSrid](@p_linestring.STSrid);
+    SET @v_isGeography = [$(owner)].[STIsGeographicSrid](@p_linestring.STSrid);
     SET @v_round_xy    = ISNULL(@p_round_xy,3);
     SET @v_round_zm    = ISNULL(@p_round_zm,2);
 
@@ -124,14 +135,14 @@ Begin
         SET @v_deltaX         = @v_internal_pt.STX - @v_end_pt.STX;
         SET @v_deltaY         = @v_internal_pt.STY - @v_end_pt.STY;
         SET @v_segment_length = ROUND(case when @v_isGeography = 1
-                                          then [dbo].[STToGeography] (@v_end_pt,     @p_linestring.STSrid).STDistance( 
-                                               [dbo].[STToGeography] (@v_internal_pt,@p_linestring.STSrid) )
+                                          then [$(owner)].[STToGeography] (@v_end_pt,     @p_linestring.STSrid).STDistance( 
+                                               [$(owner)].[STToGeography] (@v_internal_pt,@p_linestring.STSrid) )
                                           else @v_end_pt.STDistance(@v_internal_pt)
                                       End,@v_round_xy);
         IF (ROUND(@v_reduction_length, @v_round_xy + 1)
          >= ROUND(@v_segment_length,   @v_round_xy + 1))
         BEGIN
-          SET @v_linestring   = [dbo].[STDeleteN] ( 
+          SET @v_linestring   = [$(owner)].[STDeleteN] ( 
                                    @v_linestring, 
                                    @v_pt_id, 
                                    @v_round_xy, 
@@ -148,7 +159,7 @@ Begin
                                   round(@v_end_pt.STY + @v_deltaY * (@v_reduction_length / @v_segment_length), @v_round_xy),
                                   @p_linestring.STSrid
                               );
-          SET @v_linestring = [dbo].[STUpdateN] (
+          SET @v_linestring = [$(owner)].[STUpdateN] (
                                  @v_linestring,
                                  @v_new_point,
                                  @v_pt_id,
@@ -173,14 +184,14 @@ Begin
         SET @v_deltaX         = @v_internal_pt.STX - @v_end_pt.STX;
         SET @v_deltaY         = @v_internal_pt.STY - @v_end_pt.STY;
         SET @v_segment_length = ROUND(case when @v_isGeography = 1
-                                          then [dbo].[STToGeography] (@v_end_pt,     @p_linestring.STSrid).STDistance( 
-                                               [dbo].[STToGeography] (@v_internal_pt,@p_linestring.STSrid) )
+                                          then [$(owner)].[STToGeography] (@v_end_pt,     @p_linestring.STSrid).STDistance( 
+                                               [$(owner)].[STToGeography] (@v_internal_pt,@p_linestring.STSrid) )
                                           else @v_end_pt.STDistance(@v_internal_pt)
                                       End,@v_round_xy);
         IF ( ROUND(@v_reduction_length,@v_round_xy + 1) 
           >= ROUND(@v_segment_length,  @v_round_xy + 1) )
         BEGIN
-          SET @v_linestring   = [dbo].[STDeleteN] ( 
+          SET @v_linestring   = [$(owner)].[STDeleteN] ( 
                                    @v_linestring, 
                                    @v_pt_id, 
                                    @v_round_xy, 
@@ -196,7 +207,7 @@ Begin
                                  round(@v_end_pt.STY + @v_deltaY * (@v_reduction_length / @v_segment_length), @v_round_xy),
                                  @p_linestring.STSrid
                               );
-          SET @v_linestring = [dbo].[STUpdateN] (
+          SET @v_linestring = [$(owner)].[STUpdateN] (
                                  @v_linestring,
                                  @v_new_point,
                                  @v_linestring.STNumPoints(),
@@ -213,4 +224,5 @@ Begin
   END;
 END
 GO
+
 

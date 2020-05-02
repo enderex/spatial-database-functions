@@ -1,15 +1,26 @@
-USE [DEVDB]
-GO
-
-/****** Object:  UserDefinedFunction [dbo].[STCollectionExtract]    Script Date: 20/04/2020 6:00:49 PM ******/
 SET ANSI_NULLS ON
-GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
+PRINT '******************************************************************';
+PRINT 'Database Schema Variables are: Owner($(cogoowner)) owner($(owner))';
+GO
 
-create function [dbo].[STCollectionExtract] (
+IF EXISTS (SELECT * 
+             FROM sysobjects 
+            WHERE id = object_id (N'[$(owner)].[STCollectionExtract]')
+              AND xtype IN (N'FN', N'IF', N'TF') 
+)
+BEGIN
+  DROP FUNCTION [$(owner)].[STCollectionExtract];
+  Print 'Dropped [$(owner)].[STCollectionExtract] ....';
+END;
+GO
+
+Print 'Creating [$(owner)].[STCollectionExtract]....';
+GO
+
+CREATE FUNCTION [$owner)].[STCollectionExtract] (
   @p_collection geometry,
   @p_type       integer
 )
@@ -27,9 +38,9 @@ Begin
       FROM (SELECT @p_collection
                      .STGeometryN(geomN.[IntValue])
                      .STGeometryN(partN.[IntValue]) as geom
-              FROM [dbo].[Generate_Series](1,@p_collection.STNumGeometries(),1) as geomN
+              FROM [$owner)].[Generate_Series](1,@p_collection.STNumGeometries(),1) as geomN
                    cross apply
-                   [dbo].[Generate_Series](1,@p_collection.STGeometryN(geomN.[IntValue]).STNumGeometries(),1) as partN
+                   [$owner)].[Generate_Series](1,@p_collection.STGeometryN(geomN.[IntValue]).STNumGeometries(),1) as partN
            ) as f
      WHERE (@p_type = 1 and f.geom.STGeometryType() = 'Point')
 	    OR (@p_type = 2 and f.geom.STGeometryType() = 'LineString')

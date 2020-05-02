@@ -1,15 +1,26 @@
-USE [DEVDB]
-GO
-
-/****** Object:  UserDefinedFunction [dbo].[STCollectionDeduplicate]    Script Date: 20/04/2020 6:00:33 PM ******/
 SET ANSI_NULLS ON
-GO
-
 SET QUOTED_IDENTIFIER ON
 GO
 
+PRINT '******************************************************************';
+PRINT 'Database Schema Variables are: Owner($(cogoowner)) owner($(owner))';
+GO
 
-CREATE FUNCTION [dbo].[STCollectionDeduplicate] (
+IF EXISTS (SELECT * 
+             FROM sysobjects 
+            WHERE id = object_id (N'[$(owner)].[STCollectionDeDuplicate]')
+              AND xtype IN (N'FN', N'IF', N'TF') 
+)
+BEGIN
+  DROP FUNCTION [$(owner)].[STCollectionDeDuplicate];
+  Print 'Dropped [$(owner)].[STCollectionDeDuplicate] ....';
+END;
+GO
+
+Print 'Creating [$(owner)].[STCollectionDeDuplicate]....';
+GO
+
+CREATE FUNCTION [$(owner)].[STCollectionDeduplicate] (
   @p_collection geometry, -- GeometryCollection
   @p_geom_type  integer = 0, /* 0:All, 1:Point, 2:Line, 3:geom */
   @p_similarity float = 1.0
@@ -26,7 +37,7 @@ AS
  *    Function STCollectionDeduplicate
  *               @p_collection geometry,    -- GeometryCollection
  *               @p_geom_type  integer = 0, -- 0:All, 1:Point, 2:Line, 3:geom 
- *               @p_similarity float = 1.0  -- See dbo.STSimilarityByArea
+ *               @p_similarity float = 1.0  -- See $(owner).STSimilarityByArea
  *             )
  *     RETURNS @geoms TABLE (
  *       Id   integer,
@@ -59,7 +70,7 @@ AS
 BEGIN
   DECLARE
     @v_collection geometry,
-	@v_similarity float,
+    @v_similarity float,
     @v_srid       integer,
     @v_geom_type  integer;
 
@@ -87,16 +98,16 @@ BEGIN
       FROM (SELECT @v_collection
                       .STGeometryN(geomN.[IntValue])
                       .STGeometryN(partN.[IntValue]) as Geom
-              FROM [dbo].[Generate_Series](1,@v_collection.STNumGeometries(),1) as geomN
+              FROM [$(owner)].[Generate_Series](1,@v_collection.STNumGeometries(),1) as geomN
                    cross apply
-                   [dbo].[Generate_Series](1,@v_collection.STGeometryN(geomN.[IntValue]).STNumGeometries(),1) as partN
+                   [$(owner)].[Generate_Series](1,@v_collection.STGeometryN(geomN.[IntValue]).STNumGeometries(),1) as partN
             ) as f
       WHERE  @v_geom_type = 0
          OR (@v_geom_type = 1 and f.Geom.STGeometryType() = 'Point')
          OR (@v_geom_type = 2 and f.Geom.STGeometryType() = 'LineString')
          OR (@v_geom_type = 3 and f.Geom.STGeometryType() = 'Polygon')
      )
-	 , equals as (
+     , equals as (
      SELECT DISTINCT a.id2 as id_equals /* id2 is the equals one to be thrown away */
        FROM (SELECT DISTINCT 
                     case when a.id < b.id then a.id else b.id end as id1,
@@ -107,9 +118,9 @@ BEGIN
               ) as a
               INNER JOIN geomSet as ps  ON (ps.id  = a.id1)
               INNER JOIN geomSet as ps2 ON (ps2.id = a.id2)
-        WHERE [dbo].[STDetermine](ps.geom,ps2.geom,@v_similarity) = 'EQUALS'
+        WHERE [$(owner)].[STDetermine](ps.geom,ps2.geom,@v_similarity) = 'EQUALS'
       )
-	  --select * from equals; -- 2 3 8 12
+      --select * from equals; -- 2 3 8 12
       INSERT INTO @geoms (id,geom)
       SELECT gs.id, gs.geom as geom
        FROM (SELECT ps.id
@@ -119,8 +130,8 @@ BEGIN
                FROM geomSet as ps
               WHERE EXISTS (SELECT 1 FROM equals as e WHERE e.id_equals = ps.id)
             ) as b
-			inner join 
-			geomSet as gS on (gs.id = b.id);
+            inner join 
+            geomSet as gS on (gs.id = b.id);
 
    RETURN;
 END;
