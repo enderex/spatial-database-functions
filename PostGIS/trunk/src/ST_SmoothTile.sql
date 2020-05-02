@@ -228,9 +228,16 @@ select 1 as id, 'POLYGON((0 0,10 0,10 10,0 10,0 0))'::geometry as p_geom     uni
 select 2, 'POLYGON((0 0,10 0,10 10,0 10,0 0),(2.5 2.5,7.5 2.5, 7.5 7.5,2.5 7.5,2.5 2.5))'::geometry as p_geom     union all
 select 3, 'POLYGON((0 0,10 0,10 10,0 10,0 0),(2.5 2.5,7.5 2.5, 7.5 7.5,2.5 7.5,2.5 2.5),(0.5 0.5,1.5 0.5,1.5 1.5,0.5 1.5, 0.5 0.5))'::geometry as p_geom    union all
 select 4 as id, 'LINESTRING(0 0,1 0,1 1,2 1,2 2,3 2,3 3,3 6,0 6,0 2)'::geometry as p_geom union all
+select 9 as id, 'LINESTRING(0 0,1 0,1 1,2 1,2 2,3 2,3 3,4 3)'::geometry as p_geom union all
 select 5 as id, 'MULTILINESTRING((0 0,1 0,1 1,2 1,2 2,3 2,3 3,3 6,0 6,0 2),(10 0,11 0,11 1,12 1,12 2,13 2,13 3,13 6,10 6,10 2))'::geometry as p_geom union all
 select 6 as id,  'MULTIPOLYGON(((0  0, 9 0, 9  9, 0 9, 0 0),( 2.5 2.5, 7.5 2.5, 7.5 7.5, 2.5 7.5, 2.5 2.5)),
-                       ((10 0,19 0,19  9,10 9,10 0),(12.5 2.5,17.5 2.5,17.5 7.5,12.5 7.5,12.5 2.5),(11 1,18 1,18 8,11 8,11 1)))'::geometry as p_geom union all
+                       ((10 0,19 0,19  9,10 9,10 0),(12.5 2.5,17.5 2.5,17.5 7.5,12.5 7.5,12.5 2.5),(11 1,18 1,18 8,11 8,11 1)))'::geometry as p_geom 
+)
+select id, p_geom from data as a
+union all
+select id, spdba.ST_SmoothTile(p_geom,3) from data as a
+
+with data as (
 select 7, 'MULTIPOLYGON(((207540 155340,207520 155340,207520 155359.999999999,207480 155360,207480 155380,207440 155380.000000001,207440 155400,207420 155400,207540 155000,207540 155340)))' as p_geom union all
 select 8, 'MULTIPOLYGON(((207540 155340,207520 155340,207520 155359.999999999,207480 155360,207480 155380,207440 155380.000000001,207440 155400,207420 155400,207540 155000,207540 155340)),((200000 155300,200010 155300,200010 155310,200000 155310,200000 155300)))'  as p_geom
 )
