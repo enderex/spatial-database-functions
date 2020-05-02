@@ -67,7 +67,6 @@ GO
 :r src/general/STAzimuth.sql 
 :r src/general/STFindDeflectionAngle.sql
 :r src/general/STFindAngleBetween.sql 
-:r src/general/STSnapPointToGeom.sql
 
 :r src/general/STExtract.sql  
 :r src/general/STExtractPolygon.sql  
@@ -77,14 +76,19 @@ GO
 :r src/general/STLineMerge.sql
 :r src/general/STBoundingDiagonal.sql 
 :r src/general/STCheckRadii.sql 
+:r src/general/STSnapPointToGeom.sql
 
 :r src/general/STNumCircularStrings.sql
 :r src/general/STCircularStringN.sql
 
+:r src/general/STThinnessRatio.sql 
 :r src/general/STSegmentLine.sql 
 :r src/general/STIsCollinear.sql
 :r src/general/STReverse.sql  
 :r src/general/STAppend.sql  
+
+:r src/general/STCollectionDeDuplicate.sql
+:r src/general/STCollectionExtract.sql
 :r src/general/STMakeLineFromCollection.sql
 
 :r src/general/STFindLineIntersection.sql 
@@ -109,6 +113,7 @@ GO
 :r src/general/STDelete.sql  
 :r src/general/STDeleteN.sql  
 :r src/general/STExtend.sql  
+:r src/general/STReduce.sql  
 :r src/general/STAddSegmentByCOGO.sql 
 :r src/general/STDensify.sql 
 :r src/general/STConvertToLineString.sql 
@@ -135,6 +140,7 @@ GO
 :r src/general/STScale.sql  
 
 :r src/general/STNumTiles.sql  
+:r src/general/STSmoothTile.sql  
 :r src/general/STTileXY.sql  
 :r src/general/STTileGeom.sql  
 :r src/general/STTileGeomByPoint.sql  

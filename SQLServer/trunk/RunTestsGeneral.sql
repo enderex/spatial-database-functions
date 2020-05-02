@@ -25,8 +25,7 @@ GO
 :r test/general/STMBR.sql 
 :r test/general/STMakeEnvelope.sql 
 :r test/general/STMakeEnvelopeFromText.sql 
-:r test/general/STGeomFromText.sql
-:r test/general/STAsText.sql
+:r test/general/STGeomFromEWKT.sql
 
 :r test/general/STMorton.sql  
 :r test/general/date_fns.sql  
@@ -45,13 +44,17 @@ GO
 :r test/general/STIsPseudoMultiCurve.sql  
 
 :r test/general/STPointAsText.sql 
+:r test/general/STAsEWKT.sql
 :r test/general/STMakePoint.sql 
 :r test/general/STRound.sql  
 
 :r test/general/DD2DMS.sql 
 :r test/general/STBearingAndDistance.sql 
+:r test/general/STBearingAlongLine.sql 
 :r test/general/STGeographic.sql 
 :r test/general/STCOGOFunctions.sql 
+:r test/general/STComputeTangentPoint.sql
+:r test/general/STFindPointBisector.sql  
 :r test/general/STGeographicDistance.sql 
 :r test/general/STEllipsoidParameters.sql 
 :r test/general/STDirectVincenty.sql 
@@ -68,28 +71,35 @@ GO
 :r test/general/STLineMerge.sql
 :r test/general/STBoundingDiagonal.sql 
 :r test/general/STCheckRadii.sql 
-:r test/general/STSnapPointToLine.sql
+:r test/general/STSnapPointToGeom.sql
 
 :r test/general/STNumCircularStrings.sql
 :r test/general/STCircularStringN.sql
 
--- :r src/general/STSegment.sql 
+-- :r src/general/STSegment.sql
+:r test/general/STThinnessRatio.sql
 :r test/general/STSegmentLine.sql 
 :r test/general/STIsCollinear.sql
 :r test/general/STReverse.sql  
 :r test/general/STAppend.sql  
+
+:r test/general/STCollectionDeDuplicate.sql
+:r test/general/STCollectionExtract.sql
 :r test/general/STMakeLineFromCollection.sql
 
 :r test/general/STFindLineIntersection.sql 
+
 :r test/general/STVectorize.sql 
 :r test/general/STSegmentize.sql 
+:r test/general/STWhichSide.sql 
+:r test/general/STOffsetPoint.sql  
 :r test/general/STFilterRings.sql 
-:r test/general/STVertices.sql  
+:r test/general/STVertices.sql
 
 :r test/general/STLine2Cogo.sql
 :r test/general/STAverageBearing.sql  
 
-:r test/general/STAddZ.sql  
+:r test/general/STAddZ.sql
 :r test/general/STSetZ.sql  
 :r test/general/STInsertN.sql  
 :r test/general/STUpdate.sql  
@@ -124,6 +134,7 @@ GO
 :r test/general/STScale.sql  
 
 :r test/general/STNumTiles.sql  
+:r test/general/STSmoothTile.sql  
 :r test/general/STTileXY.sql  
 :r test/general/STTileGeom.sql  
 :r test/general/STTileGeomByPoint.sql  
