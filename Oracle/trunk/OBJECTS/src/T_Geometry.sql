@@ -6177,7 +6177,7 @@ AS OBJECT (
  *    All rows and columns are visited, with geometry objects being created that represent each tile.
  *    Geometry object created can be:
  *      TILE  -- Single polygon per grid cell/Tile (optimized rectangle).
- *==      POINT -- Centre point of each grid cell/Tile
+ *      POINT -- Centre point of each grid cell/Tile
  *      BOTH  -- Single polygon per grid cell/Tile (optimized rectangle) with centre point coded in SDO_POINT_TYPE structure.
  *    When polygon tiles are to be returned, they can represent:
  *      MBR       -- The entire extent of the underlying geometry;

@@ -1,15 +1,9 @@
 DROP FUNCTION IF EXISTS spdba.ST_Reduce(geometry,numeric,varchar(5),integer,integer);
 
-CREATE OR REPLACE FUNCTION spdba.ST_Reduce
-(
-  p_linestring       geometry,
-  p_reduction_length numeric,
-  p_end              varchar(5) = 'START',
-  p_round_xy         integer   = 3,
-  p_round_zm         integer   = 2
-)
-returns geometry
-as
+CREATE OR REPLACE FUNCTION spdba.st_reduce(p_linestring geometry, p_reduction_length numeric, p_end character varying DEFAULT 'START'::character varying, p_round_xy integer DEFAULT 3, p_round_zm integer DEFAULT 2)
+ RETURNS geometry
+ LANGUAGE plpgsql
+AS 
 $BODY$
 /****f* EDITOR/ST_Reduce (2008)
  *  NAME
@@ -126,12 +120,10 @@ RAISE NOTICE 'START: Internal Point %',ST_AsText(v_internal_pt);
                                              ST_GeogFromText(ST_AsEWKT(v_internal_pt)) 
                                            )
                                       else ST_Distance(v_end_pt,v_internal_pt)
-                                  End)::numeric,
-                                 v_round_xy
-                          );
+                                  End)::numeric,v_round_xy);
 Raise Notice 'START: delta X/Y %/% -- Length seg/reduce %/%',v_deltaX,v_deltaY,v_segment_length,v_reduction_length;
       IF (ROUND(v_reduction_length::numeric,v_round_xy + 1) >= 
-          ROUND(v_segment_length::numeric,  v_round_xy + 1)) THEN
+          ROUND(v_segment_length::numeric,v_round_xy + 1)) THEN
         v_linestring       := ST_RemovePoint(v_linestring, v_pt_id-1 );
         v_reduction_length := v_reduction_length - v_segment_length;
         v_pt_id            := v_pt_id - 1;
@@ -185,8 +177,7 @@ Raise Notice 'END: delta X/Y %/% -- Length seg/reduce %/%',v_deltaX,v_deltaY,v_s
   END IF;   -- IF ( v_end IN ('BOTH','END') )THEN
   Return v_linestring;
 END
-$BODY$
-LANGUAGE plpgsql;
+$BODY$;
 
 -- Test
 --

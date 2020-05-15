@@ -1,4 +1,4 @@
-F:\Projects\database\code\robodoc-win32-4.99.36\robodoc ^
+..\..\..\Tools\bin\robodoc ^
       --src src ^
       --doc documentation\OracleObjects ^
       --singledoc ^
